@@ -1,0 +1,212 @@
+/* Landing Page Styles - Dark Security-Focused Theme */
+/* This CSS only applies to the landing page */
+
+/* Dark security-focused theme for landing page */
+.landing-page,
+body.landing-page {
+  /* Dark security-focused theme */
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+  
+  --card: 222 47% 8%;
+  --card-foreground: 210 40% 98%;
+  
+  --popover: 222 47% 10%;
+  --popover-foreground: 210 40% 98%;
+  
+  /* Teal accent for security/trust */
+  --primary: 173 80% 45%;
+  --primary-foreground: 222 47% 6%;
+  
+  --secondary: 222 47% 12%;
+  --secondary-foreground: 210 40% 98%;
+  
+  --muted: 222 47% 14%;
+  --muted-foreground: 215 20% 55%;
+  
+  --accent: 222 47% 16%;
+  --accent-foreground: 210 40% 98%;
+  
+  --destructive: 0 62% 50%;
+  --destructive-foreground: 210 40% 98%;
+  
+  --border: 222 47% 15%;
+  --input: 222 47% 15%;
+  --ring: 173 80% 45%;
+  
+  --radius: 0.75rem;
+  
+  /* Custom design tokens */
+  --glow-primary: 173 80% 45%;
+  --surface-elevated: 222 47% 10%;
+}
+
+/* Apply dark theme to landing page body */
+body.landing-page {
+  background: hsl(222 47% 6%);
+  color: hsl(210 40% 98%);
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.landing-page {
+  background: hsl(222 47% 6%);
+  color: hsl(210 40% 98%);
+}
+
+/* Gradient backgrounds */
+.gradient-radial {
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--primary) / 0.15), transparent);
+}
+
+.gradient-hero {
+  background: linear-gradient(180deg, hsl(222 47% 8%) 0%, hsl(222 47% 4%) 100%);
+}
+
+/* Glow effects */
+.glow-primary {
+  box-shadow: 0 0 40px hsl(var(--glow-primary) / 0.3);
+}
+
+.glow-text {
+  text-shadow: 0 0 30px hsl(var(--primary) / 0.5);
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass effect for navbar */
+.glass {
+  background: hsl(var(--card) / 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(var(--border) / 0.5);
+}
+
+/* Animated gradient border */
+.border-gradient {
+  position: relative;
+}
+
+.border-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.5), transparent 50%, hsl(var(--primary) / 0.3));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* Surface styles */
+.surface-elevated {
+  background: hsl(var(--surface-elevated));
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Smooth scroll behavior for anchor links */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Landing page section spacing */
+.landing-section {
+  scroll-margin-top: 80px;
+}
+
+/* Enhanced card hover effects for landing page */
+.landing-card {
+  transition: all 0.3s ease;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+}
+
+.landing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px hsl(var(--primary) / 0.2);
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+/* Gradient text for headings */
+.gradient-text {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Landing page background patterns */
+.landing-bg-pattern {
+  background-image: 
+    radial-gradient(circle at 20% 50%, hsl(var(--primary) / 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, hsl(var(--primary) / 0.05) 0%, transparent 50%);
+}
+
+/* Feature card icon backgrounds */
+.feature-icon-bg {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.05));
+  border: 1px solid hsl(var(--primary) / 0.2);
+}
+
+/* Testimonial card styles */
+.testimonial-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  transition: all 0.3s ease;
+}
+
+.testimonial-card:hover {
+  border-color: hsl(var(--primary) / 0.3);
+  box-shadow: 0 8px 24px -8px hsl(var(--primary) / 0.15);
+}
+
+/* CTA section enhancements */
+.cta-gradient {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.05) 0%,
+    hsl(var(--primary) / 0.1) 50%,
+    hsl(var(--primary) / 0.05) 100%
+  );
+}
+
+/* Navbar scroll hide/show transition */
+nav.glass {
+  will-change: transform;
+}
+
+/* Responsive adjustments for landing page */
+@media (max-width: 768px) {
+  .glass {
+    background: hsl(var(--card) / 0.8);
+  }
+}
