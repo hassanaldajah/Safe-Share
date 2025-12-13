@@ -1,74 +1,89 @@
-# Welcome to your Lovable project
+SafeShare 🔐
 
-## Project info
+Zero-Knowledge End-to-End Encrypted File Sharing & Collaboration
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+SafeShare is a privacy-first file sharing and collaboration platform designed to give users full control over their data. All files are encrypted client-side, ensuring a zero-knowledge architecture where no server or administrator can read user files.
 
-## How can I edit this code?
+SafeShare is built for individuals and teams that require strong security, transparency, and accountability when sharing sensitive information.
 
-There are several ways of editing your application.
+🚀 Features
 
-**Use Lovable**
+🔒 End-to-End Encryption (Zero Knowledge)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+📁 Secure file & folder management
 
-Changes made via Lovable will be committed automatically to this repo.
+👥 Role-based permissions:
 
-**Use your preferred IDE**
+Viewer – View / download only
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Editor – Upload and modify files
 
-The only requirement is having Bun installed - [install Bun](https://bun.sh/docs/installation)
+Co-Owner – Manage permissions, view statistics, delete files
 
-Follow these steps:
+🕒 Time-limited access links
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+🔑 One-Time Password (OTP) protected sharing
+
+📥 Download limits (e.g. one-time download)
+
+📊 Detailed audit logs (who did what and when)
+
+🗂️ Collaborative folders
+
+💬 Built-in chat and group collaboration
+
+🛡️ Virus scanning during file upload
+
+🗜️ Optional file compression to save storage
+
+♻️ Trash & file restore system
+
+🤖 AI-powered help assistant and FAQ
+
+🎯 Project Goals
+
+Guarantee data privacy and confidentiality
+
+Provide full transparency through activity tracking
+
+Enable secure collaboration without sacrificing usability
+
+Ensure the platform is scalable, reliable, and user-friendly
+
+🛠️ Tech Stack
+
+React (TypeScript)
+
+Vite
+
+Tailwind CSS
+
+shadcn/ui
+
+Bun (runtime & package manager)
+
+📦 Getting Started (Local Development)
+Prerequisites
+
+Install Bun
+👉 https://bun.sh/docs/installation
+
+Setup
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
+# Navigate to the project directory
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
+# Install dependencies
 bun install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 bun run dev
-```
 
-**Edit a file directly in GitHub**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The application will start with hot reloading enabled.
 
-**Use GitHub Codespaces**
+🌐 Deployment
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Bun 1.3.4
-- Vite 7.2.7
-- TypeScript
-- React 19.2.1
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+The project can be deployed as a standard frontend web application using any modern hosting provider that supports static builds or Node-based workflows.
