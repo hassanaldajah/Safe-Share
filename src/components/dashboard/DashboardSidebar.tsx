@@ -7,7 +7,9 @@ import {
   Settings,
   ChevronLeft,
   LayoutDashboard,
-  Home
+  Home,
+  Cloud,
+  Bot
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -25,6 +27,8 @@ const navItems = [
   { id: "shared", label: "Shared with me", icon: Users },
   { id: "groups", label: "Groups", icon: UsersRound },
   { id: "chat", label: "Chat", icon: MessageSquare },
+  { id: "backup", label: "Backup", icon: Cloud },
+  { id: "ai-assistant", label: "AI Assistant", icon: Bot },
   { id: "trash", label: "Trash", icon: Trash2 },
 ];
 

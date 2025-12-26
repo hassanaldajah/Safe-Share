@@ -4,22 +4,12 @@ import { Star, Quote } from "lucide-react";
 const testimonials = [
   {
     quote: "Finally a file sharing solution that takes privacy seriously. We use VaultShare for all our client communications.",
-    author: "Sarah Chen",
-    role: "CTO, LegalTech Solutions",
-    avatar: "SC",
+    author: "Dr. Azzam Sleit ",
+    role: "Professor of Computer Science at KASIT",
+    avatar: "DR",
   },
-  {
-    quote: "The zero-knowledge architecture gives us confidence that our research data remains confidential. Essential for our lab.",
-    author: "Dr. Marcus Williams",
-    role: "Research Director, BioMed Institute",
-    avatar: "MW",
-  },
-  {
-    quote: "Simple to use, impossible to breach. We switched our entire team to VaultShare and haven't looked back.",
-    author: "Elena Rodriguez",
-    role: "Security Lead, FinanceFirst",
-    avatar: "ER",
-  },
+   
+   
 ];
 
 const Testimonials = () => {
@@ -37,15 +27,10 @@ const Testimonials = () => {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Trusted by <span className="text-primary">Security-First</span> Teams
-          </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Join thousands of professionals who trust VaultShare for their most sensitive files.
-          </p>
-        </motion.div>
+           
+         </motion.div>
 
-        {/* Testimonial cards */}
+      
         <div className="grid md:grid-cols-3 gap-6">
           {testimonials.map((testimonial, index) => (
             <motion.div
@@ -56,17 +41,15 @@ const Testimonials = () => {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="p-6 rounded-2xl bg-card border border-border"
             >
-              {/* Quote icon */}
+   
               <Quote className="h-8 w-8 text-primary/30 mb-4" />
-
-              {/* Stars */}
+ 
               <div className="flex gap-1 mb-4">
                 {[...Array(5)].map((_, i) => (
                   <Star key={i} className="h-4 w-4 fill-primary text-primary" />
                 ))}
               </div>
-
-              {/* Quote text */}
+ 
               <p className="text-foreground mb-6 leading-relaxed">
                 "{testimonial.quote}"
               </p>
