@@ -11,7 +11,7 @@ import {
   Cloud,
   Bot
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -22,17 +22,35 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "my-folders", label: "My Folders", icon: FolderOpen },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+  { id: "my-folders", label: "My Folders", icon: FolderOpen, path: "/MyFolders" },
   { id: "shared", label: "Shared with me", icon: Users },
   { id: "groups", label: "Groups", icon: UsersRound },
   { id: "chat", label: "Chat", icon: MessageSquare },
   { id: "backup", label: "Backup", icon: Cloud },
-  { id: "ai-assistant", label: "AI Assistant", icon: Bot },
-  { id: "trash", label: "Trash", icon: Trash2 },
+  { id: "ai-assistant", label: "AI Assistant", icon: Bot, path: "/ai-assistant" },
+  { id: "trash", label: "Trash", icon: Trash2, path: "/trash" },
 ];
 
 export function DashboardSidebar({ collapsed, onToggle, activeItem, onItemClick }: SidebarProps) {
+  const location = useLocation();
+
+  // Determine which item should be active based on the current route
+  const getActiveItem = () => {
+    const currentPath = location.pathname;
+    
+    // Find the nav item that matches the current path
+    const matchedItem = navItems.find(item => item.path === currentPath);
+    if (matchedItem) {
+      return matchedItem.id;
+    }
+    
+    // Fallback to the activeItem prop
+    return activeItem;
+  };
+
+  const currentActiveItem = getActiveItem();
+
   return (
     <aside
       className={cn(
@@ -81,21 +99,44 @@ export function DashboardSidebar({ collapsed, onToggle, activeItem, onItemClick 
           {!collapsed && <span>Home</span>}
         </Link>
         
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onItemClick(item.id)}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-              activeItem === item.id
-                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
-                : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            )}
-          >
-            <item.icon className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
-            {!collapsed && <span>{item.label}</span>}
-          </button>
-        ))}
+        {navItems.map((item) => {
+          // Check if this item is active based on route
+          const isActive = currentActiveItem === item.id;
+          
+          const linkClasses = cn(
+            "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+            isActive
+              ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          );
+
+          // IF ITEM HAS A PATH, RENDER A <LINK>
+          if (item.path) {
+            return (
+              <Link
+                key={item.id}
+                to={item.path}
+                onClick={() => onItemClick(item.id)}
+                className={linkClasses}
+              >
+                <item.icon className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
+                {!collapsed && <span>{item.label}</span>}
+              </Link>
+            );
+          }
+
+          // IF NO PATH, RENDER A BUTTON
+          return (
+            <button
+              key={item.id}
+              onClick={() => onItemClick(item.id)}
+              className={linkClasses}
+            >
+              <item.icon className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
+              {!collapsed && <span>{item.label}</span>}
+            </button>
+          );
+        })}
       </nav>
 
       {/* Settings at bottom */}
