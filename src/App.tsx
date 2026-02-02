@@ -14,6 +14,8 @@ import DashboardHome from "./components/dashboard/DashboardHome";
 import { MyFolders } from "./components/dashboard/Myfolders";
 import { TrashPage } from "./components/dashboard/Trashpage";
 import { AiAssistantPage } from "./components/dashboard/AiAssistantPage";
+import { BackupPage } from "./components/dashboard/BackUp";
+import { ChatPage } from "./components/dashboard/Chatpage";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +36,8 @@ const App = () => (
               <Route path="/MyFolders" element={<MyFolders />} />
               <Route path="/trash" element={<TrashPage />} />
               <Route path="/ai-assistant" element={<AiAssistantPage />} />
+              <Route path="/backup" element={<BackupPage />} />
+              <Route path="/chat" element={<ChatPage />} />
             </Route> 
             <Route path="*" element={<NotFound />} />
           </Routes>

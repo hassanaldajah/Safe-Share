@@ -26,8 +26,8 @@ const navItems = [
   { id: "my-folders", label: "My Folders", icon: FolderOpen, path: "/MyFolders" },
   { id: "shared", label: "Shared with me", icon: Users },
   { id: "groups", label: "Groups", icon: UsersRound },
-  { id: "chat", label: "Chat", icon: MessageSquare },
-  { id: "backup", label: "Backup", icon: Cloud },
+  { id: "chat", label: "Chat", icon: MessageSquare, path: "/chat" },
+  { id: "backup", label: "Backup", icon: Cloud, path: "/backup" },
   { id: "ai-assistant", label: "AI Assistant", icon: Bot, path: "/ai-assistant" },
   { id: "trash", label: "Trash", icon: Trash2, path: "/trash" },
 ];
