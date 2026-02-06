@@ -24,8 +24,7 @@ interface SidebarProps {
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { id: "my-folders", label: "My Folders", icon: FolderOpen, path: "/MyFolders" },
-  { id: "shared", label: "Shared with me", icon: Users },
-  { id: "groups", label: "Groups", icon: UsersRound },
+  { id: "groups", label: "Groups", icon: UsersRound, path: "/groups" }, // ✅ FIX
   { id: "chat", label: "Chat", icon: MessageSquare, path: "/chat" },
   { id: "backup", label: "Backup", icon: Cloud, path: "/backup" },
   { id: "ai-assistant", label: "AI Assistant", icon: Bot, path: "/ai-assistant" },

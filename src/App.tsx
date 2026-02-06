@@ -16,6 +16,7 @@ import { TrashPage } from "./components/dashboard/Trashpage";
 import { AiAssistantPage } from "./components/dashboard/AiAssistantPage";
 import { BackupPage } from "./components/dashboard/BackUp";
 import { ChatPage } from "./components/dashboard/Chatpage";
+import { GroupPage } from './components/dashboard/Group';
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/dashboard" element={<DashboardHome />} />
               <Route path="/MyFolders" element={<MyFolders />} />
               <Route path="/trash" element={<TrashPage />} />
+              <Route path="/groups" element={<GroupPage />} />
               <Route path="/ai-assistant" element={<AiAssistantPage />} />
               <Route path="/backup" element={<BackupPage />} />
               <Route path="/chat" element={<ChatPage />} />
