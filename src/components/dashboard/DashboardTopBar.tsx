@@ -288,7 +288,10 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
                   </Avatar>
                   <div className="flex-1 overflow-hidden">
                     <p className="text-sm font-semibold text-foreground">Motasem Atawna</p>
-                    <p className="text-xs text-muted-foreground">motasem@safeshare.com</p>
+                    <p className="text-xs text-muted-foreground">ID : 2220784 
+                      the public key : 
+                      the private key : 
+                    </p>
                   </div>
                 </div>
               </div>

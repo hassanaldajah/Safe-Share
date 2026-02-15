@@ -28,6 +28,11 @@ import {
   FolderPlus,
   ArrowLeft,
   AlertTriangle,
+  Users,
+  Clock,
+  Eye,
+  Link as LinkIcon,
+  CheckCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFolders, FileItem } from "@/components/dashboard/FoldersContext";
@@ -42,9 +47,54 @@ interface ShareDialogProps {
 }
 
 function ShareDialog({ isOpen, onClose, itemName, itemType }: ShareDialogProps) {
-  const [email, setEmail] = useState("");
+  const [shareMethod, setShareMethod] = useState<"user" | "group">("user");
+  const [userIdSearch, setUserIdSearch] = useState("");
+  const [selectedGroup, setSelectedGroup] = useState("");
+  const [expiryType, setExpiryType] = useState<"downloads" | "time" | "views">("downloads");
+  const [expiryValue, setExpiryValue] = useState("");
+  const [shareLink, setShareLink] = useState("");
+  const [linkGenerated, setLinkGenerated] = useState(false);
   const [copied, setCopied] = useState(false);
-  const shareLink = `https://safeshare.app/shared/${Math.random().toString(36).substr(2, 9)}`;
+
+  // Mock users database
+  const availableUsers = [
+    { id: "U001", name: "Sarah Johnson" },
+    { id: "U002", name: "Michael Chen" },
+    { id: "U003", name: "Emily Davis" },
+    { id: "U004", name: "James Wilson" },
+    { id: "U005", name: "Lisa Anderson" },
+  ];
+
+  // Mock groups database
+  const availableGroups = [
+    { id: "G001", name: "Engineering Team" },
+    { id: "G002", name: "Marketing Department" },
+    { id: "G003", name: "ACM Research Team" },
+    { id: "G004", name: "Design Studio" },
+  ];
+
+  const filteredUsers = availableUsers.filter(
+    (user) =>
+      user.id.toLowerCase().includes(userIdSearch.toLowerCase()) ||
+      user.name.toLowerCase().includes(userIdSearch.toLowerCase())
+  );
+
+  const handleGenerateLink = () => {
+    const randomId = Math.random().toString(36).substr(2, 9);
+    let link = `https://safeshare.app/share/${randomId}`;
+    
+    // Add expiry parameters to link
+    if (expiryType === "downloads" && expiryValue) {
+      link += `?maxDownloads=${expiryValue}`;
+    } else if (expiryType === "time" && expiryValue) {
+      link += `?expiresInMinutes=${expiryValue}`;
+    } else if (expiryType === "views" && expiryValue) {
+      link += `?maxViews=${expiryValue}`;
+    }
+
+    setShareLink(link);
+    setLinkGenerated(true);
+  };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareLink);
@@ -52,13 +102,24 @@ function ShareDialog({ isOpen, onClose, itemName, itemType }: ShareDialogProps) 
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleShare = () => {
+    // In production, this would make an API call to share the file/folder
+    alert(
+      `Sharing "${itemName}" with ${
+        shareMethod === "user" ? `User ID: ${userIdSearch}` : `Group: ${selectedGroup}`
+      }`
+    );
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg animate-in fade-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6 py-5">
+      <div className="relative w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+          {/* Header */}
+          <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6 py-5 sticky top-0 z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
@@ -78,78 +139,321 @@ function ShareDialog({ isOpen, onClose, itemName, itemType }: ShareDialogProps) 
             </div>
           </div>
 
-          <div className="p-6 space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Share with people
-              </label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter email address"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
+          <div className="p-6 space-y-6">
+            {/* Share Method Tabs */}
+            <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+              <button
+                onClick={() => setShareMethod("user")}
+                className={cn(
+                  "flex-1 px-4 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2",
+                  shareMethod === "user"
+                    ? "bg-white shadow-sm text-indigo-600"
+                    : "text-gray-600 hover:text-gray-900"
+                )}
+              >
+                <Mail className="h-4 w-4" />
+                Share with User
+              </button>
+              <button
+                onClick={() => setShareMethod("group")}
+                className={cn(
+                  "flex-1 px-4 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2",
+                  shareMethod === "group"
+                    ? "bg-white shadow-sm text-indigo-600"
+                    : "text-gray-600 hover:text-gray-900"
+                )}
+              >
+                <Users className="h-4 w-4" />
+                Share with Group
+              </button>
+            </div>
+
+            {/* Share with User */}
+            {shareMethod === "user" && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Search User by ID or Name
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={userIdSearch}
+                      onChange={(e) => setUserIdSearch(e.target.value)}
+                      placeholder="Enter User ID (e.g., U001) or name"
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
                 </div>
-                <button className="px-4 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors">
-                  Invite
-                </button>
+
+                {/* User Search Results */}
+                {userIdSearch && (
+                  <div className="max-h-48 overflow-y-auto space-y-2 border border-gray-200 rounded-lg p-2">
+                    {filteredUsers.length === 0 ? (
+                      <div className="text-center py-4 text-sm text-gray-500">
+                        No users found
+                      </div>
+                    ) : (
+                      filteredUsers.map((user) => (
+                        <button
+                          key={user.id}
+                          onClick={() => setUserIdSearch(user.id)}
+                          className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors text-left"
+                        >
+                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                            {user.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">{user.name}</p>
+                            <p className="text-sm text-indigo-600">ID: {user.id}</p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Share with Group */}
+            {shareMethod === "group" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Group
+                </label>
+                <div className="space-y-2">
+                  {availableGroups.map((group) => (
+                    <label
+                      key={group.id}
+                      className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                    >
+                      <input
+                        type="radio"
+                        name="group"
+                        value={group.id}
+                        checked={selectedGroup === group.id}
+                        onChange={(e) => setSelectedGroup(e.target.value)}
+                        className="text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{group.name}</p>
+                        <p className="text-sm text-gray-600">ID: {group.id}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Expiration Controls */}
+            <div className="border-t border-gray-200 pt-6">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Clock className="h-4 w-4 text-indigo-600" />
+                Link Expiration Settings
+              </h3>
+
+              <div className="space-y-4">
+                {/* Expiry Type Selection */}
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => setExpiryType("downloads")}
+                    className={cn(
+                      "p-3 rounded-lg border-2 transition-all text-left",
+                      expiryType === "downloads"
+                        ? "border-indigo-500 bg-indigo-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    )}
+                  >
+                    <Download className="h-5 w-5 text-indigo-600 mb-2" />
+                    <p className="font-medium text-sm text-gray-900">Downloads</p>
+                    <p className="text-xs text-gray-600">Limit by downloads</p>
+                  </button>
+
+                  <button
+                    onClick={() => setExpiryType("time")}
+                    className={cn(
+                      "p-3 rounded-lg border-2 transition-all text-left",
+                      expiryType === "time"
+                        ? "border-indigo-500 bg-indigo-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    )}
+                  >
+                    <Clock className="h-5 w-5 text-purple-600 mb-2" />
+                    <p className="font-medium text-sm text-gray-900">Time</p>
+                    <p className="text-xs text-gray-600">Expire after X min</p>
+                  </button>
+
+                  <button
+                    onClick={() => setExpiryType("views")}
+                    className={cn(
+                      "p-3 rounded-lg border-2 transition-all text-left",
+                      expiryType === "views"
+                        ? "border-indigo-500 bg-indigo-50"
+                        : "border-gray-200 hover:border-gray-300"
+                    )}
+                  >
+                    <Eye className="h-5 w-5 text-pink-600 mb-2" />
+                    <p className="font-medium text-sm text-gray-900">Views</p>
+                    <p className="text-xs text-gray-600">One-time view</p>
+                  </button>
+                </div>
+
+                {/* Expiry Value Input */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {expiryType === "downloads" && "Maximum Downloads"}
+                    {expiryType === "time" && "Expire After (minutes)"}
+                    {expiryType === "views" && "Maximum Views"}
+                  </label>
+                  <input
+                    type="number"
+                    value={expiryValue}
+                    onChange={(e) => setExpiryValue(e.target.value)}
+                    placeholder={
+                      expiryType === "downloads"
+                        ? "e.g., 5"
+                        : expiryType === "time"
+                        ? "e.g., 60"
+                        : "e.g., 1"
+                    }
+                    min="1"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {expiryType === "downloads" &&
+                      "Link will expire after this many downloads"}
+                    {expiryType === "time" &&
+                      "Link will expire after this many minutes from now"}
+                    {expiryType === "views" && "Link will expire after this many views (1 = one-time view)"}
+                  </p>
+                </div>
+
+                {/* Quick Presets for Time */}
+                {expiryType === "time" && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setExpiryValue("30")}
+                      className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                    >
+                      30 min
+                    </button>
+                    <button
+                      onClick={() => setExpiryValue("60")}
+                      className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                    >
+                      1 hour
+                    </button>
+                    <button
+                      onClick={() => setExpiryValue("1440")}
+                      className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                    >
+                      24 hours
+                    </button>
+                    <button
+                      onClick={() => setExpiryValue("10080")}
+                      className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                    >
+                      7 days
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-sm text-gray-500">or</span>
-              <div className="flex-1 h-px bg-gray-200" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Share link
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={shareLink}
-                  readOnly
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-600"
-                />
-                <button
-                  onClick={handleCopyLink}
-                  className={cn(
-                    "px-4 py-2.5 font-medium rounded-lg transition-all duration-200 flex items-center gap-2",
-                    copied
-                      ? "bg-green-100 text-green-700"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  )}
-                >
-                  {copied ? (
-                    <>
-                      <Check className="h-4 w-4" />
-                      Copied
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4" />
-                      Copy
-                    </>
-                  )}
-                </button>
+            {/* Generate Link Section */}
+            {!linkGenerated ? (
+              <button
+                onClick={handleGenerateLink}
+                disabled={!expiryValue}
+                className={cn(
+                  "w-full px-4 py-3 font-medium rounded-lg transition-all flex items-center justify-center gap-2",
+                  expiryValue
+                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                )}
+              >
+                <LinkIcon className="h-4 w-4" />
+                Generate Secure Link
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-gray-700">
+                  Secure Share Link
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={shareLink}
+                    readOnly
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-600"
+                  />
+                  <button
+                    onClick={handleCopyLink}
+                    className={cn(
+                      "px-4 py-2.5 font-medium rounded-lg transition-all duration-200 flex items-center gap-2",
+                      copied
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    )}
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" />
+                        Copy
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs text-green-800">
+                    <p className="font-semibold mb-1">Link Generated Successfully</p>
+                    <p>
+                      Expires after{" "}
+                      {expiryType === "downloads" && `${expiryValue} downloads`}
+                      {expiryType === "time" && `${expiryValue} minutes`}
+                      {expiryType === "views" && `${expiryValue} view(s)`}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="pt-2">
-              <label className="flex items-center gap-2 text-sm text-gray-600">
-                <input type="checkbox" className="rounded border-gray-300" />
-                Allow recipients to download
-              </label>
-              <label className="flex items-center gap-2 text-sm text-gray-600 mt-2">
-                <input type="checkbox" className="rounded border-gray-300" />
-                Require password to access
-              </label>
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 border-t border-gray-200">
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleShare}
+                disabled={
+                  (shareMethod === "user" && !userIdSearch) ||
+                  (shareMethod === "group" && !selectedGroup)
+                }
+                className={cn(
+                  "flex-1 px-4 py-2.5 font-medium rounded-lg transition-colors flex items-center justify-center gap-2",
+                  (shareMethod === "user" && userIdSearch) ||
+                    (shareMethod === "group" && selectedGroup)
+                    ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                )}
+              >
+                <Share2 className="h-4 w-4" />
+                Share Now
+              </button>
             </div>
           </div>
         </div>
@@ -318,14 +622,17 @@ export function MyFolders() {
               </p>
             </div>
 
+            {/* Action buttons - New Folder only shows at root level */}
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setIsCreateFolderOpen(true)}
-                className="px-4 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
-              >
-                <FolderPlus className="h-4 w-4" />
-                New Folder
-              </button>
+              {!currentFolder && (
+                <button
+                  onClick={() => setIsCreateFolderOpen(true)}
+                  className="px-4 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
+                >
+                  <FolderPlus className="h-4 w-4" />
+                  New Folder
+                </button>
+              )}
               <button
                 onClick={() => setIsUploadDialogOpen(true)}
                 className="px-4 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md"
@@ -333,21 +640,11 @@ export function MyFolders() {
                 <Upload className="h-4 w-4" />
                 Upload Files
               </button>
-              <button
-                onClick={() =>
-                  setShareDialog({
-                    isOpen: true,
-                    itemName: currentFolder ? currentFolder.name : "My Folders",
-                    itemType: "folder",
-                  })
-                }
-                className="px-4 py-2.5 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-all duration-200 flex items-center gap-2"
-              >
-                <Share2 className="h-4 w-4" />
-                Share Folder
-              </button>
+             
             </div>
           </div>
+
+           
         </div>
       </div>
 
@@ -574,13 +871,15 @@ export function MyFolders() {
             </p>
             {!searchQuery && (
               <>
-                <button
-                  onClick={() => setIsCreateFolderOpen(true)}
-                  className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center gap-2 mr-3"
-                >
-                  <FolderPlus className="h-4 w-4" />
-                  Create Folder
-                </button>
+                {!currentFolder && (
+                  <button
+                    onClick={() => setIsCreateFolderOpen(true)}
+                    className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center gap-2 mr-3"
+                  >
+                    <FolderPlus className="h-4 w-4" />
+                    Create Folder
+                  </button>
+                )}
                 <button
                   onClick={() => setIsUploadDialogOpen(true)}
                   className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors inline-flex items-center gap-2"
@@ -594,11 +893,11 @@ export function MyFolders() {
         )}
       </div>
 
-      {/* Create Folder Dialog */}
+      {/* Create Folder Dialog - Only creates at root */}
       <CreateFolderDialog
         isOpen={isCreateFolderOpen}
         onClose={() => setIsCreateFolderOpen(false)}
-        onCreateFolder={(name) => addFolder(name, currentFolder?.id)}
+        onCreateFolder={(name) => addFolder(name)}
       />
 
       {/* Upload File Dialog */}
