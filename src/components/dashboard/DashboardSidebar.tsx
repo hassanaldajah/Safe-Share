@@ -24,7 +24,7 @@ interface SidebarProps {
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { id: "my-folders", label: "My Folders", icon: FolderOpen, path: "/MyFolders" },
-  { id: "groups", label: "Groups", icon: UsersRound, path: "/groups" }, // ✅ FIX
+ // { id: "groups", label: "Groups", icon: UsersRound, path: "/groups" }, // ✅ FIX
   { id: "chat", label: "Chat", icon: MessageSquare, path: "/chat" },
   { id: "backup", label: "Backup", icon: Cloud, path: "/backup" },
   { id: "ai-assistant", label: "AI Assistant", icon: Bot, path: "/ai-assistant" },
@@ -86,18 +86,6 @@ export function DashboardSidebar({ collapsed, onToggle, activeItem, onItemClick 
       {/* Navigation */}
       <nav className="flex flex-col gap-1 p-3">
         {/* Home Button */}
-        <Link
-          to="/"
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-            "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          )}
-          title="Go to Home"
-        >
-          <Home className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
-          {!collapsed && <span>Home</span>}
-        </Link>
-        
         {navItems.map((item) => {
           // Check if this item is active based on route
           const isActive = currentActiveItem === item.id;

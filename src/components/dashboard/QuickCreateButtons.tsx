@@ -40,8 +40,8 @@ export function QuickCreateButtons() {
       // Navigate to My Folders page for file upload
       navigate("/MyFolders");
     } else if (actionId === "new-group") {
-      // Handle new group creation
-      console.log("Create new group");
+      // Navigate to Groups page
+      navigate("/groups");
     }
   };
 
