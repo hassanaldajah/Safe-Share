@@ -12,7 +12,7 @@ const steps = [
     icon: Lock,
     step: "02",
     title: "Generate Secure Link",
-    description: "Get a unique encrypted link. Set expiration, password protection, or download limits for extra security.",
+    description: "Get a unique encrypted link. Set expiration, Views, or download limits for extra security.",
   },
   {
     icon: Share2,

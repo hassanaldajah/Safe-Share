@@ -1,4 +1,4 @@
-import { FolderPlus, Upload, UsersRound } from "lucide-react";
+import { FolderPlus, Upload , UsersRound } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CreateFolderDialog } from "@/components/dashboard/Createfolderdialog";
@@ -23,7 +23,7 @@ const quickActions = [
     id: "new-group",
     label: "New Group",
     icon: UsersRound,
-    description: "Create a sharing group",
+    description: "Create a new group",
     variant: "secondary" as const,
   },
 ];
@@ -39,9 +39,8 @@ export function QuickCreateButtons() {
     } else if (actionId === "upload-file") {
       // Navigate to My Folders page for file upload
       navigate("/MyFolders");
-    } else if (actionId === "new-group") {
-      // Navigate to Groups page
-      navigate("/groups");
+    }  else if(actionId == "new-group"){
+        navigate("/groups");
     }
   };
 

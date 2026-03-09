@@ -23,7 +23,6 @@ import {
   Music,
   Archive,
   File,
-  Mail,
   UserPlus,
   Calendar,
   Activity,
@@ -60,7 +59,7 @@ interface SharedFile {
   uploadedAt: Date;
   downloadCount: number;
   lastAccessed?: Date;
-  isEncrypted: true; // Always true in SafeShare
+  isEncrypted: true;
 }
 
 interface FileExchange {
@@ -75,13 +74,13 @@ interface AuditLogEntry {
   id: string;
   action: "uploaded" | "downloaded" | "opened" | "permission_changed" | "member_added" | "member_removed";
   user: string;
-  target: string; // file name or member name
+  target: string;
   timestamp: Date;
   details?: string;
 }
 
 interface SecuritySettings {
-  linkExpiry?: number; // hours
+  linkExpiry?: number;
   otpRequired: boolean;
   downloadLimit?: number;
 }
@@ -91,15 +90,19 @@ interface SecuritySettings {
 // ============================================================================
 
 export function GroupPage() {
-  // Current user info (in real app, from auth context)
   const currentUser = {
     id: "current",
-    role: "Co-Owner" as UserRole, // Change to test different permissions
+    role: "Co-Owner" as UserRole,
   };
 
   // ============================================================================
   // STATE MANAGEMENT
   // ============================================================================
+
+  const [hasGroup, setHasGroup] = useState(false);
+  const [groupMode, setGroupMode] = useState<"create" | "join" | null>(null);
+  const [joinGroupId, setJoinGroupId] = useState("");
+  const [newGroupName, setNewGroupName] = useState("");
 
   const [members, setMembers] = useState<GroupMember[]>([
     {
@@ -230,7 +233,7 @@ export function GroupPage() {
 
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showSecurityDialog, setShowSecurityDialog] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteUserId, setInviteUserId] = useState("");
   const [inviteRole, setInviteRole] = useState<UserRole>("Viewer");
 
   // ============================================================================
@@ -310,14 +313,123 @@ export function GroupPage() {
   const canUploadFiles = currentUser.role === "Co-Owner" || currentUser.role === "Editor";
 
   // ============================================================================
-  // RENDER
+  // NO GROUP YET — LANDING SCREEN
+  // ============================================================================
+
+  if (!hasGroup) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 flex items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4">
+              <Users className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Groups</h1>
+            <p className="text-gray-600">Create a new group or join an existing one</p>
+          </div>
+
+          {!groupMode && (
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setGroupMode("create")}
+                className="p-6 bg-white border-2 border-purple-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all text-center group"
+              >
+                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200 transition-colors">
+                  <FolderPlus className="h-6 w-6 text-purple-600" />
+                </div>
+                <p className="font-semibold text-gray-900">Create Group</p>
+                <p className="text-sm text-gray-500 mt-1">Start a new group</p>
+              </button>
+
+              <button
+                onClick={() => setGroupMode("join")}
+                className="p-6 bg-white border-2 border-blue-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-all text-center group"
+              >
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 transition-colors">
+                  <UserPlus className="h-6 w-6 text-blue-600" />
+                </div>
+                <p className="font-semibold text-gray-900">Join Group</p>
+                <p className="text-sm text-gray-500 mt-1">Enter a group ID</p>
+              </button>
+            </div>
+          )}
+
+          {groupMode === "create" && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+              <h2 className="font-semibold text-gray-900 text-lg">Create a New Group</h2>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Group Name
+                </label>
+                <input
+                  type="text"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  placeholder="e.g. Research Team"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setGroupMode(null)}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={() => { if (newGroupName.trim()) setHasGroup(true); }}
+                  className="flex-1 px-4 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  Create Group
+                </button>
+              </div>
+            </div>
+          )}
+
+          {groupMode === "join" && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+              <h2 className="font-semibold text-gray-900 text-lg">Join a Group</h2>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Group ID
+                </label>
+                <input
+                  type="text"
+                  value={joinGroupId}
+                  onChange={(e) => setJoinGroupId(e.target.value)}
+                  placeholder="Enter group ID"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setGroupMode(null)}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={() => { if (joinGroupId.trim()) setHasGroup(true); }}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Join Group
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================================
+  // RENDER — MAIN GROUP PAGE
   // ============================================================================
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
       {/* ============================================================================
           HEADER SECTION
-          Shows group info, creation date, and invite button
           ============================================================================ */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-6">
@@ -327,7 +439,9 @@ export function GroupPage() {
                 <Users className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">ACM Research Team</h1>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                  {newGroupName || "ACM Research Team"}
+                </h1>
                 <p className="text-gray-600 mb-2">
                   Collaborative space for ACM research project - Secure encrypted file sharing
                 </p>
@@ -380,7 +494,6 @@ export function GroupPage() {
                 {members.map((member) => (
                   <div key={member.id} className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-start gap-3">
-                      {/* Avatar */}
                       <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
                         {member.name
                           .split(" ")
@@ -389,7 +502,6 @@ export function GroupPage() {
                           .toUpperCase()}
                       </div>
 
-                      {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="font-medium text-gray-900 truncate">{member.name}</p>
@@ -416,7 +528,6 @@ export function GroupPage() {
                         </div>
                       </div>
 
-                      {/* Actions (Co-Owners only) */}
                       {canManageMembers && member.id !== currentUser.id && (
                         <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
                           <MoreVertical className="h-4 w-4 text-gray-600" />
@@ -440,7 +551,6 @@ export function GroupPage() {
                 </p>
               </div>
 
-              {/* Upload Button */}
               <div className="p-4 border-b border-gray-200">
                 <button className="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
                   <Upload className="h-4 w-4" />
@@ -448,7 +558,6 @@ export function GroupPage() {
                 </button>
               </div>
 
-              {/* Recent Exchanges */}
               <div className="divide-y divide-gray-200 max-h-64 overflow-y-auto">
                 {fileExchanges.map((exchange) => (
                   <div key={exchange.id} className="p-4 hover:bg-gray-50 transition-colors">
@@ -512,7 +621,6 @@ export function GroupPage() {
                 </div>
               </div>
 
-              {/* Files Table */}
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
@@ -557,7 +665,7 @@ export function GroupPage() {
                                 <p className="text-xs text-gray-500">{file.size}</p>
                               )}
                             </div>
-                           </div>
+                          </div>
                         </td>
                         <td className="px-4 py-4 text-sm text-gray-600">{file.uploadedBy}</td>
                         <td className="px-4 py-4 text-sm text-gray-600">
@@ -692,22 +800,27 @@ export function GroupPage() {
               </div>
 
               <div className="p-6 space-y-4">
+                {/* User ID Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
+                    User ID
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="colleague@university.edu"
+                      type="text"
+                      value={inviteUserId}
+                      onChange={(e) => setInviteUserId(e.target.value)}
+                      placeholder="e.g. USR-84729"
                       className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   </div>
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    Ask your colleague for their User ID from their profile settings.
+                  </p>
                 </div>
 
+                {/* Role Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
                   <div className="space-y-2">
@@ -746,7 +859,10 @@ export function GroupPage() {
                   >
                     Cancel
                   </button>
-                  <button className="flex-1 px-4 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors">
+                  <button
+                    onClick={() => setShowInviteDialog(false)}
+                    className="flex-1 px-4 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                  >
                     Send Invite
                   </button>
                 </div>
