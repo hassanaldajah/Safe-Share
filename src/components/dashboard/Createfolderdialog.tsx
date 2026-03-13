@@ -1,4 +1,5 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom"; // Essential for modals
 import { FolderPlus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,15 @@ export function CreateFolderDialog({
 }: CreateFolderDialogProps) {
   const [folderName, setFolderName] = useState("");
   const [error, setError] = useState("");
+
+  // Accessibility: Close on Escape key
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    if (isOpen) window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,10 +53,18 @@ export function CreateFolderDialog({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+  // Render into document.body to avoid Z-index issues with the Sidebar
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={handleClose} // Click backdrop to close
+    >
+      <div 
+        className="relative w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300"
+        onClick={(e) => e.stopPropagation()} // Prevents clicks inside the modal from closing it
+      >
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
+          
           {/* Header */}
           <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6 py-5">
             <div className="flex items-center justify-between">
@@ -61,14 +79,15 @@ export function CreateFolderDialog({
               </div>
               <button
                 onClick={handleClose}
-                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
+                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors text-white"
+                aria-label="Close dialog"
               >
-                <X className="h-5 w-5 text-white" />
+                <X className="h-5 w-5" />
               </button>
             </div>
           </div>
 
-          {/* Content */}
+          {/* Form Content */}
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -79,30 +98,32 @@ export function CreateFolderDialog({
                 value={folderName}
                 onChange={(e) => {
                   setFolderName(e.target.value);
-                  setError("");
+                  if (error) setError("");
                 }}
                 placeholder="Enter folder name"
                 className={cn(
-                  "w-full px-4 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
-                  error ? "border-red-300" : "border-gray-300"
+                  "w-full px-4 py-2.5 border rounded-lg transition-all",
+                  "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
+                  "text-gray-900 placeholder:text-gray-400 bg-white", // Added specific colors for clarity
+                  error ? "border-red-300 bg-red-50/30" : "border-gray-300"
                 )}
                 autoFocus
               />
-              {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+              {error && <p className="mt-2 text-sm text-red-600 font-medium">{error}</p>}
             </div>
 
-            {/* Actions */}
+            {/* Action Buttons */}
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={handleClose}
-                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                className="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all active:scale-[0.98]"
               >
                 Create Folder
               </button>
@@ -110,6 +131,7 @@ export function CreateFolderDialog({
           </form>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

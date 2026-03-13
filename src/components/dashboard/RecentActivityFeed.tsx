@@ -100,7 +100,7 @@ export function RecentActivityFeed() {
     <div className="rounded-xl border border-border bg-card p-5 shadow-card">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-card-foreground">Recent Activity</h3>
-        <button className="text-sm font-medium text-primary hover:underline">View all</button>
+        <button className="text-sm font-medium text-primary hover:underline"> </button>
       </div>
 
       <div className="space-y-4">
