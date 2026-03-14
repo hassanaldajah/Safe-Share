@@ -17,6 +17,9 @@ import { AiAssistantPage } from "./components/dashboard/AiAssistantPage";
 import { BackupPage } from "./components/dashboard/BackUp";
 import { ShareTransactionsPage } from "./components/dashboard/Chatpage";
 import { GroupPage } from './components/dashboard/Group';
+import ProfilePage from "./pages/ProfilePage";
+import SettingsPage from "./pages/SettingsPage";
+import HelpPage from "./pages/HelpPage";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +43,10 @@ const App = () => (
               <Route path="/ai-assistant" element={<AiAssistantPage />} />
               <Route path="/backup" element={<BackupPage />} />
               <Route path="/chat" element={<ShareTransactionsPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/help" element={<HelpPage />} />
+
             </Route> 
             <Route path="*" element={<NotFound />} />
           </Routes>

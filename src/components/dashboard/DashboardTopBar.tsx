@@ -1,5 +1,5 @@
 import { Search, Bell, ChevronDown, Home, X, FileText, Users, MessageSquare, Clock, LogOut, User, Settings, HelpCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -68,6 +68,7 @@ const getNotificationIcon = (type: Notification["type"]) => {
 };
 
 export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
+  const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
@@ -76,7 +77,6 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  // Close notification popup when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -118,6 +118,13 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
 
   const deleteNotification = (id: string) => {
     setNotifications((prev) => prev.filter((notification) => notification.id !== id));
+  };
+
+  const handleLogout = () => {
+    // Clear any auth tokens / session data here when you add auth
+    // e.g. localStorage.removeItem("token"); or authContext.logout();
+    setShowProfileMenu(false);
+    navigate("/");
   };
 
   return (
@@ -163,7 +170,6 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
           {/* Notification Popup */}
           {showNotifications && (
             <div className="absolute right-0 top-14 w-96 rounded-lg border border-border bg-card shadow-lg">
-              {/* Header */}
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <h3 className="text-sm font-semibold text-foreground">
                   Notifications ({unreadCount} unread)
@@ -178,7 +184,6 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
                 )}
               </div>
 
-              {/* Notifications List */}
               <div className="max-h-[400px] overflow-y-auto">
                 {notifications.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -239,7 +244,6 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
                 )}
               </div>
 
-              {/* Footer */}
               {notifications.length > 0 && (
                 <div className="border-t border-border px-4 py-2 text-center">
                   <button className="text-xs text-primary hover:underline">
@@ -288,10 +292,7 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
                   </Avatar>
                   <div className="flex-1 overflow-hidden">
                     <p className="text-sm font-semibold text-foreground">Motasem Atawna</p>
-                    <p className="text-xs text-muted-foreground">ID : 2220784 
-                      the public key : 
-                      the private key : 
-                    </p>
+                    <p className="text-xs text-muted-foreground">ID: 2220784</p>
                   </div>
                 </div>
               </div>
@@ -330,11 +331,7 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
               <div className="border-t border-border py-2">
                 <button
                   className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
-                  onClick={() => {
-                    // Add logout logic here
-                    console.log("Logging out...");
-                    setShowProfileMenu(false);
-                  }}
+                  onClick={handleLogout}
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Log out</span>

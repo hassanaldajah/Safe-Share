@@ -16,8 +16,7 @@ import {
   Archive,
   Download,
   Trash2,
-  MoreVertical,
-  Shield,
+   Shield,
   ShieldCheck,
   AlertCircle,
   Package,
@@ -181,7 +180,7 @@ function ShareDialog({ isOpen, onClose, itemName, itemType }: ShareDialogProps) 
                       type="text"
                       value={userIdSearch}
                       onChange={(e) => setUserIdSearch(e.target.value)}
-                      placeholder="Enter User ID (e.g., U001) or name"
+                      placeholder="Enter User ID (e.g., U001)"
                       className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     />
                   </div>
@@ -778,12 +777,7 @@ export function MyFolders() {
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
-                        <button
-                          className="p-1.5 hover:bg-gray-100 text-gray-600 rounded-lg transition-colors"
-                          title="More"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
+                        
                       </div>
                     </td>
                   </tr>
@@ -806,9 +800,7 @@ export function MyFolders() {
                   >
                     {getFileIcon(file)}
                   </div>
-                  <button className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-gray-100 rounded-lg transition-all">
-                    <MoreVertical className="h-4 w-4 text-gray-600" />
-                  </button>
+                   
                 </div>
 
                 <h3 className="font-medium text-gray-900 mb-1 truncate">{file.name}</h3>
