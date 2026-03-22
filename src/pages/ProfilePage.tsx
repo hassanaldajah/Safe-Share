@@ -17,8 +17,8 @@ export default function ProfilePage() {
   const [fields, setFields] = useState<Record<string, string>>({
     fullName: "Motasem Atawna",
     email: "motasem.atawna@example.com",
-    phone: "+970 599 123 456",
-    location: "Palestine, West Bank",
+     
+   
     joinDate: "January 2024",
     publicKey: "pk_live_aB3xK9mN2pQ7rS1tU5vW8y",
     privateKey: "sk_live_••••••••••••••••••••••",
@@ -46,9 +46,7 @@ export default function ProfilePage() {
   const infoRows: EditableField[] = [
     { label: "Full Name", value: fields.fullName, icon: <Edit3 className="h-4 w-4" /> },
     { label: "Email", value: fields.email, icon: <Mail className="h-4 w-4" />, type: "email" },
-    { label: "Phone", value: fields.phone, icon: <Phone className="h-4 w-4" />, type: "tel" },
-    { label: "Location", value: fields.location, icon: <MapPin className="h-4 w-4" /> },
-  ];
+   ];
 
   return (
     <div className="min-h-screen bg-background p-6 lg:p-8">
@@ -74,16 +72,10 @@ export default function ProfilePage() {
                 </div>
                 <div className="mb-1">
                   <h1 className="text-xl font-bold text-foreground">{fields.fullName}</h1>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">Admin</Badge>
-                    <Badge className="bg-green-500/10 text-green-600 border-green-500/20 text-xs">Active</Badge>
-                  </div>
+                   
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>Member since {fields.joinDate}</span>
-              </div>
+               
             </div>
           </div>
         </div>
