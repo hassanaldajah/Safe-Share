@@ -21,10 +21,20 @@ public class AuthenticationController {
         return ResponseEntity.ok(service.register(request));
     }
 
+    // --- UPDATED: Step 1 of Login (Send OTP) ---
     @PostMapping("/authenticate")
-    public ResponseEntity<AuthenticationResponse> authenticate(
+    public ResponseEntity<String> authenticate(
             @RequestBody AuthenticationRequest request
     ) {
-        return ResponseEntity.ok(service.authenticate(request));
+        service.authenticate(request);
+        return ResponseEntity.ok("OTP sent to your email.");
+    }
+
+    // --- NEW: Step 2 of Login (Verify OTP & Get Keys) ---
+    @PostMapping("/verify-otp")
+    public ResponseEntity<AuthenticationResponse> verifyOtp(
+            @RequestBody VerificationRequest request
+    ) {
+        return ResponseEntity.ok(service.verifyOtp(request));
     }
 }

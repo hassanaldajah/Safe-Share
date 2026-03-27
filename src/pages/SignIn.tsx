@@ -7,50 +7,131 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import AuthLayout from "@/components/auth/AuthLayout";
 import OTPModal from "@/components/auth/OTPModal";
+import { decryptPrivateKeyFromServer } from "@/services/cryptoService";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom"; // Assuming you use react-router
 
- 
+/**
+ * Shape of the JWT response from POST /api/auth/login.
+ *
+ * ⚠️  Backend checklist:
+ *   □ Add encryptedPrivateKey, keySalt, keyIv to your AuthResponse DTO
+ *     so the frontend can decrypt the private key right after login.
+ *   □ Do NOT return the plaintext private key — only the encrypted form.
+ */
+interface AuthResponse {
+  token: string;
+  encryptedPrivateKey: string;
+  keySalt: string;
+  keyIv: string;
+}
 
-// ─── Main SignIn Component ─────────────────────────────────────────────────────
+// ─── SignIn Component ─────────────────────────────────────────────────────────
+
 const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showOTP, setShowOTP] = useState(false);
+  const [isLoading,    setIsLoading]    = useState(false);
+  const [showOTP,      setShowOTP]      = useState(false);
+  const [error,        setError]        = useState<string | null>(null);
+
+  // We keep the auth response in state so handleOTPVerify can access it
+  const [authResponse, setAuthResponse] = useState<AuthResponse | null>(null);
+
   const [formData, setFormData] = useState({
-    email: "",
-    password: "",
+    email:      "",
+    password:   "",
     rememberMe: false,
   });
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    setShowOTP(true);
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setError(null);
   };
 
-  const handleGoogleClick = async () => {
-    // Google sign-in for existing users goes straight to dashboard
-    // (no username step needed — they already have one from sign-up)
-    await new Promise((r) => setTimeout(r, 500));
-    // TODO: trigger Google OAuth then redirect
-    console.log("Google sign-in initiated");
+  // ── Step 1: credentials → backend ─────────────────────────────────────────
+const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("http://localhost:8080/api/v1/auth/authenticate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Invalid email or password");
+      }
+
+      // If password is correct, backend sends email and we show the OTP input
+      setShowOTP(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Login failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleOTPVerify = (otp: string) => {
-    console.log("OTP verified:", otp);
-    setShowOTP(false);
-    // TODO: redirect to dashboard
+  // ── Step 2: OTP verified → decrypt private key ────────────────────────────
+// --- Step 2: Verify OTP (Gets the Keys) ---
+  const handleOTPVerify = async (otp: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("http://localhost:8080/api/v1/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          code: otp,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Invalid or expired code");
+      }
+
+      const data = await response.json();
+
+      // Now we use the data from Step 2 to decrypt the private key
+      const privateKey = await decryptPrivateKeyFromServer(
+        formData.password, // We still use the password from the first form
+        data.encryptedPrivateKey,
+        data.keySalt,
+        data.keyIv
+      );
+
+      // Save everything to global state
+      login(data.token, privateKey);
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Verification failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <>
       <AuthLayout title="Welcome back" subtitle="Sign in to access your encrypted files">
         <form onSubmit={handleSubmit} className="space-y-5">
+
+          {/* Global error */}
+          {error && (
+            <div className="rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+
           {/* Email */}
           <div className="space-y-2">
             <Label htmlFor="email">Email Address</Label>
@@ -122,7 +203,7 @@ const SignIn = () => {
             {isLoading ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Signing in...
+                Signing in…
               </>
             ) : (
               "Sign In"
@@ -135,9 +216,6 @@ const SignIn = () => {
             <span className="text-xs text-muted-foreground">or</span>
             <div className="flex-1 h-px bg-border" />
           </div>
-
-          {/* Google */}
-          <GoogleButton onClick={handleGoogleClick} />
 
           <p className="text-center text-sm text-muted-foreground">
             Don't have an account?{" "}

@@ -7,7 +7,8 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 5173,         // 👈 Changed from 8080 to 5173
+    strictPort: true,   // 👈 Forces Vite to crash if 5173 is somehow taken
     watch: {
       usePolling: true,
       interval: 1000,

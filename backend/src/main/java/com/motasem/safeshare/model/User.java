@@ -7,6 +7,7 @@ import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -32,6 +33,14 @@ public class User implements UserDetails {
     private String encryptedPrivateKey;
     @Column(columnDefinition = "TEXT")
     private String publicKey;
+    @Column(columnDefinition = "TEXT")
+    private String keySalt;
+    @Column(columnDefinition = "TEXT")
+    private String keyIv;
+    @Column(name = "otp_code")
+    private String otpCode;
+    @Column(name = "otp_expiry")
+    private LocalDateTime otpExpiry;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
