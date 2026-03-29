@@ -33,6 +33,14 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse register(RegisterRequest request) {
+        // 1. ADD THIS CHECK: Verify the email isn't already taken
+        if (repository.findByEmail(request.getEmail()).isPresent()) {
+            // You can throw a RuntimeException here, or better yet, a custom exception
+            // that your GlobalExceptionHandler translates into an HTTP 409 Conflict.
+            throw new RuntimeException("A user with this email is already registered.");
+        }
+
+        // 2. Proceed with saving the user if the email is available
         var user = User.builder()
                 .searchTag(request.getSearchTag())
                 .fullName(request.getFullName())
