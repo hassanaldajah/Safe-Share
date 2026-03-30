@@ -569,10 +569,53 @@ export function MyFolders() {
     setCurrentFolder(null);
   };
 
-  const handleUploadFiles = (newFiles: FileItem[]) => {
-    newFiles.forEach((file) => {
-      addFile(file, currentFolder?.id);
-    });
+  const handleUploadFiles = async (newFiles: any[]) => {
+    // 1. Get the JWT token to prove the user is logged in
+    const token = localStorage.getItem("token"); // Or grab it from your useAuth hook!
+    
+    if (!token) {
+      alert("Authentication error: Please log in again.");
+      return;
+    }
+
+    for (const file of newFiles) {
+      try {
+        // 2. Build the exact package Spring Boot is expecting
+        const formData = new FormData();
+        formData.append("file", file.encryptedBlob);
+        formData.append("originalName", file.name);
+        formData.append("fileType", file.fileType);
+        formData.append("sizeBytes", file.sizeBytes.toString());
+        formData.append("compressed", file.compressed.toString());
+        
+        // The Zero-Knowledge Metadata
+        formData.append("encryptedFileKey", file.encryptedFileKey);
+        formData.append("iv", file.iv);
+
+        // 3. Send the encrypted package to Spring Boot
+        const response = await fetch("http://localhost:8080/api/v1/files/upload", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`
+            // Note: Do NOT set "Content-Type": "multipart/form-data". 
+            // The browser sets it automatically with the correct boundary when using FormData!
+          },
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText);
+        }
+
+        // 4. If successful, add it to the React UI context so the user sees it
+        addFile(file, currentFolder?.id);
+
+      } catch (error) {
+        console.error("Upload failed for file:", file.name, error);
+        alert(`Failed to upload ${file.name}. Check the console.`);
+      }
+    }
   };
 
   const filteredFiles = currentFiles.filter((file) =>

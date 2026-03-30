@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Random;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -39,13 +40,15 @@ public class AuthenticationService {
             // that your GlobalExceptionHandler translates into an HTTP 409 Conflict.
             throw new RuntimeException("A user with this email is already registered.");
         }
-
+        String uniqueTag = "@" + request.getFullName().replaceAll("\\s+", "").toLowerCase() +
+                "_" + UUID.randomUUID().toString().substring(0, 5);
         // 2. Proceed with saving the user if the email is available
         var user = User.builder()
                 .searchTag(request.getSearchTag())
                 .fullName(request.getFullName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .searchTag(uniqueTag) // <--- ADD THIS LINE HERE!
                 .publicKey(request.getPublicKey())
                 .encryptedPrivateKey(request.getEncryptedPrivateKey())
                 .keySalt(request.getKeySalt())
@@ -57,6 +60,7 @@ public class AuthenticationService {
 
         return AuthenticationResponse.builder()
                 .token(jwtToken)
+                .publicKey(user.getPublicKey()) // <-- ADD THIS
                 .encryptedPrivateKey(user.getEncryptedPrivateKey())
                 .keySalt(user.getKeySalt())
                 .keyIv(user.getKeyIv())
@@ -116,6 +120,7 @@ public class AuthenticationService {
 
         return AuthenticationResponse.builder()
                 .token(jwtToken)
+                .publicKey(user.getPublicKey())
                 .encryptedPrivateKey(user.getEncryptedPrivateKey())
                 .keySalt(user.getKeySalt())
                 .keyIv(user.getKeyIv())

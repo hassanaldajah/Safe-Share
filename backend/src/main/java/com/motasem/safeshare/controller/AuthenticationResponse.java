@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AuthenticationResponse {
     private String token;
-
+    private String publicKey;
     // E2EE Data needed by frontend to decrypt the private key on login
     private String encryptedPrivateKey;
     private String keySalt;

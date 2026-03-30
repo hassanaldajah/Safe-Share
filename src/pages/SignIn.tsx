@@ -21,6 +21,7 @@ import { useNavigate } from "react-router-dom"; // Assuming you use react-router
  */
 interface AuthResponse {
   token: string;
+  publicKey: string; 
   encryptedPrivateKey: string;
   keySalt: string;
   keyIv: string;
@@ -71,15 +72,19 @@ const handleSubmit = async (e: React.FormEvent) => {
         throw new Error("Invalid email or password");
       }
 
-      // If password is correct, backend sends email and we show the OTP input
-      setShowOTP(true);
+      // --- THE FIX IS HERE ---
+      // We don't need to parse the JSON yet because the 
+      // first step just returns a success string.
+      const message = await response.text(); 
+      console.log(message); 
+
+      setShowOTP(true); // Now this will successfully run!
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setIsLoading(false);
     }
   };
-
   // ── Step 2: OTP verified → decrypt private key ────────────────────────────
 // --- Step 2: Verify OTP (Gets the Keys) ---
   const handleOTPVerify = async (otp: string) => {
@@ -102,18 +107,20 @@ const handleSubmit = async (e: React.FormEvent) => {
 
       const data = await response.json();
 
-      // Now we use the data from Step 2 to decrypt the private key
-      const privateKey = await decryptPrivateKeyFromServer(
-        formData.password, // We still use the password from the first form
+const privateKey = await decryptPrivateKeyFromServer(
+        formData.password, 
         data.encryptedPrivateKey,
         data.keySalt,
         data.keyIv
       );
 
+      // --- ADD THIS LINE ---
+      // Save the public key for the Zero-Knowledge File Uploader!
+      localStorage.setItem("publicKey", data.publicKey);
+      localStorage.setItem("token", data.token); // <--- ADD THIS LINE!
       // Save everything to global state
       login(data.token, privateKey);
-      navigate("/dashboard");
-    } catch (err) {
+      navigate("/dashboard");    } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
       setIsLoading(false);

@@ -83,7 +83,8 @@ const SignUp = () => {
         data.keySalt,
         data.keyIv
       );
-
+      localStorage.setItem("publicKey", data.publicKey);
+      localStorage.setItem("token", data.token); // <--- ADD THIS LINE!
       login(data.token, privateKey);
       navigate("/dashboard");
 

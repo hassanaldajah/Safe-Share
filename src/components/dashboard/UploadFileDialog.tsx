@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Upload, X, FileText, Image, Video, Music, Archive, File, AlertCircle, CheckCircle, Loader2, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FileItem } from "@/components/dashboard/FoldersContext";
+import { generateFileKey, encryptFile, encryptKeyWithRSA } from "@/lib/encryption";
 
 interface UploadFileDialogProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ interface UploadingFile {
 export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: UploadFileDialogProps) {
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const [dragActive, setDragActive] = useState(false);
+  const [isEncrypting, setIsEncrypting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getFileType = (fileName: string): FileItem["fileType"] => {
@@ -45,17 +47,14 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
     const fileType = getFileType(file.name);
     const sizeMB = file.size / (1024 * 1024);
 
-    // Don't recommend compression for already compressed formats
     if (fileType === "archive") return false;
     if (["jpg", "jpeg", "mp3", "mp4"].some(ext => file.name.toLowerCase().endsWith(ext))) return false;
-
-    // Recommend compression for large uncompressed files
     if (fileType === "document" && sizeMB > 1) return true;
     if (fileType === "image" && sizeMB > 2) return true;
-    if (fileType === "video" && sizeMB > 10) return false; // Videos are usually already compressed
-    if (fileType === "audio" && sizeMB > 5) return false; // Audio is usually already compressed
+    if (fileType === "video" && sizeMB > 10) return false; 
+    if (fileType === "audio" && sizeMB > 5) return false; 
 
-    return sizeMB > 5; // General rule: compress files larger than 5MB
+    return sizeMB > 5;
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -66,7 +65,6 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
   };
 
   const simulateVirusScan = (fileId: string) => {
-    // Simulate virus scanning (1-3 seconds)
     const scanTime = 1000 + Math.random() * 2000;
     setTimeout(() => {
       setUploadingFiles((prev) =>
@@ -87,23 +85,20 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
         id,
         progress: 0,
         virusStatus: "scanning" as const,
-        compressed: compressionRecommended, // Auto-enable compression if recommended
+        compressed: compressionRecommended,
         compressionRecommended,
         sizeBytes: file.size,
       };
     });
 
     setUploadingFiles((prev) => [...prev, ...newFiles]);
-
-    // Start virus scanning for each file
-    newFiles.forEach((f) => {
-      simulateVirusScan(f.id);
-    });
+    newFiles.forEach((f) => simulateVirusScan(f.id));
   };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isEncrypting) return;
     if (e.type === "dragenter" || e.type === "dragover") {
       setDragActive(true);
     } else if (e.type === "dragleave") {
@@ -115,6 +110,7 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
+    if (isEncrypting) return;
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFiles(e.dataTransfer.files);
@@ -129,33 +125,73 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
   };
 
   const toggleCompression = (fileId: string) => {
+    if (isEncrypting) return;
     setUploadingFiles((prev) =>
       prev.map((f) => (f.id === fileId ? { ...f, compressed: !f.compressed } : f))
     );
   };
 
   const removeFile = (fileId: string) => {
+    if (isEncrypting) return;
     setUploadingFiles((prev) => prev.filter((f) => f.id !== fileId));
   };
 
-  const handleUpload = () => {
-    const fileItems: FileItem[] = uploadingFiles
-      .filter((f) => f.virusStatus === "clean")
-      .map((f) => ({
-        id: f.id,
-        name: f.file.name,
-        type: "file" as const,
-        size: formatFileSize(f.compressed ? f.sizeBytes * 0.7 : f.sizeBytes), // Simulate compression
-        sizeBytes: f.compressed ? Math.floor(f.sizeBytes * 0.7) : f.sizeBytes,
-        compressed: f.compressed,
-        virusScan: f.virusStatus,
-        uploadedAt: new Date().toISOString().split("T")[0],
-        fileType: getFileType(f.file.name),
-      }));
+  // --- THE ZERO-KNOWLEDGE ENCRYPTION UPLOAD FLOW ---
+  const handleUpload = async () => {
+    const cleanFiles = uploadingFiles.filter((f) => f.virusStatus === "clean");
+    if (cleanFiles.length === 0) return;
 
-    onUpload(fileItems);
-    setUploadingFiles([]);
-    onClose();
+    setIsEncrypting(true);
+
+    try {
+      // 1. Fetch the User's Public Key from localStorage (saved during Login)
+      const publicKey = localStorage.getItem("publicKey");
+      if (!publicKey) {
+        throw new Error("Public key missing. Please sign out and sign in again.");
+      }
+
+      const encryptedFileItems: any[] = [];
+
+      for (const f of cleanFiles) {
+        // 2. Generate a unique AES lock for this specific file
+        const aesKey = await generateFileKey();
+        
+        // 3. Encrypt the file bytes
+        const { encryptedBlob, iv } = await encryptFile(f.file, aesKey);
+        
+        // 4. Encrypt the AES lock with the User's Public Key
+        const encryptedFileKey = await encryptKeyWithRSA(aesKey, publicKey);
+
+        // 5. Build the final payload to send upwards
+        encryptedFileItems.push({
+          id: f.id,
+          name: f.file.name,
+          type: "file" as const,
+          size: formatFileSize(f.compressed ? f.sizeBytes * 0.7 : f.sizeBytes),
+          sizeBytes: f.compressed ? Math.floor(f.sizeBytes * 0.7) : f.sizeBytes,
+          compressed: f.compressed,
+          virusScan: f.virusStatus,
+          uploadedAt: new Date().toISOString().split("T")[0],
+          fileType: getFileType(f.file.name),
+          
+          // Cryptographic Data (We will send this to Spring Boot later)
+          encryptedBlob: encryptedBlob,
+          encryptedFileKey: encryptedFileKey,
+          iv: iv
+        });
+      }
+
+      // Pass the encrypted files to the parent component
+      onUpload(encryptedFileItems as FileItem[]);
+      setUploadingFiles([]);
+      onClose();
+
+    } catch (error) {
+      console.error("Encryption failed:", error);
+      alert(error instanceof Error ? error.message : "Failed to encrypt files.");
+    } finally {
+      setIsEncrypting(false);
+    }
   };
 
   const allScanned = uploadingFiles.every((f) => f.virusStatus !== "scanning");
@@ -184,7 +220,8 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
+                disabled={isEncrypting}
+                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50"
               >
                 <X className="h-5 w-5 text-white" />
               </button>
@@ -203,16 +240,17 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
                 "border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer",
                 dragActive
                   ? "border-indigo-500 bg-indigo-50"
-                  : "border-gray-300 hover:border-indigo-400 hover:bg-gray-50"
+                  : "border-gray-300 hover:border-indigo-400 hover:bg-gray-50",
+                isEncrypting && "opacity-50 cursor-not-allowed"
               )}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => !isEncrypting && fileInputRef.current?.click()}
             >
               <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <p className="text-lg font-medium text-gray-900 mb-1">
                 Drop files here or click to browse
               </p>
               <p className="text-sm text-gray-600">
-                Supports all file types • Automatic virus scanning • Smart compression
+                Supports all file types • Automatic virus scanning • Local Zero-Knowledge Encryption
               </p>
               <input
                 ref={fileInputRef}
@@ -220,6 +258,7 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
                 multiple
                 onChange={handleChange}
                 className="hidden"
+                disabled={isEncrypting}
               />
             </div>
 
@@ -230,45 +269,27 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
                   Files ({uploadingFiles.length})
                 </h3>
                 {uploadingFiles.map((file) => (
-                  <div
-                    key={file.id}
-                    className="bg-gray-50 rounded-lg p-4 border border-gray-200"
-                  >
+                  <div key={file.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         {/* File Icon */}
                         <div className="p-2 bg-white rounded-lg flex-shrink-0">
-                          {getFileType(file.file.name) === "document" && (
-                            <FileText className="h-5 w-5 text-blue-500" />
-                          )}
-                          {getFileType(file.file.name) === "image" && (
-                            <Image className="h-5 w-5 text-purple-500" />
-                          )}
-                          {getFileType(file.file.name) === "video" && (
-                            <Video className="h-5 w-5 text-red-500" />
-                          )}
-                          {getFileType(file.file.name) === "audio" && (
-                            <Music className="h-5 w-5 text-green-500" />
-                          )}
-                          {getFileType(file.file.name) === "archive" && (
-                            <Archive className="h-5 w-5 text-orange-500" />
-                          )}
-                          {getFileType(file.file.name) === "other" && (
-                            <File className="h-5 w-5 text-gray-500" />
-                          )}
+                          {getFileType(file.file.name) === "document" && <FileText className="h-5 w-5 text-blue-500" />}
+                          {getFileType(file.file.name) === "image" && <Image className="h-5 w-5 text-purple-500" />}
+                          {getFileType(file.file.name) === "video" && <Video className="h-5 w-5 text-red-500" />}
+                          {getFileType(file.file.name) === "audio" && <Music className="h-5 w-5 text-green-500" />}
+                          {getFileType(file.file.name) === "archive" && <Archive className="h-5 w-5 text-orange-500" />}
+                          {getFileType(file.file.name) === "other" && <File className="h-5 w-5 text-gray-500" />}
                         </div>
 
                         {/* File Info */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 truncate">
-                            {file.file.name}
-                          </p>
+                          <p className="font-medium text-gray-900 truncate">{file.file.name}</p>
                           <p className="text-sm text-gray-600">
                             {formatFileSize(file.sizeBytes)}
                             {file.compressed && (
                               <span className="text-green-600">
-                                {" "}
-                                → ~{formatFileSize(Math.floor(file.sizeBytes * 0.7))} (compressed)
+                                {" "}→ ~{formatFileSize(Math.floor(file.sizeBytes * 0.7))} (compressed)
                               </span>
                             )}
                           </p>
@@ -297,12 +318,13 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
 
                           {/* Compression Toggle */}
                           <div className="mt-2 flex items-center gap-2">
-                            <label className="flex items-center gap-2 cursor-pointer">
+                            <label className={cn("flex items-center gap-2 cursor-pointer", isEncrypting && "opacity-50 cursor-not-allowed")}>
                               <input
                                 type="checkbox"
                                 checked={file.compressed}
                                 onChange={() => toggleCompression(file.id)}
-                                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                disabled={isEncrypting}
+                                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
                               />
                               <span className="text-sm text-gray-700 flex items-center gap-1">
                                 <Package className="h-3.5 w-3.5" />
@@ -319,26 +341,17 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
                       </div>
 
                       {/* Remove Button */}
-                      <button
-                        onClick={() => removeFile(file.id)}
-                        className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition-colors flex-shrink-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
+                      {!isEncrypting && (
+                        <button
+                          onClick={() => removeFile(file.id)}
+                          className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition-colors flex-shrink-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
-              </div>
-            )}
-
-            {/* Compression Info */}
-            {uploadingFiles.some((f) => f.compressionRecommended) && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm text-blue-900">
-                  <strong>💡 Smart Compression:</strong> We've recommended compression for files
-                  that will benefit from it. Compressed files save storage space while maintaining
-                  quality. Already compressed formats (JPG, MP4, ZIP) won't be compressed further.
-                </p>
               </div>
             )}
           </div>
@@ -357,21 +370,23 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
               <div className="flex gap-3">
                 <button
                   onClick={onClose}
-                  className="px-4 py-2.5 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+                  disabled={isEncrypting}
+                  className="px-4 py-2.5 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleUpload}
-                  disabled={!canUpload}
+                  disabled={!canUpload || isEncrypting}
                   className={cn(
-                    "px-6 py-2.5 font-medium rounded-lg transition-colors",
-                    canUpload
+                    "px-6 py-2.5 font-medium rounded-lg transition-colors flex items-center gap-2",
+                    canUpload && !isEncrypting
                       ? "bg-indigo-600 text-white hover:bg-indigo-700"
                       : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   )}
                 >
-                  Upload {uploadingFiles.length > 0 && `(${uploadingFiles.length})`}
+                  {isEncrypting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {isEncrypting ? "Encrypting..." : `Secure Upload ${uploadingFiles.length > 0 ? `(${uploadingFiles.length})` : ''}`}
                 </button>
               </div>
             </div>
