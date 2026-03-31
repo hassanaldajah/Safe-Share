@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FolderOpen,
   Upload,
@@ -16,7 +16,7 @@ import {
   Archive,
   Download,
   Trash2,
-   Shield,
+  Shield,
   ShieldCheck,
   AlertCircle,
   Package,
@@ -32,6 +32,7 @@ import {
   Eye,
   Link as LinkIcon,
   CheckCircle,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFolders, FileItem } from "@/components/dashboard/FoldersContext";
@@ -486,7 +487,13 @@ export function MyFolders() {
     itemType: "file",
   });
 
-  const { files, addFolder, addFile, moveToTrash, getFilesInFolder } = useFolders();
+  // --- ADDED fetchFiles AND isLoading HERE ---
+  const { files, addFolder, addFile, moveToTrash, getFilesInFolder, fetchFiles, isLoading } = useFolders();
+
+  // --- ADDED THIS USE EFFECT TO LOAD FILES WHEN PAGE OPENS ---
+  useEffect(() => {
+    fetchFiles();
+  }, []);
 
   // Get current files (either root or folder contents)
   const currentFiles = currentFolder ? getFilesInFolder(currentFolder.id) : files;
@@ -571,7 +578,7 @@ export function MyFolders() {
 
   const handleUploadFiles = async (newFiles: any[]) => {
     // 1. Get the JWT token to prove the user is logged in
-    const token = localStorage.getItem("token"); // Or grab it from your useAuth hook!
+    const token = localStorage.getItem("token"); 
     
     if (!token) {
       alert("Authentication error: Please log in again.");
@@ -597,8 +604,6 @@ export function MyFolders() {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`
-            // Note: Do NOT set "Content-Type": "multipart/form-data". 
-            // The browser sets it automatically with the correct boundary when using FormData!
           },
           body: formData,
         });
@@ -608,8 +613,8 @@ export function MyFolders() {
           throw new Error(errorText);
         }
 
-        // 4. If successful, add it to the React UI context so the user sees it
-        addFile(file, currentFolder?.id);
+        // 4. Refresh the list straight from the server to guarantee it shows up properly!
+        fetchFiles();
 
       } catch (error) {
         console.error("Upload failed for file:", file.name, error);
@@ -735,7 +740,14 @@ export function MyFolders() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {viewMode === "list" ? (
+        
+        {/* ADDED A LOADING INDICATOR SO YOU CAN SEE THE FETCH HAPPENING */}
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+            <span className="ml-3 text-gray-600 font-medium">Loading your secure files...</span>
+          </div>
+        ) : viewMode === "list" ? (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -794,7 +806,7 @@ export function MyFolders() {
                     </td>
                     <td className="px-6 py-4">{getVirusScanBadge(file.virusScan)}</td>
                     <td className="px-6 py-4 text-sm text-gray-600">
-                      {new Date(file.uploadedAt).toLocaleDateString()}
+                      {file.uploadedAt ? new Date(file.uploadedAt).toLocaleDateString() : ""}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -891,7 +903,7 @@ export function MyFolders() {
           </div>
         )}
 
-        {filteredFiles.length === 0 && (
+        {!isLoading && filteredFiles.length === 0 && (
           <div className="text-center py-16">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
               <FolderOpen className="h-8 w-8 text-gray-400" />

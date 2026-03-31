@@ -14,6 +14,10 @@ export interface FileItem {
   children?: FileItem[];
   deletedAt?: string;
   originalParentId?: string;
+  
+  // Optional cryptographic fields if you need them later for downloading
+  encryptedFileKey?: string;
+  iv?: string;
 }
 
 interface FoldersContextType {
@@ -29,77 +33,67 @@ interface FoldersContextType {
   getFilesInFolder: (folderId: string) => FileItem[];
   getFolderSize: (folderId: string) => { size: string; sizeBytes: number };
   getTotalStorage: () => { used: number; usedFormatted: string; activeFormatted: string; trashedFormatted: string };
+  
+  // --- NEW EXPORTS FOR BACKEND SYNC ---
+  fetchFiles: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const FoldersContext = createContext<FoldersContextType | undefined>(undefined);
 
 export function FoldersProvider({ children }: { children: ReactNode }) {
-  const [files, setFiles] = useState<FileItem[]>([
-    {
-      id: "1",
-      name: "Project Proposal.pdf",
-      type: "file",
-      size: "2.4 MB",
-      sizeBytes: 2400000,
-      compressed: true,
-      virusScan: "clean",
-      uploadedAt: "2024-01-20",
-      fileType: "document",
-    },
-    {
-      id: "2",
-      name: "Team Photos",
-      type: "folder",
-      size: "0 B",
-      sizeBytes: 0,
-      compressed: false,
-      virusScan: "clean",
-      uploadedAt: "2024-01-18",
-      children: [],
-    },
-    {
-      id: "3",
-      name: "presentation.pptx",
-      type: "file",
-      size: "8.7 MB",
-      sizeBytes: 8700000,
-      compressed: false,
-      virusScan: "clean",
-      uploadedAt: "2024-01-19",
-      fileType: "document",
-    },
-    {
-      id: "4",
-      name: "vacation.jpg",
-      type: "file",
-      size: "4.2 MB",
-      sizeBytes: 4200000,
-      compressed: true,
-      virusScan: "clean",
-      uploadedAt: "2024-01-17",
-      fileType: "image",
-    },
-    {
-      id: "5",
-      name: "database_backup.zip",
-      type: "file",
-      size: "156 MB",
-      sizeBytes: 156000000,
-      compressed: false,
-      virusScan: "scanning",
-      uploadedAt: "2024-01-21",
-      fileType: "archive",
-    },
-  ]);
-
+  
+  // 1. Start with completely empty arrays! No more ghost data!
+  const [files, setFiles] = useState<FileItem[]>([]);
   const [trashedFiles, setTrashedFiles] = useState<FileItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // 2. Format File Size Helper
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 B";
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
     if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB";
     return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
+  };
+
+  // 3. THE MAGIC FETCH FUNCTION
+  const fetchFiles = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch("http://localhost:8080/api/v1/files", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Map the Spring Boot FileResponse DTO to our React FileItem
+        const mappedFiles: FileItem[] = data.map((f: any) => ({
+          id: f.id.toString(),
+          name: f.name,
+          type: "file",
+          size: formatFileSize(f.sizeBytes),
+          sizeBytes: f.sizeBytes,
+          compressed: f.compressed,
+          virusScan: f.virusScan || "clean",
+          uploadedAt: f.uploadedAt ? f.uploadedAt.split('T')[0] : new Date().toISOString().split('T')[0],
+          fileType: f.fileType || "other",
+          encryptedFileKey: f.encryptedFileKey,
+          iv: f.iv
+        }));
+        
+        // Completely overwrite the state with the real files
+        setFiles(mappedFiles);
+      }
+    } catch (error) {
+      console.error("Failed to fetch files:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const calculateFolderSize = (children: FileItem[] = []): number => {
@@ -324,7 +318,11 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
         updateFileStatus, 
         getFilesInFolder, 
         getFolderSize,
-        getTotalStorage
+        getTotalStorage,
+        
+        // Make sure to expose the new variables!
+        fetchFiles,
+        isLoading
       }}
     >
       {children}
