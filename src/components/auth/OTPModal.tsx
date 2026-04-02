@@ -50,28 +50,30 @@ const OTPModal = ({ isOpen, onClose, onVerify, email, purpose = "signin" }: OTPM
     ? "verify your sign in" 
     : "unlock the shared file";
 
-  return (
+return (
     <AnimatePresence>
       {isOpen && (
-        <>
-          {/* Backdrop */}
+        // Add a fixed Flexbox wrapper that perfectly centers everything inside it
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          
+          {/* Backdrop (Changed to absolute so it fills the wrapper) */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50"
+            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {/* Modal (Removed the top/left/translate classes, Flexbox handles it now!) */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md"
+            className="relative z-10 w-full max-w-md"
           >
-            <div className="bg-card border border-border rounded-2xl shadow-2xl p-6 mx-4">
+            <div className="bg-card border border-border rounded-2xl shadow-2xl p-6">
               {/* Header */}
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -162,7 +164,7 @@ const OTPModal = ({ isOpen, onClose, onVerify, email, purpose = "signin" }: OTPM
               </p>
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );

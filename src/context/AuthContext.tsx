@@ -4,11 +4,11 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 interface AuthState {
   isAuthenticated: boolean;
   token: string | null;
-  privateKey: CryptoKey | null; // This is the crucial E2EE key!
+  privateKey: string | null; // This is the crucial E2EE key!
 }
 
 interface AuthContextType extends AuthState {
-  login: (token: string, privateKey: CryptoKey) => void;
+  login: (token: string, privateKey: string) => void;
   logout: () => void;
 }
 

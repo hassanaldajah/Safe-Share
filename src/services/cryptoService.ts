@@ -190,7 +190,7 @@ export async function importPrivateKey(pkcs8Buffer: ArrayBuffer): Promise<Crypto
     "pkcs8",
     pkcs8Buffer,
     { name: "RSA-OAEP", hash: "SHA-256" },
-    false,       // non-extractable once imported
+    true,        // <--- NOW IT CAN BE EXPORTED TO LOCALSTORAGE!
     ["decrypt"]
   );
 }

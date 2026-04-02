@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/components/auth/AuthLayout";
+import OTPModal from "@/components/auth/OTPModal"; // <-- ADDED THE IMPORT
 import { buildRegistrationPayload, decryptPrivateKeyFromServer } from "@/services/cryptoService";
 import { useAuth } from "@/context/AuthContext";
 
@@ -23,6 +24,7 @@ const SignUp = () => {
   const [showPassword, setShowPassword]   = useState(false);
   const [showConfirm,  setShowConfirm]    = useState(false);
   const [isLoading,    setIsLoading]      = useState(false);
+  const [showOTP,      setShowOTP]        = useState(false); // <-- ADDED OTP STATE
   const [error,        setError]          = useState<string | null>(null);
   
   const navigate = useNavigate();
@@ -44,11 +46,12 @@ const SignUp = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value, // Simplified since searchTag is gone
+      [name]: value,
     }));
     setError(null);
   };
 
+  // --- STEP 1: Generate Keys & Register ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordsMismatch) return;
@@ -56,7 +59,6 @@ const SignUp = () => {
     setError(null);
 
    try {
-      // Passed "" as the first argument so your cryptoService doesn't break
       const payload = await buildRegistrationPayload(
         "", 
         formData.fullName,
@@ -75,18 +77,8 @@ const SignUp = () => {
         throw new Error(msg || "Registration failed");
       }
 
-      const data = await res.json();
-
-      const privateKey = await decryptPrivateKeyFromServer(
-        formData.password,
-        data.encryptedPrivateKey,
-        data.keySalt,
-        data.keyIv
-      );
-      localStorage.setItem("publicKey", data.publicKey);
-      localStorage.setItem("token", data.token); // <--- ADD THIS LINE!
-      login(data.token, privateKey);
-      navigate("/dashboard");
+      // Success! The backend created the user and sent the email. Let's show the modal.
+      setShowOTP(true);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -95,167 +87,229 @@ const SignUp = () => {
     }
   };
 
+  // --- STEP 2: Verify OTP & Login ---
+  const handleOTPVerify = async (otp: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Exactly like SignIn!
+      const response = await fetch("http://localhost:8080/api/v1/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          code: otp,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Invalid or expired code");
+      }
+
+      const data = await response.json();
+
+      // 1. Decrypt the private key
+      const decryptedKey = await decryptPrivateKeyFromServer(
+        formData.password, 
+        data.encryptedPrivateKey,
+        data.keySalt,
+        data.keyIv
+      );
+
+      // 2. Export to Base64 (Using the exact same fix we did in SignIn to prevent crashing!)
+      const exportedKeyBuffer = await window.crypto.subtle.exportKey("pkcs8", decryptedKey as any);
+      const exportedKeyArray = Array.from(new Uint8Array(exportedKeyBuffer));
+      const privateKeyBase64 = btoa(String.fromCharCode.apply(null, exportedKeyArray));
+
+      // 3. Save everything to localStorage
+      localStorage.setItem("publicKey", data.publicKey);
+      localStorage.setItem("privateKey", privateKeyBase64); 
+      localStorage.setItem("token", data.token);      
+      
+      // 4. Save to global state and redirect
+      login(data.token, decryptedKey as any);
+      navigate("/dashboard");
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Verification failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <AuthLayout
-      title="Create your account"
-      subtitle="Start securing your files with zero-knowledge encryption"
-    >
-      <form onSubmit={handleSubmit} className="space-y-5">
+    <>
+      <AuthLayout
+        title="Create your account"
+        subtitle="Start securing your files with zero-knowledge encryption"
+      >
+        <form onSubmit={handleSubmit} className="space-y-5">
 
-        {error && (
-          <div className="rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        {/* Full Name */}
-        <div className="space-y-2">
-          <Label htmlFor="fullName">Full Name</Label>
-          <Input
-            id="fullName"
-            name="fullName"
-            type="text"
-            placeholder="Ada Lovelace"
-            value={formData.fullName}
-            onChange={handleChange}
-            required
-            className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary"
-          />
-        </div>
-
-        {/* Email */}
-        <div className="space-y-2">
-          <Label htmlFor="email">Email Address</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="you@example.com"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary"
-          />
-        </div>
-
-        {/* Password */}
-        <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
-            <Input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Create a strong password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary pr-12"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-            </button>
-          </div>
-          {formData.password && (
-            <div className="space-y-1">
-              <div className="flex gap-1">
-                {[1, 2, 3].map((lvl) => (
-                  <div
-                    key={lvl}
-                    className={`h-1 flex-1 rounded-full transition-colors ${
-                      lvl <= strength ? color : "bg-muted"
-                    }`}
-                  />
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Strength: <span className="font-medium">{label}</span>
-              </p>
+          {error && (
+            <div className="rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive">
+              {error}
             </div>
           )}
-        </div>
 
-        {/* Confirm password */}
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm Password</Label>
-          <div className="relative">
+          {/* Full Name */}
+          <div className="space-y-2">
+            <Label htmlFor="fullName">Full Name</Label>
             <Input
-              id="confirmPassword"
-              name="confirmPassword"
-              type={showConfirm ? "text" : "password"}
-              placeholder="Repeat your password"
-              value={formData.confirmPassword}
+              id="fullName"
+              name="fullName"
+              type="text"
+              placeholder="Ada Lovelace"
+              value={formData.fullName}
               onChange={handleChange}
               required
-              className={`h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary pr-12 transition-colors ${
-                passwordsMismatch
-                  ? "border-destructive focus:border-destructive"
-                  : passwordsMatch
-                  ? "border-green-500 focus:border-green-500"
-                  : ""
-              }`}
+              className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary"
             />
-            <button
-              type="button"
-              onClick={() => setShowConfirm(!showConfirm)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-            </button>
           </div>
-          {passwordsMismatch && (
-            <p className="text-xs text-destructive">Passwords do not match</p>
-          )}
-          {passwordsMatch && (
-            <p className="text-xs text-green-500 flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Passwords match
-            </p>
-          )}
-        </div>
 
-        {/* Submit */}
-        <Button
-          type="submit"
-          disabled={isLoading || passwordsMismatch || !passwordsMatch}
-          className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Creating account…
-            </>
-          ) : (
-            "Create Account"
-          )}
-        </Button>
+          {/* Email */}
+          <div className="space-y-2">
+            <Label htmlFor="email">Email Address</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="you@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary"
+            />
+          </div>
 
-        {/* Divider */}
-        <div className="relative flex items-center gap-3">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-xs text-muted-foreground">or</span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
+          {/* Password */}
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Create a strong password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+            {formData.password && (
+              <div className="space-y-1">
+                <div className="flex gap-1">
+                  {[1, 2, 3].map((lvl) => (
+                    <div
+                      key={lvl}
+                      className={`h-1 flex-1 rounded-full transition-colors ${
+                        lvl <= strength ? color : "bg-muted"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Strength: <span className="font-medium">{label}</span>
+                </p>
+              </div>
+            )}
+          </div>
 
-        <p className="text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link to="/signin" className="text-primary hover:text-primary/80 font-medium">
-            Sign in
-          </Link>
-        </p>
+          {/* Confirm password */}
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirm ? "text" : "password"}
+                placeholder="Repeat your password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                className={`h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary pr-12 transition-colors ${
+                  passwordsMismatch
+                    ? "border-destructive focus:border-destructive"
+                    : passwordsMatch
+                    ? "border-green-500 focus:border-green-500"
+                    : ""
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+            {passwordsMismatch && (
+              <p className="text-xs text-destructive">Passwords do not match</p>
+            )}
+            {passwordsMatch && (
+              <p className="text-xs text-green-500 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" /> Passwords match
+              </p>
+            )}
+          </div>
 
-        <p className="text-center text-xs text-muted-foreground">
-          By creating an account you agree to our{" "}
-          <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
-          {" "}and{" "}
-          <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
-        </p>
+          {/* Submit */}
+          <Button
+            type="submit"
+            disabled={isLoading || passwordsMismatch || !passwordsMatch}
+            className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Creating account…
+              </>
+            ) : (
+              "Create Account"
+            )}
+          </Button>
 
-      </form>
-    </AuthLayout>
+          {/* Divider */}
+          <div className="relative flex items-center gap-3">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link to="/signin" className="text-primary hover:text-primary/80 font-medium">
+              Sign in
+            </Link>
+          </p>
+
+          <p className="text-center text-xs text-muted-foreground">
+            By creating an account you agree to our{" "}
+            <Link to="/terms" className="text-primary hover:underline">Terms of Service</Link>
+            {" "}and{" "}
+            <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
+          </p>
+
+        </form>
+      </AuthLayout>
+
+      {/* --- ADDED THE OTP MODAL HERE --- */}
+      <OTPModal
+        isOpen={showOTP}
+        onClose={() => setShowOTP(false)}
+        onVerify={handleOTPVerify}
+        email={formData.email}
+        purpose="signin" 
+      />
+    </>
   );
 };
 

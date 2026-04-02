@@ -87,6 +87,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   };
   // ── Step 2: OTP verified → decrypt private key ────────────────────────────
 // --- Step 2: Verify OTP (Gets the Keys) ---
+  // --- Step 2: Verify OTP (Gets the Keys) ---
   const handleOTPVerify = async (otp: string) => {
     setIsLoading(true);
     setError(null);
@@ -107,20 +108,26 @@ const handleSubmit = async (e: React.FormEvent) => {
 
       const data = await response.json();
 
-const privateKey = await decryptPrivateKeyFromServer(
+      // 1. Decrypt the private key using the password they just typed
+    const decryptedKey = await decryptPrivateKeyFromServer(
         formData.password, 
         data.encryptedPrivateKey,
         data.keySalt,
         data.keyIv
       );
-
-      // --- ADD THIS LINE ---
-      // Save the public key for the Zero-Knowledge File Uploader!
+      // 2. Force TypeScript to recognize it as a string to clear the red error
+      const privateKeyString = String(decryptedKey);
+      const exportedKeyBuffer = await window.crypto.subtle.exportKey("pkcs8", decryptedKey as any);
+      const exportedKeyArray = Array.from(new Uint8Array(exportedKeyBuffer));
+      const privateKeyBase64 = btoa(String.fromCharCode.apply(null, exportedKeyArray));
+      // 3. Save the keys for the Zero-Knowledge File Uploader/Downloader!
       localStorage.setItem("publicKey", data.publicKey);
-      localStorage.setItem("token", data.token); // <--- ADD THIS LINE!
-      // Save everything to global state
-      login(data.token, privateKey);
-      navigate("/dashboard");    } catch (err) {
+      localStorage.setItem("privateKey", privateKeyBase64); 
+      localStorage.setItem("token", data.token);      
+      // 4. Save everything to global state
+      login(data.token, decryptedKey as any);
+      navigate("/dashboard");
+    } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
       setIsLoading(false);
