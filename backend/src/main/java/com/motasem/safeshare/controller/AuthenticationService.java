@@ -95,9 +95,21 @@ public class AuthenticationService {
         System.out.println("🚨 DEV HACK OTP CODE FOR " + user.getEmail() + " IS: " + otpCode);
         System.out.println("=================================================\n\n\n");
 
-        // emailService.sendOtpEmail(user.getEmail(), otpCode);
+        emailService.sendOtpEmail(user.getEmail(), otpCode);
     }
+    public void resendOtp(String email) {
+        var user = repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // Generate a fresh code and give them 10 more minutes
+        String newOtpCode = generateOtp();
+        user.setOtpCode(newOtpCode);
+        user.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
+        repository.save(user);
+
+        // Send the new code via email!
+        emailService.sendOtpEmail(user.getEmail(), newOtpCode);
+    }
     // --- VERIFICATION FLOW ---
     public AuthenticationResponse verifyOtp(VerificationRequest request) {
         var user = repository.findByEmail(request.getEmail())

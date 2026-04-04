@@ -1,11 +1,9 @@
 package com.motasem.safeshare.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -36,5 +34,17 @@ public class AuthenticationController {
             @RequestBody VerificationRequest request
     ) {
         return ResponseEntity.ok(service.verifyOtp(request));
+    }
+    @PostMapping("/resend-otp")
+    public ResponseEntity<String> resendOtp(@RequestBody java.util.Map<String, String> request) {
+        String email = request.get("email");
+        service.resendOtp(email);
+        return ResponseEntity.ok("New OTP sent successfully");
+    }
+    // 🔥 ADD THIS SAFETY NET 🔥
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<String> handleExceptions(RuntimeException ex) {
+        // This grabs your custom message and sends it back to React cleanly!
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 }
