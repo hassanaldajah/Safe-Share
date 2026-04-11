@@ -10,7 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.security.Principal;
 import java.util.List;
+import java.util.Map; // <-- ADDED THIS IMPORT
 
 @RestController
 @RequestMapping("/api/v1/files")
@@ -78,36 +81,40 @@ public class FileController {
         }
     }
 
-    // --- NEW ENDPOINTS FOR SHARING ---
+    // --- ENDPOINTS FOR SHARING ---
 
     @GetMapping("/search-user")
-    public ResponseEntity<?> searchUser(@RequestParam String email) {
+    public ResponseEntity<?> searchUser(@RequestParam String searchTag) {
         try {
-            return ResponseEntity.ok(fileService.searchUserByEmail(email));
+            return ResponseEntity.ok(fileService.searchUserByTag(searchTag));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    @PostMapping("/{id}/share")
+    @PostMapping("/{fileId}/share")
     public ResponseEntity<?> shareFile(
-            @PathVariable Integer id,
-            @RequestBody ShareRequest shareRequest,
+            @PathVariable Integer fileId,
+            @RequestBody ShareFileRequest shareRequest, // <--- CHANGED THIS TO MATCH YOUR FILE
             @AuthenticationPrincipal User currentUser
     ) {
         try {
-            fileService.shareFile(id, shareRequest, currentUser);
-            return ResponseEntity.ok("File shared successfully!");
+            fileService.shareFile(fileId, shareRequest, currentUser);
+            return ResponseEntity.ok("File shared securely!");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    @GetMapping("/shared-with-me")
-    public ResponseEntity<List<FileResponse>> getSharedWithMeFiles(
-            @AuthenticationPrincipal User currentUser
-    ) {
-        List<FileResponse> sharedFiles = fileService.getSharedWithMeFiles(currentUser);
+    @GetMapping("/shared")
+    public ResponseEntity<List<SharedFileResponse>> getSharedFiles(Principal principal) {
+        var sharedFiles = fileService.getSharedFiles(principal.getName());
         return ResponseEntity.ok(sharedFiles);
+    }
+
+    // --- THE NEW DASHBOARD STATS ENDPOINT ---
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Object>> getDashboardStats(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(fileService.getDashboardStats(currentUser));
     }
 }

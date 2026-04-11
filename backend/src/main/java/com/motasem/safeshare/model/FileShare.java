@@ -5,47 +5,40 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "file_shares")
 public class FileShare {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // The file being shared
     @ManyToOne
     @JoinColumn(name = "file_id", nullable = false)
-    private FileEntity file;
+    private FileEntity file; // The file being shared
 
-    // The user who is receiving the file
     @ManyToOne
-    @JoinColumn(name = "shared_with_user_id", nullable = false)
-    private User sharedWith;
+    @JoinColumn(name = "shared_with_id", nullable = false)
+    private User sharedWith; // The recipient (found via searchTag)
 
-    // The AES key, re-encrypted with the RECEIVER'S Public RSA Key
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String receiverEncryptedKey;
+    private String encryptedKey; // The AES key encrypted with the recipient's Public Key
 
-    // Optional expiration tracking (matching your React UI!)
-    private LocalDateTime expiresAt;
+    @Column(nullable = false)
+    private String sharedBy; // The searchTag of the person who shared it
+    @Column(nullable = true)
+    private Integer maxViews;
+
+    @Column(nullable = true)
     private Integer maxDownloads;
-    private Integer currentDownloads;
 
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime sharedAt;
+    @Column(nullable = false)
+    private Boolean canReshare = false;
 
-    @PrePersist
-    protected void onCreate() {
-        this.sharedAt = LocalDateTime.now();
-        if (this.currentDownloads == null) {
-            this.currentDownloads = 0;
-        }
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User owner;
 }

@@ -16,4 +16,7 @@ public class AuthenticationResponse {
     private String encryptedPrivateKey;
     private String keySalt;
     private String keyIv;
+    private String fullName;
+    private String email;
+    private String searchTag;
 }

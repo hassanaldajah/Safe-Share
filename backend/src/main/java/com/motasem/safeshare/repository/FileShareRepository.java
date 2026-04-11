@@ -7,9 +7,13 @@ import java.util.Optional;
 
 public interface FileShareRepository extends JpaRepository<FileShare, Integer> {
 
-    // Find all files that have been shared WITH a specific user
-    List<FileShare> findAllBySharedWithId(Integer userId);
+    // Finds all files shared with a specific user
+    List<FileShare> findAllBySharedWith_Id(Integer userId);
 
-    // Check if a specific user already has access to a specific file
-    Optional<FileShare> findByFileIdAndSharedWithId(Integer fileId, Integer sharedWithId);
+    // ADD THIS NEW LINE: Checks if a specific file is shared with a specific user
+    Optional<FileShare> findByFile_IdAndSharedWith_Id(Integer fileId, Integer sharedWithId);
+
+    // YOU NEED THESE TWO LINES FOR THE DASHBOARD:
+    long countBySharedBy(String sharedByTag);
+    long countBySharedWith_Id(Integer userId);
 }

@@ -3,7 +3,8 @@ import {
   FolderOpen, Upload, Share2, Search, Grid3x3, List, ChevronRight, Home,
   FileText, Image as ImageIcon, File, Video, Music, Archive, Download,
   Trash2, Shield, ShieldCheck, AlertCircle, Package, X, Mail, Copy, Check,
-  FolderPlus, ArrowLeft, AlertTriangle, Users, Clock, Eye, Link as LinkIcon, CheckCircle, Loader2
+  FolderPlus, ArrowLeft, AlertTriangle, Users, Clock, Eye, Link as LinkIcon, 
+  CheckCircle, Loader2, AtSign, Settings2, CheckSquare, Square // <--- THESE WERE MISSING!
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFolders, FileItem } from "@/components/dashboard/FoldersContext";
@@ -17,17 +18,25 @@ import { decryptKeyWithRSA, decryptFile, encryptKeyWithRSA } from "@/lib/encrypt
 interface ShareDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  file: FileItem | null; // We pass the whole file now so we have its keys!
+  file: FileItem | null;
 }
 
 function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
-  const [shareMethod, setShareMethod] = useState<"user" | "group">("user");
-  const [emailSearch, setEmailSearch] = useState("");
+  const [searchTag, setSearchTag] = useState("");
   const [isSharing, setIsSharing] = useState(false);
   const [shareMessage, setShareMessage] = useState({ type: "", text: "" });
+  
+  // New Permission States
+  const [showPermissions, setShowPermissions] = useState(false);
+  const [maxViews, setMaxViews] = useState<string>(""); 
+  const [maxDownloads, setMaxDownloads] = useState<string>("");
+  const [canReshare, setCanReshare] = useState(false);
 
   const handleShareSubmit = async () => {
-    if (!file || !emailSearch) return;
+    // Basic validation to ensure the tag starts with @
+    const formattedTag = searchTag.startsWith("@") ? searchTag : `@${searchTag}`;
+    
+    if (!file || !searchTag) return;
     setIsSharing(true);
     setShareMessage({ type: "", text: "" });
 
@@ -39,21 +48,22 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
         throw new Error("Security Error: Missing cryptographic keys. Please log in again.");
       }
 
-      // 1. Search for the friend's email and get their Public Key from Spring Boot
-      const searchRes = await fetch(`http://localhost:8080/api/v1/files/search-user?email=${emailSearch}`, {
+      // 1. Search for the friend's SearchTag and get their Public Key
+      // Ensure your backend endpoint is updated to accept ?tag= instead of ?email=
+      const searchRes = await fetch(`http://localhost:8080/api/v1/files/search-user?searchTag=${encodeURIComponent(formattedTag)}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
 
-      if (!searchRes.ok) throw new Error("User not found! Make sure they have a SafeShare account.");
+      if (!searchRes.ok) throw new Error("User not found! Check the @SearchTag.");
       const receiver = await searchRes.json();
 
       // 2. Unlock the AES key using YOUR private key
       const aesKey = await decryptKeyWithRSA(file.encryptedFileKey, privateKey);
 
-      // 3. Re-lock the AES key using THEIR public key! (Zero-Knowledge Magic)
+      // 3. Re-lock the AES key using THEIR public key!
       const receiverEncryptedKey = await encryptKeyWithRSA(aesKey, receiver.publicKey);
 
-      // 4. Send the new lock back to the database
+      // 4. Send the new lock AND the permissions back to the database
       const shareRes = await fetch(`http://localhost:8080/api/v1/files/${file.id}/share`, {
         method: "POST",
         headers: {
@@ -61,8 +71,12 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          receiverEmail: receiver.email,
-          receiverEncryptedKey: receiverEncryptedKey
+          targetSearchTag: receiver.searchTag || formattedTag,
+          encryptedKey: receiverEncryptedKey,
+          // Convert empty strings to null for unlimited access
+          maxViews: maxViews === "" ? null : parseInt(maxViews),
+          maxDownloads: maxDownloads === "" ? null : parseInt(maxDownloads),
+          canReshare: canReshare
         })
       });
 
@@ -71,11 +85,16 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
         throw new Error(errText);
       }
 
-      setShareMessage({ type: "success", text: `Successfully shared with ${receiver.email}!` });
+      setShareMessage({ type: "success", text: `Successfully shared with ${formattedTag}!` });
       setTimeout(() => {
         onClose();
+        // Reset states
         setShareMessage({ type: "", text: "" });
-        setEmailSearch("");
+        setSearchTag("");
+        setMaxViews("");
+        setMaxDownloads("");
+        setCanReshare(false);
+        setShowPermissions(false);
       }, 2000);
 
     } catch (err: any) {
@@ -110,37 +129,109 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
           </div>
 
           <div className="p-6 space-y-6">
-            
             {shareMessage.text && (
               <div className={cn("p-4 rounded-lg text-sm font-medium", shareMessage.type === "error" ? "bg-red-50 text-red-700 border border-red-200" : "bg-green-50 text-green-700 border border-green-200")}>
                 {shareMessage.text}
               </div>
             )}
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Enter friend's email address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="email"
-                    value={emailSearch}
-                    onChange={(e) => setEmailSearch(e.target.value)}
-                    placeholder="friend@example.com"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                  <ShieldCheck className="h-3 w-3" />
-                  The file will be re-encrypted using their Public Key before leaving your browser.
-                </p>
+            {/* Recipient Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Enter recipient's Search Tag
+              </label>
+              <div className="relative">
+                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchTag}
+                  onChange={(e) => setSearchTag(e.target.value)}
+                  placeholder="username (e.g., mo_alatawnah)"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
               </div>
             </div>
 
+            {/* Advanced Permissions Toggle */}
+            <div className="border-t border-gray-100 pt-4">
+              <button 
+                onClick={() => setShowPermissions(!showPermissions)}
+                className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+              >
+                <Settings2 className="h-4 w-4" />
+                {showPermissions ? "Hide Access Controls" : "Set Access Controls (Optional)"}
+              </button>
+
+              {/* Permissions Panel */}
+              {showPermissions && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-xl space-y-4 border border-gray-100">
+                  
+                  {/* View Limits */}
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-white rounded-md shadow-sm text-gray-500"><Eye className="h-4 w-4" /></div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">View Limit</p>
+                        <p className="text-xs text-gray-500">Max times file can be opened</p>
+                      </div>
+                    </div>
+                    <input 
+                      type="number" 
+                      min="1"
+                      placeholder="Unlimited" 
+                      value={maxViews}
+                      onChange={(e) => setMaxViews(e.target.value)}
+                      className="w-24 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  {/* Download Limits */}
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-white rounded-md shadow-sm text-gray-500"><Download className="h-4 w-4" /></div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Download Limit</p>
+                        <p className="text-xs text-gray-500">Max times file can be saved</p>
+                      </div>
+                    </div>
+                    <input 
+                      type="number" 
+                      min="1"
+                      placeholder="Unlimited" 
+                      value={maxDownloads}
+                      onChange={(e) => setMaxDownloads(e.target.value)}
+                      className="w-24 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  {/* Reshare Permission */}
+                  <div 
+                    className="flex items-center justify-between gap-4 cursor-pointer pt-2"
+                    onClick={() => setCanReshare(!canReshare)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-white rounded-md shadow-sm text-gray-500"><Share2 className="h-4 w-4" /></div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Allow Re-sharing</p>
+                        <p className="text-xs text-gray-500">Can they share this with others?</p>
+                      </div>
+                    </div>
+                    <div className="text-indigo-600">
+                      {canReshare ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5 text-gray-400" />}
+                    </div>
+                  </div>
+
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-gray-500 flex items-center gap-1.5 bg-blue-50 p-3 rounded-lg border border-blue-100">
+              <ShieldCheck className="h-4 w-4 text-blue-600 flex-shrink-0" />
+              End-to-End Encrypted: The file key is re-encrypted in your browser using the recipient's public key. The server cannot read the contents.
+            </p>
+
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <div className="flex gap-3 pt-2">
               <button
                 onClick={onClose}
                 className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
@@ -149,14 +240,14 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
               </button>
               <button
                 onClick={handleShareSubmit}
-                disabled={!emailSearch || isSharing}
+                disabled={!searchTag || isSharing}
                 className={cn(
                   "flex-1 px-4 py-2.5 font-medium rounded-lg transition-colors flex items-center justify-center gap-2",
-                  emailSearch && !isSharing ? "bg-indigo-600 text-white hover:bg-indigo-700" : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  searchTag && !isSharing ? "bg-indigo-600 text-white hover:bg-indigo-700" : "bg-gray-100 text-gray-400 cursor-not-allowed"
                 )}
               >
                 {isSharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
-                {isSharing ? "Encrypting for receiver..." : "Share Now"}
+                {isSharing ? "Encrypting..." : "Share Securely"}
               </button>
             </div>
           </div>

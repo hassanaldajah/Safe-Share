@@ -31,7 +31,7 @@ public class AuthenticationService {
         return String.valueOf(otp);
     }
 
-    // --- UPDATED REGISTRATION FLOW ---
+    // --- REGISTRATION FLOW ---
     public AuthenticationResponse register(RegisterRequest request) {
         if (repository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("A user with this email is already registered.");
@@ -40,7 +40,6 @@ public class AuthenticationService {
         String uniqueTag = "@" + request.getFullName().replaceAll("\\s+", "").toLowerCase() +
                 "_" + UUID.randomUUID().toString().substring(0, 5);
 
-        // 1. Generate the code
         String otpCode = generateOtp();
 
         var user = User.builder()
@@ -52,15 +51,13 @@ public class AuthenticationService {
                 .encryptedPrivateKey(request.getEncryptedPrivateKey())
                 .keySalt(request.getKeySalt())
                 .keyIv(request.getKeyIv())
-                .otpCode(otpCode) // 2. Save code to DB
+                .otpCode(otpCode)
                 .otpExpiry(LocalDateTime.now().plusMinutes(10))
                 .build();
 
         repository.save(user);
-        emailService.sendOtpEmail(user.getEmail(), user.getOtpCode());
-        // --- THE MISSING LINK: ADD THIS LINE BELOW ---
+
         emailService.sendOtpEmail(user.getEmail(), otpCode);
-        // ----------------------------------------------
 
         var jwtToken = jwtService.generateToken(user);
 
@@ -70,6 +67,9 @@ public class AuthenticationService {
                 .encryptedPrivateKey(user.getEncryptedPrivateKey())
                 .keySalt(user.getKeySalt())
                 .keyIv(user.getKeyIv())
+                .fullName(user.getFullName())      // <-- ADDED HERE
+                .email(user.getEmail())            // <-- ADDED HERE
+                .searchTag(user.getSearchTag())    // <-- ADDED HERE
                 .build();
     }
 
@@ -90,26 +90,25 @@ public class AuthenticationService {
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
         repository.save(user);
 
-        // 🚨 ADDED THE DEV HACK FOR LOGINS TOO 🚨
         System.out.println("\n\n\n=================================================");
         System.out.println("🚨 DEV HACK OTP CODE FOR " + user.getEmail() + " IS: " + otpCode);
         System.out.println("=================================================\n\n\n");
 
         emailService.sendOtpEmail(user.getEmail(), otpCode);
     }
+
     public void resendOtp(String email) {
         var user = repository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Generate a fresh code and give them 10 more minutes
         String newOtpCode = generateOtp();
         user.setOtpCode(newOtpCode);
         user.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
         repository.save(user);
 
-        // Send the new code via email!
         emailService.sendOtpEmail(user.getEmail(), newOtpCode);
     }
+
     // --- VERIFICATION FLOW ---
     public AuthenticationResponse verifyOtp(VerificationRequest request) {
         var user = repository.findByEmail(request.getEmail())
@@ -135,6 +134,9 @@ public class AuthenticationService {
                 .encryptedPrivateKey(user.getEncryptedPrivateKey())
                 .keySalt(user.getKeySalt())
                 .keyIv(user.getKeyIv())
+                .fullName(user.getFullName())      // <-- ADDED HERE
+                .email(user.getEmail())            // <-- ADDED HERE
+                .searchTag(user.getSearchTag())    // <-- ADDED HERE
                 .build();
     }
 }

@@ -5,9 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/components/auth/AuthLayout";
-import OTPModal from "@/components/auth/OTPModal"; // <-- ADDED THE IMPORT
+import OTPModal from "@/components/auth/OTPModal"; 
 import { buildRegistrationPayload, decryptPrivateKeyFromServer } from "@/services/cryptoService";
 import { useAuth } from "@/context/AuthContext";
+
+/**
+ * Shape of the JWT response from POST /api/auth/verify-otp.
+ */
+interface AuthResponse {
+  token: string;
+  publicKey: string; 
+  encryptedPrivateKey: string;
+  keySalt: string;
+  keyIv: string;
+  fullName: string;
+  email: string;
+  searchTag: string;
+}
 
 // ─── Password Strength Hook ───────────────────────────────────────────────────
 const usePasswordStrength = (password: string) => {
@@ -24,7 +38,7 @@ const SignUp = () => {
   const [showPassword, setShowPassword]   = useState(false);
   const [showConfirm,  setShowConfirm]    = useState(false);
   const [isLoading,    setIsLoading]      = useState(false);
-  const [showOTP,      setShowOTP]        = useState(false); // <-- ADDED OTP STATE
+  const [showOTP,      setShowOTP]        = useState(false); 
   const [error,        setError]          = useState<string | null>(null);
   
   const navigate = useNavigate();
@@ -93,7 +107,6 @@ const SignUp = () => {
     setError(null);
 
     try {
-      // Exactly like SignIn!
       const response = await fetch("http://localhost:8080/api/v1/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -107,7 +120,8 @@ const SignUp = () => {
         throw new Error("Invalid or expired code");
       }
 
-      const data = await response.json();
+      // Cast the response to our AuthResponse interface
+      const data: AuthResponse = await response.json();
 
       // 1. Decrypt the private key
       const decryptedKey = await decryptPrivateKeyFromServer(
@@ -117,18 +131,27 @@ const SignUp = () => {
         data.keyIv
       );
 
-      // 2. Export to Base64 (Using the exact same fix we did in SignIn to prevent crashing!)
+      // 2. Export to Base64
       const exportedKeyBuffer = await window.crypto.subtle.exportKey("pkcs8", decryptedKey as any);
       const exportedKeyArray = Array.from(new Uint8Array(exportedKeyBuffer));
       const privateKeyBase64 = btoa(String.fromCharCode.apply(null, exportedKeyArray));
 
-      // 3. Save everything to localStorage
+      // 3. Save the keys
       localStorage.setItem("publicKey", data.publicKey);
       localStorage.setItem("privateKey", privateKeyBase64); 
       localStorage.setItem("token", data.token);      
       
+      // ---> THE ULTIMATE BYPASS FIX <---
+      const userProfile = {
+        name: data.fullName,
+        email: data.email,
+        searchTag: data.searchTag
+      };
+      localStorage.setItem("user", JSON.stringify(userProfile));
+      // ---------------------------------
+
       // 4. Save to global state and redirect
-      login(data.token, decryptedKey as any);
+      login(data.token, decryptedKey as any, userProfile);
       navigate("/dashboard");
 
     } catch (err) {
@@ -301,7 +324,6 @@ const SignUp = () => {
         </form>
       </AuthLayout>
 
-      {/* --- ADDED THE OTP MODAL HERE --- */}
       <OTPModal
         isOpen={showOTP}
         onClose={() => setShowOTP(false)}
