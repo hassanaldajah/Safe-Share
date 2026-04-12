@@ -158,7 +158,24 @@ public class FileService {
 
         return new UserSearchResponse(user.getSearchTag(), user.getFullName(), user.getPublicKey());
     }
+    public java.util.Map<String, String> getFileMetadataForDownload(Integer fileId, User currentUser) {
+        FileEntity file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found"));
 
+        java.util.Map<String, String> meta = new java.util.HashMap<>();
+        meta.put("iv", file.getIv());
+        meta.put("fileType", file.getFileType());
+
+        // If I am the sender, get my original key. If I am the receiver, get the shared key.
+        if (file.getOwner().getId().equals(currentUser.getId())) {
+            meta.put("encryptedKey", file.getEncryptedFileKey());
+        } else {
+            var share = fileShareRepository.findByFile_IdAndSharedWith_Id(fileId, currentUser.getId())
+                    .orElseThrow(() -> new RuntimeException("Unauthorized access to file metadata"));
+            meta.put("encryptedKey", share.getEncryptedKey());
+        }
+        return meta;
+    }
     public void shareFile(Integer fileId, ShareFileRequest request, User sender) {
         FileEntity file = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found"));

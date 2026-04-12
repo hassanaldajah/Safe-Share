@@ -91,7 +91,12 @@ public class FileController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
+    @GetMapping("/{fileId}/metadata")
+    public ResponseEntity<java.util.Map<String, String>> getFileMetadata(
+            @PathVariable Integer fileId,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(fileService.getFileMetadataForDownload(fileId, currentUser));
+    }
     @PostMapping("/{fileId}/share")
     public ResponseEntity<?> shareFile(
             @PathVariable Integer fileId,

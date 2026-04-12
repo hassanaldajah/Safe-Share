@@ -15,7 +15,7 @@ import { MyFolders } from "./components/dashboard/Myfolders";
 import { TrashPage } from "./components/dashboard/Trashpage";
 import { AiAssistantPage } from "./components/dashboard/AiAssistantPage";
 import { BackupPage } from "./components/dashboard/BackUp";
-import { ShareTransactionsPage } from "./components/dashboard/Chatpage";
+import { Chatpage } from "./components/dashboard/Chatpage";
 import { GroupPage } from './components/dashboard/Group';
 import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
@@ -45,7 +45,7 @@ const App = () => (
                 <Route path="/groups" element={<GroupPage />} />
                 <Route path="/ai-assistant" element={<AiAssistantPage />} />
                 <Route path="/backup" element={<BackupPage />} />
-                <Route path="/chat" element={<ShareTransactionsPage />} />
+                <Route path="/chat" element={<Chatpage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/help" element={<HelpPage />} />

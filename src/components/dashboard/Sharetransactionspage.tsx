@@ -1,457 +1,413 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState, useEffect } from "react";
+import {
+  Search, FileText, Image as ImageIcon, Video, Music, Archive, File,
+  FolderOpen, Download, Eye, ArrowUpRight, ArrowDownLeft, Clock, User,
+  AlertCircle, Loader2, Share2
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type TransactionType = "SENT" | "RECEIVED";
-type TransactionStatus = "PENDING" | "COMPLETED" | "FAILED" | "CANCELLED";
+// --- IMPORT YOUR ENCRYPTION MATH ---
+import { decryptKeyWithRSA, decryptFile } from "@/lib/encryption";
 
 interface FileTransaction {
   id: string;
   fileId: string;
   fileName: string;
-  senderTag: string;
-  receiverTag: string;
-  transactionType: TransactionType;
-  timestamp: string; // ISO-8601
-  status: TransactionStatus;
-  fileSizeBytes: number | null;
+  fileType: "file" | "folder";
+  fileCategory?: "document" | "image" | "video" | "audio" | "archive" | "other";
+  fileSize?: string;
+  transactionType: "sent" | "received";
+  userId: string; 
+  timestamp: Date;
+  status: "completed" | "pending" | "viewed" | "failed" | "cancelled";
 }
 
-type FilterType = "ALL" | TransactionType;
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatFileSize(bytes: number | null): string {
-  if (bytes === null || bytes === 0) return "—";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatTimestamp(iso: string): string {
-  const date = new Date(iso);
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
-
-const STATUS_STYLES: Record<TransactionStatus, string> = {
-  COMPLETED: "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30",
-  PENDING:   "bg-amber-500/15  text-amber-400  ring-1 ring-amber-500/30",
-  FAILED:    "bg-red-500/15    text-red-400    ring-1 ring-red-500/30",
-  CANCELLED: "bg-slate-500/15  text-slate-400  ring-1 ring-slate-500/30",
+const formatBytes = (bytes: number) => {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
 };
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
+const guessFileCategory = (fileName: string) => {
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(ext || '')) return 'image';
+  if (['mp4', 'mov', 'avi'].includes(ext || '')) return 'video';
+  if (['mp3', 'wav', 'ogg'].includes(ext || '')) return 'audio';
+  if (['zip', 'rar', 'tar', 'gz'].includes(ext || '')) return 'archive';
+  if (['pdf', 'doc', 'docx', 'txt', 'xls', 'xlsx'].includes(ext || '')) return 'document';
+  return 'other';
+};
 
-function SkeletonRow() {
-  return (
-    <tr className="animate-pulse">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <td key={i} className="px-6 py-4">
-          <div className="h-4 rounded bg-slate-700/60 w-full" />
-        </td>
-      ))}
-    </tr>
-  );
-}
-
-function EmptyState({ filter }: { filter: FilterType }) {
-  return (
-    <tr>
-      <td colSpan={6}>
-        <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-          <svg
-            className="mb-4 h-12 w-12 opacity-40"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.2}
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3.75 9.75h16.5m-16.5 4.5h16.5M9 3.75 3.75 9l5.25 5.25M15 3.75l5.25 5.25L15 14.25"
-            />
-          </svg>
-          <p className="text-sm font-medium">
-            No {filter !== "ALL" ? filter.toLowerCase() : ""} transactions found.
-          </p>
-        </div>
-      </td>
-    </tr>
-  );
-}
-
-function ErrorBanner({
-  message,
-  onRetry,
-}: {
-  message: string;
-  onRetry: () => void;
-}) {
-  return (
-    <div className="flex items-start gap-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4">
-      <svg
-        className="mt-0.5 h-5 w-5 shrink-0 text-red-400"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-      >
-        <path
-          fillRule="evenodd"
-          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z"
-          clipRule="evenodd"
-        />
-      </svg>
-      <div className="flex-1">
-        <p className="text-sm font-medium text-red-300">Failed to load transactions</p>
-        <p className="mt-0.5 text-xs text-red-400/80">{message}</p>
-      </div>
-      <button
-        onClick={onRetry}
-        className="shrink-0 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-medium text-red-300 transition hover:bg-red-500/30"
-      >
-        Retry
-      </button>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Main Page
-// ---------------------------------------------------------------------------
-
-export default function ShareTransactionsPage() {
+export function ShareTransactionsPage() {
+  const [searchUserId, setSearchUserId] = useState("");
+  const [filterType, setFilterType] = useState<"all" | "sent" | "received">("all");
+  
   const [transactions, setTransactions] = useState<FileTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<FilterType>("ALL");
-  const [search, setSearch] = useState("");
 
-  // -------------------------------------------------------------------------
-  // Data fetching
-  // -------------------------------------------------------------------------
-
-  const fetchTransactions = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      setError("No authentication token found. Please log in again.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch("http://localhost:8080/api/v1/transactions", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.status === 401) {
-        throw new Error("Session expired. Please log in again.");
-      }
-
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status} ${response.statusText}`);
-      }
-
-      const data: FileTransaction[] = await response.json();
-      setTransactions(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // --- NEW STATES FOR ACTION BUTTONS ---
+  const [isDownloading, setIsDownloading] = useState<string | null>(null);
+  const [isSharing, setIsSharing] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Authentication token missing. Please log in.");
+
+        const response = await fetch("http://localhost:8080/api/v1/transactions", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error("Failed to load transactions.");
+
+        const rawData = await response.json();
+
+        const mappedData: FileTransaction[] = rawData.map((tx: any) => ({
+          id: tx.id,
+          fileId: tx.fileId,
+          fileName: tx.fileName,
+          fileType: "file", 
+          fileCategory: guessFileCategory(tx.fileName),
+          fileSize: tx.fileSizeBytes ? formatBytes(tx.fileSizeBytes) : undefined,
+          transactionType: tx.transactionType.toLowerCase() as "sent" | "received",
+          userId: tx.transactionType === "SENT" ? tx.receiverTag : tx.senderTag,
+          timestamp: new Date(tx.timestamp),
+          status: tx.status.toLowerCase()
+        }));
+
+        setTransactions(mappedData);
+      } catch (err: any) {
+        setError(err.message || "An unexpected error occurred");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     fetchTransactions();
-  }, [fetchTransactions]);
+  }, []);
 
-  // -------------------------------------------------------------------------
-  // Derived / filtered list
-  // -------------------------------------------------------------------------
+  // --- 1. VIEW HANDLER ---
+  const handleView = async (transaction: FileTransaction) => {
+    console.log("👀 VIEW BUTTON CLICKED! Trying to view:", transaction.fileName);
+    console.log("File ID is:", transaction.fileId);
+    
+    try {
+      const token = localStorage.getItem("token");
+      const privateKeyBase64 = localStorage.getItem("privateKey");
 
-  const filtered = transactions.filter((tx) => {
-    const matchesFilter =
-      filter === "ALL" || tx.transactionType === filter;
+      if (!token || !privateKeyBase64) throw new Error("Missing cryptographic data.");
 
-    const query = search.toLowerCase();
-    const matchesSearch =
-      !query ||
-      tx.fileName.toLowerCase().includes(query) ||
-      tx.senderTag.toLowerCase().includes(query) ||
-      tx.receiverTag.toLowerCase().includes(query);
+      const metaRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/metadata`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (!metaRes.ok) throw new Error("Could not fetch file keys.");
+      const metadata = await metaRes.json();
+      
+      const fileRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/download`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const encryptedArrayBuffer = await fileRes.arrayBuffer();
 
-    return matchesFilter && matchesSearch;
+      const aesKey = await decryptKeyWithRSA(metadata.encryptedKey, privateKeyBase64);
+      const decryptedBlob = await decryptFile(encryptedArrayBuffer, aesKey, metadata.iv);
+
+      const finalBlob = new Blob([decryptedBlob], { type: metadata.fileType || 'application/octet-stream' });
+      const viewUrl = URL.createObjectURL(finalBlob);
+      
+      window.open(viewUrl, '_blank');
+
+    } catch (error: any) {
+      console.error("View failed:", error);
+      alert("Failed to view file. Ensure your backend metadata endpoint is active.");
+    }
+  };
+
+  // --- 2. DOWNLOAD HANDLER ---
+  const handleDownload = async (transaction: FileTransaction) => {
+    console.log("⬇️ DOWNLOAD BUTTON CLICKED! Trying to download:", transaction.fileName);
+    console.log("File ID is:", transaction.fileId);
+    
+    try {
+      setIsDownloading(transaction.id);
+      const token = localStorage.getItem("token");
+      const privateKeyBase64 = localStorage.getItem("privateKey");
+
+      if (!token || !privateKeyBase64) throw new Error("Missing cryptographic data. Please log in again.");
+
+      const metaRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/metadata`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (!metaRes.ok) throw new Error("Could not fetch file keys.");
+      const metadata = await metaRes.json();
+      const { encryptedKey, iv, fileType } = metadata; 
+
+      const fileRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/download`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (!fileRes.ok) throw new Error("Could not download encrypted file.");
+      const encryptedArrayBuffer = await fileRes.arrayBuffer();
+
+      const aesKey = await decryptKeyWithRSA(encryptedKey, privateKeyBase64);
+      const decryptedBlob = await decryptFile(encryptedArrayBuffer, aesKey, iv);
+
+      const finalBlob = new Blob([decryptedBlob], { type: fileType || 'application/octet-stream' });
+      const downloadUrl = URL.createObjectURL(finalBlob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = transaction.fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+
+    } catch (error: any) {
+      console.error("Download failed:", error);
+      alert(error.message || "Failed to process download.");
+    } finally {
+      setIsDownloading(null);
+    }
+  };
+
+  // --- 3. SHARE HANDLER ---
+  const handleShare = (transaction: FileTransaction) => {
+    console.log("🔄 SHARE BUTTON CLICKED! Trying to share:", transaction.fileName);
+    setIsSharing(transaction.id);
+    
+    setTimeout(() => {
+        alert(`Opening Share Modal for: ${transaction.fileName}`);
+        setIsSharing(null);
+    }, 500);
+  };
+
+  const filteredTransactions = transactions.filter((transaction) => {
+    const matchesUserId = searchUserId
+      ? transaction.userId.toLowerCase().includes(searchUserId.toLowerCase())
+      : true;
+    const matchesType =
+      filterType === "all" ? true : transaction.transactionType === filterType;
+    return matchesUserId && matchesType;
   });
 
-  // -------------------------------------------------------------------------
-  // Stats derived from full data (not filtered)
-  // -------------------------------------------------------------------------
+  const groupedByUser = filteredTransactions.reduce((acc, transaction) => {
+    if (!acc[transaction.userId]) {
+      acc[transaction.userId] = [];
+    }
+    acc[transaction.userId].push(transaction);
+    return acc;
+  }, {} as Record<string, FileTransaction[]>);
 
-  const totalSent     = transactions.filter((t) => t.transactionType === "SENT").length;
-  const totalReceived = transactions.filter((t) => t.transactionType === "RECEIVED").length;
-  const totalFailed   = transactions.filter((t) => t.status === "FAILED").length;
+  const getFileIcon = (fileType: "file" | "folder", fileCategory?: string) => {
+    if (fileType === "folder") return <FolderOpen className="h-5 w-5 text-amber-500" />;
+    switch (fileCategory) {
+      case "document": return <FileText className="h-5 w-5 text-blue-500" />;
+      case "image": return <ImageIcon className="h-5 w-5 text-purple-500" />;
+      case "video": return <Video className="h-5 w-5 text-red-500" />;
+      case "audio": return <Music className="h-5 w-5 text-green-500" />;
+      case "archive": return <Archive className="h-5 w-5 text-orange-500" />;
+      default: return <File className="h-5 w-5 text-gray-500" />;
+    }
+  };
 
-  // -------------------------------------------------------------------------
-  // Render
-  // -------------------------------------------------------------------------
+  const formatTimestamp = (date: Date) => {
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days === 1) return "Yesterday";
+    if (days < 7) return `${days} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  const getTransactionCount = (userId: string, type: "sent" | "received") => {
+    return groupedByUser[userId]?.filter((t) => t.transactionType === type).length || 0;
+  };
 
   return (
-    <div className="min-h-screen bg-[#0d1117] px-4 py-10 text-slate-100 sm:px-8">
-      {/* ------------------------------------------------------------------ */}
-      {/* Header                                                               */}
-      {/* ------------------------------------------------------------------ */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-white">
-          Share Transactions
-        </h1>
-        <p className="mt-1 text-sm text-slate-400">
-          A complete audit log of every file you've sent and received.
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                File Sharing Transactions
+              </h1>
+              <p className="text-sm text-gray-600">
+                View all files and folders you've sent or received securely.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex-1 max-w-md relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={searchUserId}
+                onChange={(e) => setSearchUserId(e.target.value)}
+                placeholder="Search by User Tag (e.g., @motasem)"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+              <button
+                onClick={() => setFilterType("all")}
+                className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm", filterType === "all" ? "bg-white shadow-sm text-indigo-600" : "text-gray-600 hover:text-gray-900")}
+              >All</button>
+              <button
+                onClick={() => setFilterType("sent")}
+                className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "sent" ? "bg-white shadow-sm text-indigo-600" : "text-gray-600 hover:text-gray-900")}
+              ><ArrowUpRight className="h-4 w-4" /> Sent</button>
+              <button
+                onClick={() => setFilterType("received")}
+                className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "received" ? "bg-white shadow-sm text-indigo-600" : "text-gray-600 hover:text-gray-900")}
+              ><ArrowDownLeft className="h-4 w-4" /> Received</button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Stats bar                                                            */}
-      {/* ------------------------------------------------------------------ */}
-      {!loading && !error && (
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {[
-            { label: "Total",    value: transactions.length, color: "text-sky-400" },
-            { label: "Sent",     value: totalSent,           color: "text-violet-400" },
-            { label: "Received", value: totalReceived,       color: "text-emerald-400" },
-            { label: "Failed",   value: totalFailed,         color: "text-red-400" },
-          ].map(({ label, value, color }) => (
-            <div
-              key={label}
-              className="rounded-xl border border-slate-700/50 bg-slate-800/50 px-5 py-4"
-            >
-              <p className="text-xs font-medium uppercase tracking-widest text-slate-500">
-                {label}
-              </p>
-              <p className={`mt-1 text-2xl font-bold tabular-nums ${color}`}>
-                {value}
-              </p>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {error && (
+          <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-red-50 text-red-700 border border-red-100">
+            <AlertCircle className="h-5 w-5" />
+            <p className="text-sm font-medium">{error}</p>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="flex flex-col justify-center items-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-4" />
+            <p className="text-gray-500 font-medium">Decrypting transaction history...</p>
+          </div>
+        ) : Object.keys(groupedByUser).length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-50 rounded-full mb-4 border border-gray-100">
+              <User className="h-8 w-8 text-gray-400" />
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Error state                                                          */}
-      {/* ------------------------------------------------------------------ */}
-      {error && (
-        <div className="mb-6">
-          <ErrorBanner message={error} onRetry={fetchTransactions} />
-        </div>
-      )}
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Controls: filter tabs + search                                       */}
-      {/* ------------------------------------------------------------------ */}
-      {!error && (
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Filter tabs */}
-          <div className="flex gap-1 rounded-lg border border-slate-700/50 bg-slate-800/50 p-1">
-            {(["ALL", "SENT", "RECEIVED"] as FilterType[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setFilter(tab)}
-                className={`rounded-md px-4 py-1.5 text-xs font-semibold uppercase tracking-wider transition ${
-                  filter === tab
-                    ? "bg-sky-500 text-white shadow"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No transactions found</h3>
+            <p className="text-gray-600">{searchUserId ? `No transactions with User Tag: ${searchUserId}` : "Start sharing files to see your transaction history"}</p>
           </div>
+        ) : (
+          <div className="space-y-6">
+            {Object.entries(groupedByUser).map(([userId, userTransactions]) => (
+              <div key={userId} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                
+                <div className="bg-slate-50 px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center shadow-sm">
+                        <User className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 flex items-center gap-2">{userId}</p>
+                        <p className="text-sm text-gray-500">{userTransactions.length} transaction{userTransactions.length !== 1 ? "s" : ""}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-center px-4 py-1.5 bg-white rounded-lg border border-gray-200 shadow-sm">
+                        <div className="flex items-center gap-1 text-emerald-600">
+                          <ArrowUpRight className="h-3.5 w-3.5" />
+                          <span className="text-sm font-bold">{getTransactionCount(userId, "sent")}</span>
+                        </div>
+                      </div>
+                      <div className="text-center px-4 py-1.5 bg-white rounded-lg border border-gray-200 shadow-sm">
+                        <div className="flex items-center gap-1 text-blue-600">
+                          <ArrowDownLeft className="h-3.5 w-3.5" />
+                          <span className="text-sm font-bold">{getTransactionCount(userId, "received")}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-          {/* Search */}
-          <div className="relative">
-            <svg
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search by file, sender, receiver…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-slate-700/50 bg-slate-800/50 py-2 pl-9 pr-4 text-sm text-slate-200 placeholder-slate-500 outline-none transition focus:border-sky-500 focus:ring-1 focus:ring-sky-500 sm:w-72"
-            />
-          </div>
-        </div>
-      )}
+                <div className="divide-y divide-gray-100">
+                  {userTransactions.map((transaction) => (
+                    <div key={transaction.id} className="p-4 hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        
+                        <div className={cn("p-2.5 rounded-lg", transaction.transactionType === "sent" ? "bg-emerald-50 border border-emerald-100" : "bg-blue-50 border border-blue-100")}>
+                          {transaction.transactionType === "sent" ? <ArrowUpRight className="h-4 w-4 text-emerald-600" /> : <ArrowDownLeft className="h-4 w-4 text-blue-600" />}
+                        </div>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Table                                                                */}
-      {/* ------------------------------------------------------------------ */}
-      {!error && (
-        <div className="overflow-hidden rounded-xl border border-slate-700/50 bg-slate-800/30">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-slate-700/50 bg-slate-800/60">
-                  {["File", "Type", "From", "To", "Size", "Date", "Status"].map(
-                    (heading) => (
-                      <th
-                        key={heading}
-                        className="px-6 py-3.5 text-left text-xs font-semibold uppercase tracking-widest text-slate-400"
-                      >
-                        {heading}
-                      </th>
-                    )
-                  )}
-                </tr>
-              </thead>
+                        <div className="p-2.5 bg-white border border-gray-100 rounded-lg shadow-sm">
+                          {getFileIcon(transaction.fileType, transaction.fileCategory)}
+                        </div>
 
-              <tbody className="divide-y divide-slate-700/30">
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <SkeletonRow key={i} />
-                  ))
-                ) : filtered.length === 0 ? (
-                  <EmptyState filter={filter} />
-                ) : (
-                  filtered.map((tx) => (
-                    <tr
-                      key={tx.id}
-                      className="transition-colors hover:bg-slate-700/20"
-                    >
-                      {/* File name */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2.5">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-700/60 text-slate-300">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                          </span>
-                          <span
-                            className="max-w-[180px] truncate font-medium text-slate-100"
-                            title={tx.fileName}
-                          >
-                            {tx.fileName}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-medium text-gray-900 truncate">{transaction.fileName}</p>
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-gray-500 font-medium">
+                            {transaction.fileSize && <span>{transaction.fileSize}</span>}
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" />
+                              {formatTimestamp(transaction.timestamp)}
+                            </span>
+                            <span className={cn("px-2 py-0.5 rounded-full", transaction.transactionType === "sent" ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700")}>
+                              {transaction.transactionType === "sent" ? "You sent" : "You received"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className={cn("flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold capitalize", transaction.status === 'completed' ? "bg-emerald-50 text-emerald-700" : transaction.status === 'failed' ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700")}>
+                            {transaction.status}
                           </span>
                         </div>
-                      </td>
 
-                      {/* Transaction type badge */}
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
-                            tx.transactionType === "SENT"
-                              ? "bg-violet-500/15 text-violet-400 ring-violet-500/30"
-                              : "bg-sky-500/15 text-sky-400 ring-sky-500/30"
-                          }`}
-                        >
-                          {tx.transactionType === "SENT" ? (
-                            <svg
-                              className="h-3 w-3"
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path d="M3.105 3.105a.75.75 0 01.814-.162l13 5.5a.75.75 0 010 1.114l-13 5.5a.75.75 0 01-1.001-.96l2.036-5.097L3.105 3.105z" />
-                            </svg>
-                          ) : (
-                            <svg
-                              className="h-3 w-3"
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path d="M10 2a.75.75 0 01.75.75v12.59l1.95-2.1a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 111.1-1.02l1.95 2.1V2.75A.75.75 0 0110 2z" />
-                            </svg>
-                          )}
-                          {tx.transactionType}
-                        </span>
-                      </td>
+                        {/* --- THE FULLY WIRED ACTION BUTTONS --- */}
+                        <div className="flex gap-2 ml-4">
+                          
+                          {/* 1. Share Button */}
+                          <button
+                            onClick={() => handleShare(transaction)}
+                            disabled={isSharing === transaction.id}
+                            className="p-2 hover:bg-purple-50 text-gray-500 hover:text-purple-600 rounded-lg transition-colors"
+                            title="Share File"
+                          >
+                            {isSharing === transaction.id ? <Loader2 className="h-4 w-4 animate-spin text-purple-600" /> : <Share2 className="h-4 w-4" />}
+                          </button>
 
-                      {/* Sender */}
-                      <td className="px-6 py-4 font-mono text-xs text-slate-300">
-                        {tx.senderTag}
-                      </td>
+                          {/* 2. View Button */}
+                          <button
+                            onClick={() => handleView(transaction)}
+                            className="p-2 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-lg transition-colors"
+                            title="View File"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
 
-                      {/* Receiver */}
-                      <td className="px-6 py-4 font-mono text-xs text-slate-300">
-                        {tx.receiverTag}
-                      </td>
+                          {/* 3. Download Button */}
+                          <button
+                            onClick={() => handleDownload(transaction)}
+                            disabled={isDownloading === transaction.id}
+                            className="p-2 hover:bg-indigo-50 text-gray-500 hover:text-indigo-600 rounded-lg transition-colors"
+                            title="Download File"
+                          >
+                            {isDownloading === transaction.id ? <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> : <Download className="h-4 w-4" />}
+                          </button>
+                        </div>
+                        {/* --------------------------------------- */}
 
-                      {/* File size */}
-                      <td className="px-6 py-4 text-slate-400">
-                        {formatFileSize(tx.fileSizeBytes)}
-                      </td>
-
-                      {/* Timestamp */}
-                      <td className="whitespace-nowrap px-6 py-4 text-slate-400">
-                        {formatTimestamp(tx.timestamp)}
-                      </td>
-
-                      {/* Status badge */}
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[tx.status]}`}
-                        >
-                          {tx.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
-
-          {/* Footer row */}
-          {!loading && !error && filtered.length > 0 && (
-            <div className="border-t border-slate-700/50 bg-slate-800/40 px-6 py-3 text-xs text-slate-500">
-              Showing{" "}
-              <span className="font-medium text-slate-300">{filtered.length}</span>{" "}
-              of{" "}
-              <span className="font-medium text-slate-300">{transactions.length}</span>{" "}
-              transactions
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
