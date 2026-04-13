@@ -13,7 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.Map; // <-- ADDED THIS IMPORT
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/files")
@@ -52,19 +52,22 @@ public class FileController {
         return ResponseEntity.ok(myFiles);
     }
 
+    // --- UPDATED DOWNLOAD ENDPOINT WITH ACTION PARAMETER ---
     @GetMapping("/{id}/download")
-    public ResponseEntity<Resource> downloadFile(
+    public ResponseEntity<?> downloadFile(
             @PathVariable Integer id,
+            @RequestParam(defaultValue = "download") String action,
             @AuthenticationPrincipal User currentUser
     ) {
         try {
-            Resource resource = fileService.downloadSecureFile(id, currentUser);
+            Resource resource = fileService.downloadSecureFile(id, currentUser, action);
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"encrypted_file.enc\"")
                     .body(resource);
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+            // Sends the error message text back to React!
+            return ResponseEntity.status(403).body(e.getMessage());
         }
     }
 
@@ -81,8 +84,6 @@ public class FileController {
         }
     }
 
-    // --- ENDPOINTS FOR SHARING ---
-
     @GetMapping("/search-user")
     public ResponseEntity<?> searchUser(@RequestParam String searchTag) {
         try {
@@ -91,16 +92,18 @@ public class FileController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
     @GetMapping("/{fileId}/metadata")
     public ResponseEntity<java.util.Map<String, String>> getFileMetadata(
             @PathVariable Integer fileId,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(fileService.getFileMetadataForDownload(fileId, currentUser));
     }
+
     @PostMapping("/{fileId}/share")
     public ResponseEntity<?> shareFile(
             @PathVariable Integer fileId,
-            @RequestBody ShareFileRequest shareRequest, // <--- CHANGED THIS TO MATCH YOUR FILE
+            @RequestBody ShareFileRequest shareRequest,
             @AuthenticationPrincipal User currentUser
     ) {
         try {
@@ -117,7 +120,6 @@ public class FileController {
         return ResponseEntity.ok(sharedFiles);
     }
 
-    // --- THE NEW DASHBOARD STATS ENDPOINT ---
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> getDashboardStats(@AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(fileService.getDashboardStats(currentUser));

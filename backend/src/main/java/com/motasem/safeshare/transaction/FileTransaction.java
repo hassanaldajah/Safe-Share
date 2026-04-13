@@ -51,7 +51,8 @@ public class FileTransaction {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
     private User owner;
-
+    @Column(name = "can_reshare")
+    private Boolean canReshare;
     @PrePersist
     private void prePersist() {
         if (this.timestamp == null) {

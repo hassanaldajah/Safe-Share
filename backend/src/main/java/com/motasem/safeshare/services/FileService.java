@@ -97,7 +97,8 @@ public class FileService {
         return fileRepository.save(fileEntity);
     }
 
-    public Resource downloadSecureFile(Integer fileId, User currentUser) {
+    // --- SMART DOWNLOAD LOGIC WITH ACTION TYPE ---
+    public Resource downloadSecureFile(Integer fileId, User currentUser, String action) {
         FileEntity fileEntity = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found!"));
 
@@ -108,16 +109,25 @@ public class FileService {
             throw new RuntimeException("Unauthorized access to file!");
         }
 
-        // DRM ENFORCEMENT LOGIC
         if (!isOwner && shareRecord.isPresent()) {
             FileShare share = shareRecord.get();
-            if (share.getMaxDownloads() != null) {
-                if (share.getMaxDownloads() <= 0) {
-                    throw new RuntimeException("Security Exception: Download limit reached for this file.");
+
+            if ("view".equalsIgnoreCase(action)) {
+                if (share.getMaxViews() != null) {
+                    if (share.getMaxViews() <= 0) {
+                        throw new RuntimeException("Security Exception: View limit reached for this file.");
+                    }
+                    share.setMaxViews(share.getMaxViews() - 1);
                 }
-                share.setMaxDownloads(share.getMaxDownloads() - 1);
-                fileShareRepository.save(share);
+            } else {
+                if (share.getMaxDownloads() != null) {
+                    if (share.getMaxDownloads() <= 0) {
+                        throw new RuntimeException("Security Exception: Download limit reached for this file.");
+                    }
+                    share.setMaxDownloads(share.getMaxDownloads() - 1);
+                }
             }
+            fileShareRepository.save(share);
         }
 
         try {
@@ -158,6 +168,7 @@ public class FileService {
 
         return new UserSearchResponse(user.getSearchTag(), user.getFullName(), user.getPublicKey());
     }
+
     public java.util.Map<String, String> getFileMetadataForDownload(Integer fileId, User currentUser) {
         FileEntity file = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
@@ -166,7 +177,6 @@ public class FileService {
         meta.put("iv", file.getIv());
         meta.put("fileType", file.getFileType());
 
-        // If I am the sender, get my original key. If I am the receiver, get the shared key.
         if (file.getOwner().getId().equals(currentUser.getId())) {
             meta.put("encryptedKey", file.getEncryptedFileKey());
         } else {
@@ -176,61 +186,77 @@ public class FileService {
         }
         return meta;
     }
+
+    // --- UPDATED SMART SHARE LOGIC ---
     public void shareFile(Integer fileId, ShareFileRequest request, User sender) {
         FileEntity file = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
 
-        if (!file.getOwner().getId().equals(sender.getId())) {
-            throw new RuntimeException("You can only share your own files!");
+        // 1. Check Ownership & Permissions
+        boolean isOwner = file.getOwner().getId().equals(sender.getId());
+
+        if (!isOwner) {
+            // If they are not the owner, check if they have a share record with canReshare = true
+            FileShare senderShareRecord = fileShareRepository.findByFile_IdAndSharedWith_Id(fileId, sender.getId())
+                    .orElseThrow(() -> new RuntimeException("You do not have access to this file!"));
+
+            if (!Boolean.TRUE.equals(senderShareRecord.getCanReshare())) {
+                throw new RuntimeException("You do not have permission to re-share this file!");
+            }
         }
 
+        // 2. Find Receiver
         User receiver = userRepository.findBySearchTag(request.getTargetSearchTag())
                 .orElseThrow(() -> new RuntimeException("Receiver not found"));
 
-        if (fileShareRepository.findByFile_IdAndSharedWith_Id(fileId, receiver.getId()).isPresent()) {
-            throw new RuntimeException("File is already shared with this user!");
+        var existingShare = fileShareRepository.findByFile_IdAndSharedWith_Id(fileId, receiver.getId());
+        FileShare fileShare;
+
+        // 3. Update or Create Share Record
+        if (existingShare.isPresent()) {
+            fileShare = existingShare.get();
+            fileShare.setMaxDownloads(request.getMaxDownloads());
+            fileShare.setMaxViews(request.getMaxViews());
+            fileShare.setCanReshare(request.getCanReshare() != null ? request.getCanReshare() : false);
+            fileShare.setEncryptedKey(request.getEncryptedKey());
+        } else {
+            fileShare = FileShare.builder()
+                    .file(file)
+                    .sharedWith(receiver)
+                    .encryptedKey(request.getEncryptedKey())
+                    .sharedBy(sender.getSearchTag())
+                    .maxDownloads(request.getMaxDownloads())
+                    .maxViews(request.getMaxViews())
+                    .canReshare(request.getCanReshare() != null ? request.getCanReshare() : false)
+                    .build();
         }
-
-        FileShare fileShare = FileShare.builder()
-                .file(file)
-                .sharedWith(receiver)
-                .encryptedKey(request.getEncryptedKey())
-                .sharedBy(sender.getSearchTag())
-                .maxDownloads(request.getMaxDownloads())
-                .maxViews(request.getMaxViews())
-                .canReshare(request.getCanReshare() != null ? request.getCanReshare() : false) // Default to false if null
-                .build();
-
         fileShareRepository.save(fileShare);
 
-        // --- THE BULLETPROOF FIX: Explicitly set each field ---
-
-        // 1. Create and save the SENT receipt for the sender
-// 1. Create and save the SENT receipt
+        // 4. Create Transaction Receipts
         FileTransaction sentLog = new FileTransaction();
         sentLog.setFileId(file.getId().toString());
         sentLog.setFileName(file.getOriginalName());
         sentLog.setSenderTag(sender.getSearchTag());
         sentLog.setReceiverTag(receiver.getSearchTag());
-        sentLog.setTransactionType(FileTransaction.TransactionType.SENT); // Match your variable name
+        sentLog.setTransactionType(FileTransaction.TransactionType.SENT);
         sentLog.setStatus(FileTransaction.TransactionStatus.COMPLETED);
-        sentLog.setFileSizeBytes(file.getSizeBytes()); // Match your variable name
+        sentLog.setFileSizeBytes(file.getSizeBytes());
         sentLog.setOwner(sender);
-
+        sentLog.setCanReshare(request.getCanReshare() != null ? request.getCanReshare() : false);
         fileTransactionRepository.save(sentLog);
 
-        // 2. Create and save the RECEIVED receipt
         FileTransaction receivedLog = new FileTransaction();
         receivedLog.setFileId(file.getId().toString());
         receivedLog.setFileName(file.getOriginalName());
         receivedLog.setSenderTag(sender.getSearchTag());
         receivedLog.setReceiverTag(receiver.getSearchTag());
-        receivedLog.setTransactionType(FileTransaction.TransactionType.RECEIVED); // Match your variable name
+        receivedLog.setTransactionType(FileTransaction.TransactionType.RECEIVED);
         receivedLog.setStatus(FileTransaction.TransactionStatus.COMPLETED);
-        receivedLog.setFileSizeBytes(file.getSizeBytes()); // Match your variable name
+        receivedLog.setFileSizeBytes(file.getSizeBytes());
         receivedLog.setOwner(receiver);
-
-        fileTransactionRepository.save(receivedLog);    }
+        receivedLog.setCanReshare(request.getCanReshare() != null ? request.getCanReshare() : false);
+        fileTransactionRepository.save(receivedLog);
+    }
 
     public List<FileResponse> getSharedWithMeFiles(User receiver) {
         List<FileShare> shares = fileShareRepository.findAllBySharedWith_Id(receiver.getId());
@@ -249,17 +275,13 @@ public class FileService {
         ).collect(Collectors.toList());
     }
 
-    // --- NEW: DASHBOARD STATISTICS ---
     public java.util.Map<String, Object> getDashboardStats(User currentUser) {
         var myFiles = fileRepository.findAllByOwnerId(currentUser.getId());
-
         long totalFiles = myFiles.size();
-
         long storageUsed = myFiles.stream()
                 .mapToLong(file -> file.getSizeBytes() != null ? file.getSizeBytes() : 0L)
                 .sum();
-
-        long storageLimit = 5L * 1024 * 1024 * 1024; // 5 GB limit
+        long storageLimit = 5L * 1024 * 1024 * 1024;
 
         long sentShares = fileShareRepository.countBySharedBy(currentUser.getSearchTag());
         long receivedShares = fileShareRepository.countBySharedWith_Id(currentUser.getId());

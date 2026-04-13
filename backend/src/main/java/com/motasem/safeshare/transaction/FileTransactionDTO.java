@@ -14,7 +14,8 @@ public record FileTransactionDTO(
         String transactionType,   // "SENT" | "RECEIVED"
         Instant timestamp,
         String status,            // "PENDING" | "COMPLETED" | "FAILED" | "CANCELLED"
-        Long fileSizeBytes
+        Long fileSizeBytes,
+        Boolean canReshare        // <--- 1. ADDED THIS LINE TO THE DTO
 ) {
     public static FileTransactionDTO from(FileTransaction entity) {
         return new FileTransactionDTO(
@@ -26,7 +27,8 @@ public record FileTransactionDTO(
                 entity.getTransactionType().name(),
                 entity.getTimestamp(),
                 entity.getStatus().name(),
-                entity.getFileSizeBytes()
+                entity.getFileSizeBytes(),
+                entity.getCanReshare()    // <--- 2. ADDED THIS LINE TO THE MAPPER
         );
     }
 }
