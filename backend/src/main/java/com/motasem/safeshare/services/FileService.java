@@ -186,7 +186,42 @@ public class FileService {
         }
         return meta;
     }
+    // --- MANAGE ACCESS LOGIC ---
+    public List<ShareAccessResponse> getFileAccessList(Integer fileId, User owner) {
+        FileEntity file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found"));
 
+        if (!file.getOwner().getId().equals(owner.getId())) {
+            throw new RuntimeException("Only the owner can view the access list.");
+        }
+
+        List<FileShare> shares = fileShareRepository.findAllByFile_Id(fileId);
+
+        return shares.stream().map(share -> new ShareAccessResponse(
+                share.getSharedWith().getSearchTag(),
+                share.getMaxViews(),
+                share.getMaxDownloads(),
+                share.getCanReshare()
+        )).collect(Collectors.toList());
+    }
+
+    public void revokeAccess(Integer fileId, String receiverTag, User owner) {
+        FileEntity file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        if (!file.getOwner().getId().equals(owner.getId())) {
+            throw new RuntimeException("Only the owner can revoke access.");
+        }
+
+        User receiver = userRepository.findBySearchTag(receiverTag)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        FileShare share = fileShareRepository.findByFile_IdAndSharedWith_Id(fileId, receiver.getId())
+                .orElseThrow(() -> new RuntimeException("Access record not found."));
+
+        // THE KILL SWITCH: Delete the permission record!
+        fileShareRepository.delete(share);
+    }
     // --- UPDATED SMART SHARE LOGIC ---
     public void shareFile(Integer fileId, ShareFileRequest request, User sender) {
         FileEntity file = fileRepository.findById(fileId)

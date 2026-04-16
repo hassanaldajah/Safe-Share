@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import {
   Search, FileText, Image as ImageIcon, Video, Music, Archive, File,
   FolderOpen, Download, Eye, ArrowUpRight, ArrowDownLeft, Clock, User,
-  AlertCircle, Loader2, Share2
+  AlertCircle, Loader2, Share2, ShieldAlert
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatShareDialog } from "./ChatShareDialog";
+import { ManageAccessDialog } from "./ManageAccessDialog";
 
 // --- IMPORT YOUR ENCRYPTION MATH ---
 import { decryptKeyWithRSA, decryptFile } from "@/lib/encryption";
@@ -59,7 +60,6 @@ const getExactMimeType = (fileName: string) => {
   }
 };
 
-// PERFECT NAMED EXPORT FOR APP.TSX
 export function Chatpage() {
   const [searchUserId, setSearchUserId] = useState("");
   const [filterType, setFilterType] = useState<"all" | "sent" | "received">("all");
@@ -71,6 +71,7 @@ export function Chatpage() {
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
   const [isViewing, setIsViewing] = useState<string | null>(null);
   const [selectedShareFile, setSelectedShareFile] = useState<FileTransaction | null>(null);
+  const [managingFile, setManagingFile] = useState<FileTransaction | null>(null);
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -97,7 +98,7 @@ export function Chatpage() {
           userId: tx.transactionType === "SENT" ? tx.receiverTag : tx.senderTag,
           timestamp: new Date(tx.timestamp),
           status: tx.status.toLowerCase(),
-          canReshare: tx.canReshare === true // Maps the backend boolean
+          canReshare: tx.canReshare === true
         }));
 
         setTransactions(mappedData);
@@ -111,7 +112,6 @@ export function Chatpage() {
     fetchTransactions();
   }, []);
 
-  // --- VIEW HANDLER (ACTION=VIEW) ---
   const handleView = async (transaction: FileTransaction) => {
     try {
       setIsViewing(transaction.id);
@@ -126,12 +126,10 @@ export function Chatpage() {
       if (!metaRes.ok) throw new Error("Could not fetch file keys.");
       const metadata = await metaRes.json();
       
-      // NOTICE THE ?action=view
       const fileRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/download?action=view`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       
-      // READ CUSTOM BACKEND ERROR MESSAGE
       if (!fileRes.ok) {
           const errorText = await fileRes.text();
           throw new Error(errorText || "Could not view file.");
@@ -145,7 +143,6 @@ export function Chatpage() {
       const finalBlob = new Blob([decryptedBlob], { type: exactMimeType });
       const viewUrl = URL.createObjectURL(finalBlob);
       
-      // BYPASS CHROME BLOB BLOCKER
       const a = document.createElement("a");
       a.href = viewUrl;
       a.target = "_blank"; 
@@ -162,7 +159,6 @@ export function Chatpage() {
     }
   };
 
-  // --- DOWNLOAD HANDLER (ACTION=DOWNLOAD) ---
   const handleDownload = async (transaction: FileTransaction) => {
     try {
       setIsDownloading(transaction.id);
@@ -178,12 +174,10 @@ export function Chatpage() {
       const metadata = await metaRes.json();
       const { encryptedKey, iv } = metadata; 
 
-      // NOTICE THE ?action=download
       const fileRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/download?action=download`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       
-      // READ CUSTOM BACKEND ERROR MESSAGE
       if (!fileRes.ok) {
           const errorText = await fileRes.text();
           throw new Error(errorText || "Could not download file.");
@@ -347,26 +341,35 @@ export function Chatpage() {
                           </div>
                         </div>
 
+                        {/* --- ALL ACTION BUTTONS PERFECTLY GROUPED --- */}
                         <div className="flex gap-2 ml-4">
-                          {/* SHARE BUTTON: ONLY SHOW IF SENDER OR HAS PERMISSION */}
+                          
+                          {/* SHARE BUTTON */}
                           {(transaction.transactionType === "sent" || transaction.canReshare) && (
-                            <button
-                              onClick={() => handleShare(transaction)}
-                              className="p-2 hover:bg-purple-50 text-gray-500 hover:text-purple-600 rounded-lg transition-colors"
-                              title="Share File"
-                            >
+                            <button onClick={() => handleShare(transaction)} className="p-2 hover:bg-purple-50 text-gray-500 hover:text-purple-600 rounded-lg transition-colors" title="Share File">
                               <Share2 className="h-4 w-4" />
                             </button>
                           )}
 
+                          {/* MANAGE ACCESS BUTTON */}
+                          {transaction.transactionType === "sent" && (
+                            <button onClick={() => setManagingFile(transaction)} className="p-2 hover:bg-rose-50 text-gray-500 hover:text-rose-600 rounded-lg transition-colors" title="Manage Access">
+                              <ShieldAlert className="h-4 w-4" />
+                            </button>
+                          )}
+
+                          {/* VIEW BUTTON */}
                           <button onClick={() => handleView(transaction)} disabled={isViewing === transaction.id} className="p-2 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-lg transition-colors" title="View File">
                             {isViewing === transaction.id ? <Loader2 className="h-4 w-4 animate-spin text-blue-600" /> : <Eye className="h-4 w-4" />}
                           </button>
 
+                          {/* DOWNLOAD BUTTON */}
                           <button onClick={() => handleDownload(transaction)} disabled={isDownloading === transaction.id} className="p-2 hover:bg-indigo-50 text-gray-500 hover:text-indigo-600 rounded-lg transition-colors" title="Download File">
                             {isDownloading === transaction.id ? <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> : <Download className="h-4 w-4" />}
                           </button>
+
                         </div>
+
                       </div>
                     </div>
                   ))}
@@ -374,15 +377,26 @@ export function Chatpage() {
               </div>
             ))}
           </div>
-          
-        
         )}
-        {/* RENDER THE CHAT SHARE DIALOG */}
-        <ChatShareDialog 
-          isOpen={!!selectedShareFile} 
-          onClose={() => setSelectedShareFile(null)} 
-          transaction={selectedShareFile} 
-        />
+
+        {/* MODALS */}
+        {selectedShareFile && (
+          <ChatShareDialog 
+            isOpen={!!selectedShareFile} 
+            onClose={() => setSelectedShareFile(null)} 
+            transaction={selectedShareFile} 
+          />
+        )}
+        
+        {managingFile && (
+          <ManageAccessDialog 
+            isOpen={!!managingFile} 
+            onClose={() => setManagingFile(null)} 
+            fileId={managingFile.fileId}
+            fileName={managingFile.fileName}
+          />
+        )}
+
       </div>
     </div>
   );

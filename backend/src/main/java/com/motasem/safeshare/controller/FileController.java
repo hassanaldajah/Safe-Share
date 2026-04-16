@@ -83,7 +83,30 @@ public class FileController {
             return ResponseEntity.internalServerError().body("Delete failed: " + e.getMessage());
         }
     }
+    // --- MANAGE ACCESS ENDPOINTS ---
+    @GetMapping("/{fileId}/shares")
+    public ResponseEntity<?> getFileAccessList(
+            @PathVariable Integer fileId,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            return ResponseEntity.ok(fileService.getFileAccessList(fileId, currentUser));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
+    @DeleteMapping("/{fileId}/shares/{receiverTag}")
+    public ResponseEntity<?> revokeAccess(
+            @PathVariable Integer fileId,
+            @PathVariable String receiverTag,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            fileService.revokeAccess(fileId, receiverTag, currentUser);
+            return ResponseEntity.ok("Access permanently revoked for " + receiverTag);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
     @GetMapping("/search-user")
     public ResponseEntity<?> searchUser(@RequestParam String searchTag) {
         try {

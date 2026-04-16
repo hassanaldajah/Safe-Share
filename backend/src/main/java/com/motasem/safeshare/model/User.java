@@ -23,6 +23,7 @@ public class User implements UserDetails {
     private Integer id;
     @Column(unique = true,nullable = false,updatable = false)
     private String searchTag;
+
     @Column(unique = true,nullable = false)
     private String email;
     @Column(nullable = false)
