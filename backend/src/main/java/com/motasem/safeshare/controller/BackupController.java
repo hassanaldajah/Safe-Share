@@ -22,11 +22,17 @@ public class BackupController {
             @AuthenticationPrincipal User currentUser) {
         try {
             String encryptedKey = payload.get("encryptedPrivateKey");
+            String salt = payload.get("keySalt");
+            String iv = payload.get("keyIv");
+
             if (encryptedKey == null || encryptedKey.isEmpty()) {
                 return ResponseEntity.badRequest().body("No backup data provided!");
             }
 
+            // Save to your EXISTING columns!
             currentUser.setEncryptedPrivateKey(encryptedKey);
+            currentUser.setKeySalt(salt);
+            currentUser.setKeyIv(iv);
             userRepository.save(currentUser);
 
             return ResponseEntity.ok("Key backup securely saved to the cloud!");
@@ -41,7 +47,13 @@ public class BackupController {
             if (currentUser.getEncryptedPrivateKey() == null) {
                 return ResponseEntity.badRequest().body("No backup found in the cloud.");
             }
-            return ResponseEntity.ok(Map.of("encryptedPrivateKey", currentUser.getEncryptedPrivateKey()));
+
+            // Return all 3 existing columns
+            return ResponseEntity.ok(Map.of(
+                    "encryptedPrivateKey", currentUser.getEncryptedPrivateKey(),
+                    "keySalt", currentUser.getKeySalt(),
+                    "keyIv", currentUser.getKeyIv()
+            ));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Failed to retrieve backup: " + e.getMessage());
         }

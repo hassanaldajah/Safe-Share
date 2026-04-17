@@ -46,7 +46,11 @@ public class FileEntity {
     private String filePath; // The path where we save the scrambled bytes on the server's hard drive
 
     // --- RELATIONSHIPS ---
+    @Column(name = "is_deleted", nullable = false)
+    private boolean isDeleted = false;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User owner; // Links the file securely to the user who uploaded it

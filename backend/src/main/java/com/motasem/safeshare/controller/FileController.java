@@ -115,7 +115,37 @@ public class FileController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    // --- TRASH ENDPOINTS ---
 
+    @GetMapping("/trash")
+    public ResponseEntity<?> getTrashedFiles(@AuthenticationPrincipal User currentUser) {
+        // You can create a quick service method for this, or call repo directly if allowed by your architecture
+        return ResponseEntity.ok(fileService.getTrashedFiles(currentUser));
+    }
+
+    @PutMapping("/{fileId}/trash")
+    public ResponseEntity<?> moveToTrash(@PathVariable Integer fileId, @AuthenticationPrincipal User currentUser) {
+        fileService.moveToTrash(fileId, currentUser);
+        return ResponseEntity.ok("File moved to trash.");
+    }
+
+    @PutMapping("/{fileId}/restore")
+    public ResponseEntity<?> restoreFile(@PathVariable Integer fileId, @AuthenticationPrincipal User currentUser) {
+        fileService.restoreFile(fileId, currentUser);
+        return ResponseEntity.ok("File restored.");
+    }
+
+    @DeleteMapping("/{fileId}/permanent")
+    public ResponseEntity<?> permanentlyDelete(@PathVariable Integer fileId, @AuthenticationPrincipal User currentUser) {
+        fileService.permanentlyDelete(fileId, currentUser);
+        return ResponseEntity.ok("File permanently deleted.");
+    }
+
+    @DeleteMapping("/trash/empty")
+    public ResponseEntity<?> emptyTrash(@AuthenticationPrincipal User currentUser) {
+        fileService.emptyTrash(currentUser);
+        return ResponseEntity.ok("Trash emptied.");
+    }
     @GetMapping("/{fileId}/metadata")
     public ResponseEntity<java.util.Map<String, String>> getFileMetadata(
             @PathVariable Integer fileId,

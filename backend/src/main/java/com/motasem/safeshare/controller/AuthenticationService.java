@@ -114,14 +114,28 @@ public class AuthenticationService {
         var user = repository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (user.getOtpCode() == null || !user.getOtpCode().equals(request.getCode())) {
+        // 1. Scrub the incoming code: Remove any hidden spaces, dashes, or commas sent by React
+        String cleanIncomingCode = request.getCode() != null ?
+                request.getCode().replaceAll("[\\s\\-,]", "") : "";
+
+        // 2. DEBUG: See exactly what React sent vs what the Database expects!
+        System.out.println("\n--- OTP VERIFICATION DEBUG ---");
+        System.out.println("OTP in Database: '" + user.getOtpCode() + "'");
+        System.out.println("Raw from React : '" + request.getCode() + "'");
+        System.out.println("Cleaned Code   : '" + cleanIncomingCode + "'");
+        System.out.println("------------------------------\n");
+
+        // 3. Compare the cleaned code
+        if (user.getOtpCode() == null || !user.getOtpCode().equals(cleanIncomingCode)) {
             throw new RuntimeException("Invalid verification code");
         }
 
-        if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
+        // 4. Check Expiration
+        if (user.getOtpExpiry() != null && user.getOtpExpiry().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Verification code has expired");
         }
 
+        // 5. Success! Clear the OTP and save
         user.setOtpCode(null);
         user.setOtpExpiry(null);
         repository.save(user);
@@ -134,9 +148,9 @@ public class AuthenticationService {
                 .encryptedPrivateKey(user.getEncryptedPrivateKey())
                 .keySalt(user.getKeySalt())
                 .keyIv(user.getKeyIv())
-                .fullName(user.getFullName())      // <-- ADDED HERE
-                .email(user.getEmail())            // <-- ADDED HERE
-                .searchTag(user.getSearchTag())    // <-- ADDED HERE
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .searchTag(user.getSearchTag())
                 .build();
     }
 }

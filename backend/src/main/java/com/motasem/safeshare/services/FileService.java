@@ -21,6 +21,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -36,8 +37,11 @@ public class FileService {
 
     private final String UPLOAD_DIR = "uploads/";
 
+    // 1. UPDATED: Fetch ONLY active files for "My Folders"
     public List<FileResponse> getUserFiles(User owner) {
-        List<FileEntity> userFiles = fileRepository.findAllByOwnerId(owner.getId());
+        // Notice the new 'False' query here!
+        List<FileEntity> userFiles = fileRepository.findAllByOwnerAndIsDeletedFalse(owner);
+
         return userFiles.stream().map(file -> FileResponse.builder()
                 .id(file.getId())
                 .name(file.getOriginalName())
@@ -185,6 +189,75 @@ public class FileService {
             meta.put("encryptedKey", share.getEncryptedKey());
         }
         return meta;
+    }
+    // --- TRASH BIN LOGIC ---
+
+
+    // NEW: Fetch ONLY trashed files for the "Trash Page"
+    public List<FileResponse> getTrashedFiles(User owner) {
+        List<FileEntity> trashedFiles = fileRepository.findAllByOwnerAndIsDeletedTrue(owner);
+
+        return trashedFiles.stream().map(file -> FileResponse.builder()
+                .id(file.getId())
+                .name(file.getOriginalName())
+                .fileType(file.getFileType())
+                .sizeBytes(file.getSizeBytes())
+                .compressed(file.getCompressed())
+                .virusScan(file.getVirusScanStatus())
+                .uploadedAt(file.getUploadedAt())
+                .encryptedFileKey(file.getEncryptedFileKey())
+                .iv(file.getIv())
+                .build()
+        ).collect(Collectors.toList());
+    }
+
+
+    // 1. Soft Delete (Move to Trash)
+    public void moveToTrash(Integer fileId, User owner) {
+        FileEntity file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        if (!file.getOwner().getId().equals(owner.getId())) {
+            throw new RuntimeException("Only the owner can delete this file.");
+        }
+
+        file.setDeleted(true);
+        file.setDeletedAt(LocalDateTime.now());
+        fileRepository.save(file);
+    }
+
+    // 2. Restore from Trash
+    public void restoreFile(Integer fileId, User owner) {
+        FileEntity file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        if (!file.getOwner().getId().equals(owner.getId())) {
+            throw new RuntimeException("Only the owner can restore this file.");
+        }
+
+        file.setDeleted(false);
+        file.setDeletedAt(null);
+        fileRepository.save(file);
+    }
+
+    // 3. Hard Delete (Permanent)
+    public void permanentlyDelete(Integer fileId, User owner) {
+        FileEntity file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        if (!file.getOwner().getId().equals(owner.getId())) {
+            throw new RuntimeException("Only the owner can delete this file.");
+        }
+
+        // TODO: In a production environment, you would also delete the file from AWS S3 here!
+        fileRepository.delete(file);
+    }
+
+    // 4. Empty Trash
+    public void emptyTrash(User owner) {
+        List<FileEntity> trashFiles = fileRepository.findAllByOwnerAndIsDeletedTrue(owner);
+        // TODO: Delete from S3 in a loop here
+        fileRepository.deleteAll(trashFiles);
     }
     // --- MANAGE ACCESS LOGIC ---
     public List<ShareAccessResponse> getFileAccessList(Integer fileId, User owner) {

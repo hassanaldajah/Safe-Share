@@ -1,1022 +1,617 @@
 import { useState } from "react";
 import {
   Users,
-  Shield,
-  Clock,
-  Download,
-  Eye,
-  Upload,
-  FolderPlus,
-  Link2,
-  Settings,
-  MoreVertical,
-  ChevronRight,
-  AlertTriangle,
-  Check,
-  X,
-  Crown,
-  Edit3,
-  Trash2,
   FileText,
-  Image as ImageIcon,
-  Video,
-  Music,
-  Archive,
-  File,
-  UserPlus,
-  Calendar,
+  Shield,
+  ArrowLeft,
+  Plus,
+  LogIn,
+  Download,
+  Crown,
+  ChevronRight,
+  Folder,
   Activity,
+  UserMinus,
+  RefreshCw,
   Lock,
-  Key,
-  Timer,
-  Hash,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-type UserRole = "Viewer" | "Editor" | "Co-Owner";
+type Role = "Admin" | "Editor" | "Viewer";
 
 interface GroupMember {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
-  avatar?: string;
-  lastActive: Date;
-  joinedAt: Date;
+  role: Role;
+  avatar: string;
+  joinedAt: string;
 }
 
 interface SharedFile {
   id: string;
   name: string;
-  type: "file" | "folder";
-  fileType?: "document" | "image" | "video" | "audio" | "archive" | "other";
-  size?: string;
-  uploadedBy: string;
-  uploadedAt: Date;
-  downloadCount: number;
-  lastAccessed?: Date;
-  isEncrypted: true;
-}
-
-interface FileExchange {
-  id: string;
-  fileName: string;
-  sentBy: string;
-  sentAt: Date;
   size: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  type: "pdf" | "doc" | "img" | "zip";
 }
 
-interface AuditLogEntry {
+interface AuditEntry {
   id: string;
-  action: "uploaded" | "downloaded" | "opened" | "permission_changed" | "member_added" | "member_removed";
   user: string;
+  action: string;
   target: string;
-  timestamp: Date;
-  details?: string;
+  timestamp: string;
+  severity: "info" | "warn" | "critical";
 }
 
-interface SecuritySettings {
-  linkExpiry?: number;
-  otpRequired: boolean;
-  downloadLimit?: number;
+interface Group {
+  id: string;
+  name: string;
+  description: string;
+  memberCount: number;
+  myRole: Role;
+  color: string;
+  members: GroupMember[];
+  files: SharedFile[];
+  auditLog: AuditEntry[];
 }
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
+// ─── Dummy Data ───────────────────────────────────────────────────────────────
 
-export function GroupPage() {
-  const currentUser = {
-    id: "current",
-    role: "Co-Owner" as UserRole,
-  };
+const DUMMY_GROUPS: Group[] = [
+  {
+    id: "g1",
+    name: "Product Design",
+    description: "UI/UX assets and design tokens",
+    memberCount: 8,
+    myRole: "Admin",
+    color: "from-violet-500 to-purple-600",
+    members: [
+      { id: "m1", name: "Alex Rivera", email: "alex@co.io", role: "Admin", avatar: "AR", joinedAt: "Jan 12, 2025" },
+      { id: "m2", name: "Priya Nair", email: "priya@co.io", role: "Editor", avatar: "PN", joinedAt: "Feb 3, 2025" },
+      { id: "m3", name: "Sam Chen", email: "sam@co.io", role: "Viewer", avatar: "SC", joinedAt: "Mar 18, 2025" },
+      { id: "m4", name: "Jordan Lee", email: "jordan@co.io", role: "Editor", avatar: "JL", joinedAt: "Apr 1, 2025" },
+    ],
+    files: [
+      { id: "f1", name: "Brand Guidelines v3.pdf", size: "4.2 MB", uploadedBy: "Alex Rivera", uploadedAt: "Apr 10, 2025", type: "pdf" },
+      { id: "f2", name: "Component Library.zip", size: "18.9 MB", uploadedBy: "Priya Nair", uploadedAt: "Apr 8, 2025", type: "zip" },
+      { id: "f3", name: "Onboarding Mockups.doc", size: "2.1 MB", uploadedBy: "Sam Chen", uploadedAt: "Apr 5, 2025", type: "doc" },
+    ],
+    auditLog: [
+      { id: "a1", user: "Alex Rivera", action: "Uploaded", target: "Brand Guidelines v3.pdf", timestamp: "Apr 10, 10:24 AM", severity: "info" },
+      { id: "a2", user: "Priya Nair", action: "Removed member", target: "Kai Tanaka", timestamp: "Apr 9, 3:05 PM", severity: "warn" },
+      { id: "a3", user: "Jordan Lee", action: "Changed role", target: "Sam Chen → Viewer", timestamp: "Apr 7, 9:15 AM", severity: "warn" },
+    ],
+  },
+  {
+    id: "g2",
+    name: "Engineering",
+    description: "Source code, docs, deployment configs",
+    memberCount: 14,
+    myRole: "Editor",
+    color: "from-sky-500 to-cyan-600",
+    members: [
+      { id: "m5", name: "Dana Kim", email: "dana@co.io", role: "Admin", avatar: "DK", joinedAt: "Nov 1, 2024" },
+      { id: "m6", name: "You", email: "you@co.io", role: "Editor", avatar: "YO", joinedAt: "Jan 20, 2025" },
+      { id: "m7", name: "Remy Dupont", email: "remy@co.io", role: "Viewer", avatar: "RD", joinedAt: "Feb 14, 2025" },
+    ],
+    files: [
+      { id: "f4", name: "Architecture Diagram.pdf", size: "1.7 MB", uploadedBy: "Dana Kim", uploadedAt: "Apr 12, 2025", type: "pdf" },
+      { id: "f5", name: "API Spec v2.doc", size: "890 KB", uploadedBy: "Remy Dupont", uploadedAt: "Apr 11, 2025", type: "doc" },
+    ],
+    auditLog: [
+      { id: "a4", user: "Dana Kim", action: "Uploaded", target: "Architecture Diagram.pdf", timestamp: "Apr 12, 2:30 PM", severity: "info" },
+      { id: "a5", user: "You", action: "Downloaded", target: "API Spec v2.doc", timestamp: "Apr 11, 11:00 AM", severity: "info" },
+    ],
+  },
+  {
+    id: "g3",
+    name: "Legal & Compliance",
+    description: "Contracts, NDAs, and audit reports",
+    memberCount: 4,
+    myRole: "Viewer",
+    color: "from-amber-500 to-orange-600",
+    members: [
+      { id: "m8", name: "Morgan Patel", email: "morgan@co.io", role: "Admin", avatar: "MP", joinedAt: "Oct 5, 2024" },
+      { id: "m9", name: "You", email: "you@co.io", role: "Viewer", avatar: "YO", joinedAt: "Mar 1, 2025" },
+    ],
+    files: [
+      { id: "f6", name: "Master NDA 2025.pdf", size: "320 KB", uploadedBy: "Morgan Patel", uploadedAt: "Jan 6, 2025", type: "pdf" },
+      { id: "f7", name: "Vendor Contracts.zip", size: "12.4 MB", uploadedBy: "Morgan Patel", uploadedAt: "Feb 20, 2025", type: "zip" },
+    ],
+    auditLog: [
+      { id: "a6", user: "Morgan Patel", action: "Uploaded", target: "Master NDA 2025.pdf", timestamp: "Jan 6, 9:00 AM", severity: "info" },
+      { id: "a7", user: "Morgan Patel", action: "Restricted access", target: "Vendor Contracts.zip", timestamp: "Feb 20, 4:45 PM", severity: "critical" },
+    ],
+  },
+];
 
-  // ============================================================================
-  // STATE MANAGEMENT
-  // ============================================================================
+const GROUP_LIMIT = 5;
 
-  const [hasGroup, setHasGroup] = useState(false);
-  const [groupMode, setGroupMode] = useState<"create" | "join" | null>(null);
-  const [joinGroupId, setJoinGroupId] = useState("");
-  const [newGroupName, setNewGroupName] = useState("");
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-  const [members, setMembers] = useState<GroupMember[]>([
-    {
-      id: "1",
-      name: "Sarah Johnson",
-      email: "sarah.johnson@university.edu",
-      role: "Co-Owner",
-      lastActive: new Date(Date.now() - 1000 * 60 * 5),
-      joinedAt: new Date("2024-01-15"),
-    },
-    {
-      id: "2",
-      name: "Michael Chen",
-      email: "michael.chen@university.edu",
-      role: "Editor",
-      lastActive: new Date(Date.now() - 1000 * 60 * 30),
-      joinedAt: new Date("2024-01-18"),
-    },
-    {
-      id: "3",
-      name: "Emily Davis",
-      email: "emily.davis@university.edu",
-      role: "Viewer",
-      lastActive: new Date(Date.now() - 1000 * 60 * 60 * 2),
-      joinedAt: new Date("2024-01-20"),
-    },
-    {
-      id: "4",
-      name: "James Wilson",
-      email: "james.wilson@university.edu",
-      role: "Editor",
-      lastActive: new Date(Date.now() - 1000 * 60 * 60 * 24),
-      joinedAt: new Date("2024-01-22"),
-    },
-  ]);
+const roleStyles: Record<Role, string> = {
+  Admin: "bg-violet-100 text-violet-700 border border-violet-200",
+  Editor: "bg-sky-100 text-sky-700 border border-sky-200",
+  Viewer: "bg-slate-100 text-slate-600 border border-slate-200",
+};
 
-  const [sharedFiles] = useState<SharedFile[]>([
-    {
-      id: "f1",
-      name: "Research Paper Draft v3.pdf",
-      type: "file",
-      fileType: "document",
-      size: "2.4 MB",
-      uploadedBy: "Sarah Johnson",
-      uploadedAt: new Date(Date.now() - 1000 * 60 * 60 * 3),
-      downloadCount: 7,
-      lastAccessed: new Date(Date.now() - 1000 * 60 * 45),
-      isEncrypted: true,
-    },
-    {
-      id: "f2",
-      name: "Dataset Analysis",
-      type: "folder",
-      uploadedBy: "Michael Chen",
-      uploadedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2),
-      downloadCount: 3,
-      lastAccessed: new Date(Date.now() - 1000 * 60 * 60 * 5),
-      isEncrypted: true,
-    },
-    {
-      id: "f3",
-      name: "Experiment_Results.xlsx",
-      type: "file",
-      fileType: "document",
-      size: "1.8 MB",
-      uploadedBy: "Emily Davis",
-      uploadedAt: new Date(Date.now() - 1000 * 60 * 60 * 6),
-      downloadCount: 12,
-      lastAccessed: new Date(Date.now() - 1000 * 60 * 30),
-      isEncrypted: true,
-    },
-  ]);
+const severityIcon = {
+  info: <CheckCircle size={14} className="text-emerald-500" />,
+  warn: <AlertCircle size={14} className="text-amber-500" />,
+  critical: <Lock size={14} className="text-red-500" />,
+};
 
-  const [fileExchanges] = useState<FileExchange[]>([
-    {
-      id: "e1",
-      fileName: "Meeting_Notes.pdf",
-      sentBy: "Sarah Johnson",
-      sentAt: new Date(Date.now() - 1000 * 60 * 15),
-      size: "156 KB",
-    },
-    {
-      id: "e2",
-      fileName: "Code_Review.zip",
-      sentBy: "Michael Chen",
-      sentAt: new Date(Date.now() - 1000 * 60 * 60),
-      size: "4.2 MB",
-    },
-  ]);
+const fileIcon: Record<SharedFile["type"], string> = {
+  pdf: "🗒️",
+  doc: "📝",
+  img: "🖼️",
+  zip: "🗜️",
+};
 
-  const [auditLog] = useState<AuditLogEntry[]>([
-    {
-      id: "a1",
-      action: "downloaded",
-      user: "Michael Chen",
-      target: "Research Paper Draft v3.pdf",
-      timestamp: new Date(Date.now() - 1000 * 60 * 45),
-    },
-    {
-      id: "a2",
-      action: "uploaded",
-      user: "Sarah Johnson",
-      target: "Research Paper Draft v3.pdf",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3),
-    },
-    {
-      id: "a3",
-      action: "opened",
-      user: "Emily Davis",
-      target: "Experiment_Results.xlsx",
-      timestamp: new Date(Date.now() - 1000 * 60 * 30),
-    },
-    {
-      id: "a4",
-      action: "permission_changed",
-      user: "Sarah Johnson",
-      target: "Michael Chen",
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-      details: "Changed role to Editor",
-    },
-  ]);
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
-  const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
-    linkExpiry: 24,
-    otpRequired: true,
-    downloadLimit: 10,
-  });
+function Avatar({ initials, size = "md" }: { initials: string; size?: "sm" | "md" }) {
+  const sz = size === "sm" ? "w-7 h-7 text-xs" : "w-9 h-9 text-sm";
+  return (
+    <div className={`${sz} rounded-full bg-gradient-to-br from-slate-700 to-slate-900 text-white font-semibold flex items-center justify-center flex-shrink-0`}>
+      {initials}
+    </div>
+  );
+}
 
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [showSecurityDialog, setShowSecurityDialog] = useState(false);
-  const [inviteUserId, setInviteUserId] = useState("");
-  const [inviteRole, setInviteRole] = useState<UserRole>("Viewer");
+function RoleBadge({ role }: { role: Role }) {
+  return (
+    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${roleStyles[role]}`}>
+      {role}
+    </span>
+  );
+}
 
-  // ============================================================================
-  // HELPER FUNCTIONS
-  // ============================================================================
+// ─── Files Tab ────────────────────────────────────────────────────────────────
 
-  const formatTimeAgo = (date: Date): string => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return "Just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return `${days}d ago`;
-  };
-
-  const getRoleBadgeColor = (role: UserRole): string => {
-    switch (role) {
-      case "Co-Owner":
-        return "bg-purple-100 text-purple-700 border-purple-200";
-      case "Editor":
-        return "bg-blue-100 text-blue-700 border-blue-200";
-      case "Viewer":
-        return "bg-gray-100 text-gray-700 border-gray-200";
-    }
-  };
-
-  const getRoleIcon = (role: UserRole) => {
-    switch (role) {
-      case "Co-Owner":
-        return <Crown className="h-3.5 w-3.5" />;
-      case "Editor":
-        return <Edit3 className="h-3.5 w-3.5" />;
-      case "Viewer":
-        return <Eye className="h-3.5 w-3.5" />;
-    }
-  };
-
-  const getFileIcon = (fileType?: SharedFile["fileType"]) => {
-    switch (fileType) {
-      case "document":
-        return <FileText className="h-5 w-5 text-blue-500" />;
-      case "image":
-        return <ImageIcon className="h-5 w-5 text-purple-500" />;
-      case "video":
-        return <Video className="h-5 w-5 text-red-500" />;
-      case "audio":
-        return <Music className="h-5 w-5 text-green-500" />;
-      case "archive":
-        return <Archive className="h-5 w-5 text-orange-500" />;
-      default:
-        return <File className="h-5 w-5 text-gray-500" />;
-    }
-  };
-
-  const getActionIcon = (action: AuditLogEntry["action"]) => {
-    switch (action) {
-      case "uploaded":
-        return <Upload className="h-4 w-4 text-green-600" />;
-      case "downloaded":
-        return <Download className="h-4 w-4 text-blue-600" />;
-      case "opened":
-        return <Eye className="h-4 w-4 text-purple-600" />;
-      case "permission_changed":
-        return <Settings className="h-4 w-4 text-orange-600" />;
-      case "member_added":
-        return <UserPlus className="h-4 w-4 text-green-600" />;
-      case "member_removed":
-        return <X className="h-4 w-4 text-red-600" />;
-    }
-  };
-
-  const canManageMembers = currentUser.role === "Co-Owner";
-  const canUploadFiles = currentUser.role === "Co-Owner" || currentUser.role === "Editor";
-
-  // ============================================================================
-  // NO GROUP YET — LANDING SCREEN
-  // ============================================================================
-
-  if (!hasGroup) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4">
-              <Users className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Groups</h1>
-            <p className="text-gray-600">Create a new group or join an existing one</p>
-          </div>
-
-          {!groupMode && (
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                onClick={() => setGroupMode("create")}
-                className="p-6 bg-white border-2 border-purple-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition-all text-center group"
-              >
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-200 transition-colors">
-                  <FolderPlus className="h-6 w-6 text-purple-600" />
+function FilesTab({ files }: { files: SharedFile[] }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-slate-50 border-b border-slate-200">
+            <th className="text-left px-4 py-3 text-slate-500 font-medium">File</th>
+            <th className="text-left px-4 py-3 text-slate-500 font-medium hidden sm:table-cell">Uploaded By</th>
+            <th className="text-left px-4 py-3 text-slate-500 font-medium hidden md:table-cell">Date</th>
+            <th className="text-left px-4 py-3 text-slate-500 font-medium">Size</th>
+            <th className="px-4 py-3" />
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100 bg-white">
+          {files.map((f) => (
+            <tr key={f.id} className="hover:bg-slate-50/60 transition-colors">
+              <td className="px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{fileIcon[f.type]}</span>
+                  <span className="font-medium text-slate-800 truncate max-w-[160px]">{f.name}</span>
                 </div>
-                <p className="font-semibold text-gray-900">Create Group</p>
-                <p className="text-sm text-gray-500 mt-1">Start a new group</p>
-              </button>
+              </td>
+              <td className="px-4 py-3 text-slate-500 hidden sm:table-cell">{f.uploadedBy}</td>
+              <td className="px-4 py-3 text-slate-400 hidden md:table-cell">{f.uploadedAt}</td>
+              <td className="px-4 py-3 text-slate-400">{f.size}</td>
+              <td className="px-4 py-3 text-right">
+                <button className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-3 py-1.5 rounded-lg transition-colors">
+                  <Download size={13} /> Download
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
-              <button
-                onClick={() => setGroupMode("join")}
-                className="p-6 bg-white border-2 border-blue-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-all text-center group"
-              >
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:bg-blue-200 transition-colors">
-                  <UserPlus className="h-6 w-6 text-blue-600" />
-                </div>
-                <p className="font-semibold text-gray-900">Join Group</p>
-                <p className="text-sm text-gray-500 mt-1">Enter a group ID</p>
-              </button>
-            </div>
-          )}
+// ─── Members Tab ─────────────────────────────────────────────────────────────
 
-          {groupMode === "create" && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-              <h2 className="font-semibold text-gray-900 text-lg">Create a New Group</h2>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Group Name
-                </label>
-                <input
-                  type="text"
-                  value={newGroupName}
-                  onChange={(e) => setNewGroupName(e.target.value)}
-                  placeholder="e.g. Research Team"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setGroupMode(null)}
-                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => { if (newGroupName.trim()) setHasGroup(true); }}
-                  className="flex-1 px-4 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
-                >
-                  Create Group
-                </button>
-              </div>
-            </div>
-          )}
+function MembersTab({ members, myRole }: { members: GroupMember[]; myRole: Role }) {
+  const [localMembers, setLocalMembers] = useState(members);
+  const isAdmin = myRole === "Admin";
 
-          {groupMode === "join" && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-              <h2 className="font-semibold text-gray-900 text-lg">Join a Group</h2>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Group ID
-                </label>
-                <input
-                  type="text"
-                  value={joinGroupId}
-                  onChange={(e) => setJoinGroupId(e.target.value)}
-                  placeholder="Enter group ID"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setGroupMode(null)}
-                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => { if (joinGroupId.trim()) setHasGroup(true); }}
-                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Join Group
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+  const cycleRole = (id: string) => {
+    const order: Role[] = ["Viewer", "Editor", "Admin"];
+    setLocalMembers((prev) =>
+      prev.map((m) =>
+        m.id === id ? { ...m, role: order[(order.indexOf(m.role) + 1) % order.length] } : m
+      )
     );
-  }
+  };
 
-  // ============================================================================
-  // RENDER — MAIN GROUP PAGE
-  // ============================================================================
+  const remove = (id: string) => setLocalMembers((prev) => prev.filter((m) => m.id !== id));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
-      {/* ============================================================================
-          HEADER SECTION
-          ============================================================================ */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl">
-                <Users className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                  {newGroupName || "ACM Research Team"}
-                </h1>
-                <p className="text-gray-600 mb-2">
-                  Collaborative space for ACM research project - Secure encrypted file sharing
-                </p>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="h-4 w-4" />
-                    <span>Created January 15, 2024</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Users className="h-4 w-4" />
-                    <span>{members.length} members</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Shield className="h-4 w-4 text-green-600" />
-                    <span className="text-green-600 font-medium">End-to-end encrypted</span>
-                  </div>
-                </div>
-              </div>
+    <div className="space-y-2">
+      {localMembers.map((m) => (
+        <div key={m.id} className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 hover:border-slate-300 transition-colors">
+          <div className="flex items-center gap-3">
+            <Avatar initials={m.avatar} />
+            <div>
+              <p className="font-medium text-slate-800 text-sm">{m.name}</p>
+              <p className="text-xs text-slate-400">{m.email} · Joined {m.joinedAt}</p>
             </div>
-
-            {canManageMembers && (
-              <button
-                onClick={() => setShowInviteDialog(true)}
-                className="px-4 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-all flex items-center gap-2 shadow-sm hover:shadow-md"
-              >
-                <UserPlus className="h-4 w-4" />
-                Invite Members
-              </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <RoleBadge role={m.role} />
+            {isAdmin && m.role !== "Admin" && (
+              <>
+                <button
+                  onClick={() => cycleRole(m.id)}
+                  title="Change Role"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"
+                >
+                  <RefreshCw size={14} />
+                </button>
+                <button
+                  onClick={() => remove(m.id)}
+                  title="Remove Member"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <UserMinus size={14} />
+                </button>
+              </>
             )}
           </div>
         </div>
-      </div>
+      ))}
+    </div>
+  );
+}
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* ============================================================================
-              LEFT COLUMN: Members & File Exchange
-              ============================================================================ */}
-          <div className="space-y-6">
-            {/* MEMBERS PANEL */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                  <Users className="h-5 w-5 text-purple-600" />
-                  Group Members ({members.length})
-                </h3>
-              </div>
+// ─── Audit Log Tab ────────────────────────────────────────────────────────────
 
-              <div className="divide-y divide-gray-200">
-                {members.map((member) => (
-                  <div key={member.id} className="p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
-                        {member.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-gray-900 truncate">{member.name}</p>
-                          {member.id === currentUser.id && (
-                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                              You
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-600 truncate">{member.email}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span
-                            className={cn(
-                              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border",
-                              getRoleBadgeColor(member.role)
-                            )}
-                          >
-                            {getRoleIcon(member.role)}
-                            {member.role}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            • Active {formatTimeAgo(member.lastActive)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {canManageMembers && member.id !== currentUser.id && (
-                        <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
-                          <MoreVertical className="h-4 w-4 text-gray-600" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* FILE EXCHANGE PANEL */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2 mb-1">
-                  <Lock className="h-5 w-5 text-blue-600" />
-                  Secure File Exchange
-                </h3>
-                <p className="text-xs text-gray-600">
-                  Share encrypted files instantly with group members
-                </p>
-              </div>
-
-              <div className="p-4 border-b border-gray-200">
-                <button className="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  Send Encrypted File
-                </button>
-              </div>
-
-              <div className="divide-y divide-gray-200 max-h-64 overflow-y-auto">
-                {fileExchanges.map((exchange) => (
-                  <div key={exchange.id} className="p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
-                        <File className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 text-sm truncate">
-                          {exchange.fileName}
-                        </p>
-                        <p className="text-xs text-gray-600 mt-0.5">
-                          {exchange.sentBy} • {exchange.size}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {formatTimeAgo(exchange.sentAt)}
-                        </p>
-                      </div>
-                      <button className="p-1.5 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors">
-                        <Download className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+function AuditLogTab({ entries }: { entries: AuditEntry[] }) {
+  return (
+    <div className="space-y-2">
+      {entries.map((e) => (
+        <div key={e.id} className="flex items-start gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
+          <div className="mt-0.5">{severityIcon[e.severity]}</div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-slate-800">
+              <span className="font-semibold">{e.user}</span>{" "}
+              <span className="text-slate-500">{e.action}</span>{" "}
+              <span className="font-medium text-slate-700 truncate">"{e.target}"</span>
+            </p>
+            <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+              <Clock size={11} /> {e.timestamp}
+            </p>
           </div>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
+            e.severity === "critical"
+              ? "bg-red-50 text-red-600"
+              : e.severity === "warn"
+              ? "bg-amber-50 text-amber-600"
+              : "bg-emerald-50 text-emerald-600"
+          }`}>
+            {e.severity}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
-          {/* ============================================================================
-              CENTER & RIGHT COLUMNS: Shared Files & Activity Log
-              ============================================================================ */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* SHARED GROUP FOLDER AREA */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-green-600" />
-                  Shared Group Files
-                </h3>
-                <div className="flex gap-2">
-                  {canUploadFiles && (
-                    <>
-                      <button className="px-3 py-1.5 bg-purple-50 text-purple-700 font-medium rounded-lg hover:bg-purple-100 transition-colors flex items-center gap-2 text-sm">
-                        <FolderPlus className="h-4 w-4" />
-                        New Folder
-                      </button>
-                      <button className="px-3 py-1.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm">
-                        <Upload className="h-4 w-4" />
-                        Upload File
-                      </button>
-                    </>
-                  )}
-                  {canManageMembers && (
-                    <button
-                      onClick={() => setShowSecurityDialog(true)}
-                      className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <Settings className="h-4 w-4 text-gray-600" />
-                    </button>
-                  )}
-                </div>
-              </div>
+// ─── Group Detail View ────────────────────────────────────────────────────────
 
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Name
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Uploaded By
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Upload Date
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Downloads
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                        Last Accessed
-                      </th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {sharedFiles.map((file) => (
-                      <tr key={file.id} className="hover:bg-gray-50 transition-colors group">
-                        <td className="px-4 py-4">
-                          <div className="flex items-center gap-3">
-                            {file.type === "folder" ? (
-                              <div className="p-2 bg-amber-50 rounded-lg">
-                                <ChevronRight className="h-5 w-5 text-amber-600" />
-                              </div>
-                            ) : (
-                              <div className="p-2 bg-gray-50 rounded-lg">
-                                {getFileIcon(file.fileType)}
-                              </div>
-                            )}
-                            <div>
-                              <p className="font-medium text-gray-900">{file.name}</p>
-                              {file.size && (
-                                <p className="text-xs text-gray-500">{file.size}</p>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-600">{file.uploadedBy}</td>
-                        <td className="px-4 py-4 text-sm text-gray-600">
-                          {formatTimeAgo(file.uploadedAt)}
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                            <Download className="h-3.5 w-3.5" />
-                            {file.downloadCount}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-600">
-                          {file.lastAccessed ? formatTimeAgo(file.lastAccessed) : "Never"}
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              className="p-1.5 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
-                              title="Download"
-                            >
-                              <Download className="h-4 w-4" />
-                            </button>
-                            <button
-                              className="p-1.5 hover:bg-purple-50 text-purple-600 rounded-lg transition-colors"
-                              title="Share Link"
-                            >
-                              <Link2 className="h-4 w-4" />
-                            </button>
-                            {canManageMembers && (
-                              <button
-                                className="p-1.5 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+type Tab = "files" | "members" | "audit";
 
-            {/* SECURITY WARNING */}
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <Shield className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-semibold text-green-900 mb-1">
-                    Zero-Knowledge Encryption Active
-                  </p>
-                  <p className="text-green-700">
-                    All files remain end-to-end encrypted. SafeShare cannot decrypt shared data.
-                    Only group members with proper permissions can access files.
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            {/* ACTIVITY & AUDIT LOG */}
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="p-4 bg-gray-50 border-b border-gray-200">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-blue-600" />
-                  Activity & Audit Log
-                </h3>
-                <p className="text-xs text-gray-600 mt-1">
-                  Full accountability tracking for all group actions
-                </p>
-              </div>
+function GroupDetailView({ group, onBack }: { group: Group; onBack: () => void }) {
+  const [activeTab, setActiveTab] = useState<Tab>("files");
 
-              <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                {auditLog.map((entry) => (
-                  <div key={entry.id} className="p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-gray-50 rounded-lg flex-shrink-0 mt-0.5">
-                        {getActionIcon(entry.action)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-900">
-                          <span className="font-semibold">{entry.user}</span>{" "}
-                          <span className="text-gray-600">
-                            {entry.action.replace("_", " ")}
-                          </span>{" "}
-                          <span className="font-medium">{entry.target}</span>
-                        </p>
-                        {entry.details && (
-                          <p className="text-xs text-gray-600 mt-0.5">{entry.details}</p>
-                        )}
-                        <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
-                          <Clock className="h-3 w-3" />
-                          {formatTimeAgo(entry.timestamp)} •{" "}
-                          {entry.timestamp.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+  const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
+    { key: "files", label: "Files", icon: <FileText size={15} /> },
+    { key: "members", label: "Members", icon: <Users size={15} /> },
+    { key: "audit", label: "Audit Log", icon: <Activity size={15} /> },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
+      
+      {/* Standard App Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 mb-4 transition-colors"
+          >
+            <ArrowLeft size={16} /> Back to Groups
+          </button>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-2xl font-bold text-gray-900">{group.name}</h1>
+                <RoleBadge role={group.myRole} />
               </div>
+              <p className="text-sm text-gray-600">{group.description}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ============================================================================
-          INVITE MEMBERS DIALOG
-          ============================================================================ */}
-      {showInviteDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-              <div className="bg-gradient-to-br from-purple-500 to-indigo-600 px-6 py-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
-                      <UserPlus className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold text-white">Invite Member</h2>
-                      <p className="text-sm text-white/80">Add someone to this group</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowInviteDialog(false)}
-                    className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
-                  >
-                    <X className="h-5 w-5 text-white" />
-                  </button>
-                </div>
-              </div>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Quick Stats Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+            <div className={`p-3 rounded-lg bg-gradient-to-br ${group.color} text-white`}>
+              <Users size={20} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Members</p>
+              <p className="text-xl font-bold text-gray-900">{group.memberCount}</p>
+            </div>
+          </div>
+          
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+            <div className={`p-3 rounded-lg bg-gradient-to-br ${group.color} text-white`}>
+              <FileText size={20} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Shared Files</p>
+              <p className="text-xl font-bold text-gray-900">{group.files.length}</p>
+            </div>
+          </div>
 
-              <div className="p-6 space-y-4">
-                {/* User ID Field */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    User ID
-                  </label>
-                  <div className="relative">
-                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={inviteUserId}
-                      onChange={(e) => setInviteUserId(e.target.value)}
-                      placeholder="e.g. USR-84729"
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    Ask your colleague for their User ID from their profile settings.
-                  </p>
-                </div>
-
-                {/* Role Selection */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
-                  <div className="space-y-2">
-                    {(["Viewer", "Editor", "Co-Owner"] as UserRole[]).map((role) => (
-                      <label
-                        key={role}
-                        className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                      >
-                        <input
-                          type="radio"
-                          name="role"
-                          checked={inviteRole === role}
-                          onChange={() => setInviteRole(role)}
-                          className="text-purple-600"
-                        />
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900 flex items-center gap-2">
-                            {getRoleIcon(role)}
-                            {role}
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            {role === "Viewer" && "Can view and download files"}
-                            {role === "Editor" && "Can upload, edit, and download files"}
-                            {role === "Co-Owner" && "Full control including member management"}
-                          </p>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={() => setShowInviteDialog(false)}
-                    className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => setShowInviteDialog(false)}
-                    className="flex-1 px-4 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
-                  >
-                    Send Invite
-                  </button>
-                </div>
-              </div>
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+            <div className={`p-3 rounded-lg bg-gradient-to-br ${group.color} text-white`}>
+              <Crown size={20} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Your Role</p>
+              <p className="text-xl font-bold text-gray-900">{group.myRole}</p>
             </div>
           </div>
         </div>
+
+        {/* Tabs */}
+        <div className="flex gap-1 bg-gray-100/50 border border-gray-200 p-1 rounded-xl mb-6 w-fit">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                activeTab === t.key
+                  ? "bg-white text-indigo-600 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              {t.icon}
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          {activeTab === "files" && <FilesTab files={group.files} />}
+          {activeTab === "members" && <MembersTab members={group.members} myRole={group.myRole} />}
+          {activeTab === "audit" && <AuditLogTab entries={group.auditLog} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+// ─── Group Card ───────────────────────────────────────────────────────────────
+
+function GroupCard({ group, onOpen }: { group: Group; onOpen: () => void }) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
+      <div className={`h-2 bg-gradient-to-r ${group.color}`} />
+      <div className="p-5 flex-1 flex flex-col">
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <h3 className="font-semibold text-slate-900 text-base leading-tight">{group.name}</h3>
+            <p className="text-xs text-slate-400 mt-0.5">{group.description}</p>
+          </div>
+          <RoleBadge role={group.myRole} />
+        </div>
+        <div className="flex items-center gap-1.5 text-sm text-slate-500 mt-auto pt-3 border-t border-slate-100">
+          <Users size={14} />
+          <span>{group.memberCount} members</span>
+          <span className="mx-1 text-slate-300">·</span>
+          <FileText size={14} />
+          <span>{group.files.length} files</span>
+        </div>
+        <button
+          onClick={onOpen}
+          className="mt-3 w-full flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors"
+        >
+          Open Group <ChevronRight size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-semibold text-slate-900 text-lg">{title}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─── Hub / Main Screen ────────────────────────────────────────────────────────
+
+function GroupHub({ groups, onOpenGroup }: { groups: Group[]; onOpenGroup: (id: string) => void }) {
+  const [showCreate, setShowCreate] = useState(false);
+  const [showJoin, setShowJoin] = useState(false);
+  const atLimit = groups.length >= GROUP_LIMIT;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
+      {/* Standard App Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">Groups</h1>
+              <p className="text-sm text-gray-600">Manage your secure collaborative workspaces</p>
+            </div>
+
+            {/* Usage pill */}
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 shadow-sm">
+              <div className="flex gap-1">
+                {Array.from({ length: GROUP_LIMIT }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-2 h-2 rounded-full ${i < groups.length ? "bg-violet-500" : "bg-slate-200"}`}
+                  />
+                ))}
+              </div>
+              <span className="text-xs font-medium text-slate-600">
+                {groups.length} / {GROUP_LIMIT} Free Groups
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Upgrade banner */}
+        {atLimit && (
+          <div className="mb-6 bg-gradient-to-r from-violet-600 to-purple-700 rounded-2xl p-5 text-white flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                <Crown size={20} className="text-yellow-300" />
+              </div>
+              <div>
+                <p className="font-semibold">You've hit the free limit</p>
+                <p className="text-white/80 text-sm">Upgrade to Pro for unlimited groups, 50 GB storage, and advanced audit logs.</p>
+              </div>
+            </div>
+            <button className="flex-shrink-0 bg-white text-violet-700 text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-violet-50 transition-colors shadow-sm">
+              Upgrade →
+            </button>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-semibold text-gray-900 text-lg">Your Groups</h2>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowJoin(true)}
+              className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 px-4 py-2.5 rounded-lg transition-all shadow-sm"
+            >
+              <LogIn size={16} /> Join Group
+            </button>
+            <button
+              disabled={atLimit}
+              onClick={() => !atLimit && setShowCreate(true)}
+              title={atLimit ? "Upgrade to create more groups" : "Create a new group"}
+              className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg transition-all shadow-sm ${
+                atLimit
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                  : "bg-indigo-600 hover:bg-indigo-700 text-white"
+              }`}
+            >
+              <Plus size={16} /> Create Group
+            </button>
+          </div>
+        </div>
+
+        {/* Group grid - Expanded to match dashboard width */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {groups.map((g) => (
+            <GroupCard key={g.id} group={g} onOpen={() => onOpenGroup(g.id)} />
+          ))}
+        </div>
+
+        {groups.length === 0 && (
+          <div className="text-center py-20 text-gray-400 bg-white border border-gray-200 rounded-2xl shadow-sm mt-4">
+            <Folder size={48} className="mx-auto mb-4 text-gray-300" />
+            <p className="text-lg font-medium text-gray-900">No groups yet</p>
+            <p className="text-sm mt-1">Create or join a group to start collaborating securely.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Create Modal */}
+      {showCreate && (
+        <Modal title="Create a New Group" onClose={() => setShowCreate(false)}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Group Name</label>
+              <input
+                type="text"
+                placeholder="e.g. Marketing Team"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Description</label>
+              <textarea
+                placeholder="What does this group share?"
+                rows={3}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 resize-none"
+              />
+            </div>
+            <button className="w-full bg-slate-900 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm">
+              Create Group
+            </button>
+          </div>
+        </Modal>
       )}
 
-      {/* ============================================================================
-          SECURITY SETTINGS DIALOG
-          ============================================================================ */}
-      {showSecurityDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-              <div className="bg-gradient-to-br from-blue-500 to-cyan-600 px-6 py-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
-                      <Key className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-lg font-semibold text-white">
-                        Group Sharing Security
-                      </h2>
-                      <p className="text-sm text-white/80">Configure access controls</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowSecurityDialog(false)}
-                    className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
-                  >
-                    <X className="h-5 w-5 text-white" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-4">
-                {/* Link Expiry */}
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Timer className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">Link Expiry Time</p>
-                      <p className="text-sm text-gray-600">
-                        Shared links expire after this duration
-                      </p>
-                    </div>
-                  </div>
-                  <select
-                    value={securitySettings.linkExpiry || ""}
-                    onChange={(e) =>
-                      setSecuritySettings({
-                        ...securitySettings,
-                        linkExpiry: e.target.value ? Number(e.target.value) : undefined,
-                      })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">No expiry</option>
-                    <option value="1">1 hour</option>
-                    <option value="24">24 hours</option>
-                    <option value="168">7 days</option>
-                    <option value="720">30 days</option>
-                  </select>
-                </div>
-
-                {/* OTP Requirement */}
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={securitySettings.otpRequired}
-                      onChange={(e) =>
-                        setSecuritySettings({
-                          ...securitySettings,
-                          otpRequired: e.target.checked,
-                        })
-                      }
-                      className="mt-1"
-                    />
-                    <div className="flex items-start gap-3">
-                      <Hash className="h-5 w-5 text-purple-600 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium text-gray-900">Require OTP</p>
-                        <p className="text-sm text-gray-600">
-                          Recipients must verify email with one-time password
-                        </p>
-                      </div>
-                    </div>
-                  </label>
-                </div>
-
-                {/* Download Limit */}
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Download className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">Download Limit</p>
-                      <p className="text-sm text-gray-600">
-                        Maximum downloads per shared link
-                      </p>
-                    </div>
-                  </div>
-                  <select
-                    value={securitySettings.downloadLimit || ""}
-                    onChange={(e) =>
-                      setSecuritySettings({
-                        ...securitySettings,
-                        downloadLimit: e.target.value ? Number(e.target.value) : undefined,
-                      })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="">Unlimited</option>
-                    <option value="1">1 download</option>
-                    <option value="5">5 downloads</option>
-                    <option value="10">10 downloads</option>
-                    <option value="50">50 downloads</option>
-                  </select>
-                </div>
-
-                {/* Warning */}
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex gap-3">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0" />
-                    <p className="text-sm text-yellow-800">
-                      These settings apply to new shared links. Existing links retain their
-                      original settings.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={() => setShowSecurityDialog(false)}
-                    className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => setShowSecurityDialog(false)}
-                    className="flex-1 px-4 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Check className="h-4 w-4" />
-                    Save Settings
-                  </button>
-                </div>
-              </div>
+      {/* Join Modal */}
+      {showJoin && (
+        <Modal title="Join a Group" onClose={() => setShowJoin(false)}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">Invite Code</label>
+              <input
+                type="text"
+                placeholder="e.g. GRP-XXXX-XXXX"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-400 font-mono tracking-wider"
+              />
             </div>
+            <p className="text-xs text-slate-400">Ask your group admin for an invite code. Codes expire after 24 hours.</p>
+            <button className="w-full bg-sky-600 hover:bg-sky-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm">
+              Join Group
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
+}
+
+// ─── Root Component ───────────────────────────────────────────────────────────
+
+export   function GroupPage() {
+  const [groups] = useState<Group[]>(DUMMY_GROUPS);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+
+  const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
+
+  if (activeGroup) {
+    return <GroupDetailView group={activeGroup} onBack={() => setActiveGroupId(null)} />;
+  }
+
+  return <GroupHub groups={groups} onOpenGroup={setActiveGroupId} />;
 }

@@ -74,6 +74,27 @@ export function BackupPage() {
     setTimeout(() => setIsBackingUp(false), 3000);
   };
 
+  // --- UTILITY FOR BASE64 ---
+  const arrayBufferToBase64 = (buffer: ArrayBuffer | Uint8Array) => {
+    let binary = '';
+    // This safely handles both ArrayBuffer and Uint8Array!
+    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  };
+
+  const base64ToArrayBuffer = (base64: string) => {
+    const binaryString = atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  };
+
   // --- KEY ESCROW FUNCTIONS ---
   const handleKeyBackup = async () => {
     if (password !== confirmPassword) {
@@ -96,15 +117,15 @@ export function BackupPage() {
         { name: "AES-GCM", iv: iv as any }, aesKey, enc.encode(privateKey)
       );
 
-      const encryptedArray = Array.from(new Uint8Array(encryptedBuffer));
-      const payload = JSON.stringify({ salt: Array.from(salt), iv: Array.from(iv), data: encryptedArray });
-      const finalBlob = btoa(payload);
-
       const token = localStorage.getItem("token");
       const res = await fetch("http://localhost:8080/api/v1/backup/save", {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ encryptedPrivateKey: finalBlob })
+        body: JSON.stringify({ 
+          encryptedPrivateKey: arrayBufferToBase64(encryptedBuffer),
+          keySalt: arrayBufferToBase64(salt),
+          keyIv: arrayBufferToBase64(iv)
+        })
       });
 
       if (!res.ok) throw new Error(await res.text());
@@ -128,12 +149,15 @@ export function BackupPage() {
       });
 
       if (!res.ok) throw new Error(await res.text());
-      const { encryptedPrivateKey } = await res.json();
+      const { encryptedPrivateKey, keySalt, keyIv } = await res.json();
 
-      const { salt, iv, data } = JSON.parse(atob(encryptedPrivateKey));
-      const aesKey = await deriveKey(password, new Uint8Array(salt));
+      const saltBuffer = base64ToArrayBuffer(keySalt);
+      const ivBuffer = base64ToArrayBuffer(keyIv);
+      const dataBuffer = base64ToArrayBuffer(encryptedPrivateKey);
+
+      const aesKey = await deriveKey(password, new Uint8Array(saltBuffer));
       const decryptedBuffer = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: new Uint8Array(iv) as any }, aesKey, new Uint8Array(data) as any
+        { name: "AES-GCM", iv: new Uint8Array(ivBuffer) as any }, aesKey, new Uint8Array(dataBuffer) as any
       );
 
       const dec = new TextDecoder();
