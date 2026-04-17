@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-
+import { authFetch } from "@/lib/api";
 export interface FileItem {
   id: string;
   name: string;
@@ -52,15 +52,11 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
   };
 
-  const fetchFiles = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
+ const fetchFiles = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:8080/api/v1/files", {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      // Clean and simple using authFetch!
+      const response = await authFetch("http://localhost:8080/api/v1/files");
       
       if (response.ok) {
         const data = await response.json();
@@ -202,14 +198,10 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
 
   // --- NEW: THE MAGIC DELETE FUNCTION ---
   const permanentlyDelete = async (id: string) => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     try {
-      // Tell Spring Boot to physically destroy the file
-      const response = await fetch(`http://localhost:8080/api/v1/files/${id}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
+      // Tell Spring Boot to physically destroy the file using authFetch
+      const response = await authFetch(`http://localhost:8080/api/v1/files/${id}`, {
+        method: "DELETE"
       });
 
       if (response.ok) {

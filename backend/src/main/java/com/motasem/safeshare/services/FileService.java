@@ -3,17 +3,21 @@ package com.motasem.safeshare.services;
 import com.motasem.safeshare.controller.*;
 import com.motasem.safeshare.model.FileEntity;
 import com.motasem.safeshare.model.FileShare;
+import com.motasem.safeshare.model.GroupEntity;
 import com.motasem.safeshare.model.User;
 import com.motasem.safeshare.repository.FileRepository;
 import com.motasem.safeshare.repository.FileShareRepository;
 import com.motasem.safeshare.repository.UserRepository;
+import com.motasem.safeshare.repository.GroupRepository;
+import com.motasem.safeshare.repository.GroupMemberRepository;
+import com.motasem.safeshare.transaction.FileTransaction;
+import com.motasem.safeshare.repository.FileTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import com.motasem.safeshare.transaction.FileTransaction;
-import com.motasem.safeshare.repository.FileTransactionRepository;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,13 +39,16 @@ public class FileService {
     private final UserRepository userRepository;
     private final FileTransactionRepository fileTransactionRepository;
 
+    // --- NEW INJECTIONS FOR GROUP LOGIC ---
+    private final GroupRepository groupRepository;
+    private final GroupMemberRepository groupMemberRepository;
+    private final AuditService auditService;
+
     private final String UPLOAD_DIR = "uploads/";
 
-    // 1. UPDATED: Fetch ONLY active files for "My Folders"
+    // 1. Fetch ONLY active files for "My Folders"
     public List<FileResponse> getUserFiles(User owner) {
-        // Notice the new 'False' query here!
-        List<FileEntity> userFiles = fileRepository.findAllByOwnerAndIsDeletedFalse(owner);
-
+        List<FileEntity> userFiles = fileRepository.findAllByOwnerAndGroupIsNullAndIsDeletedFalse(owner);
         return userFiles.stream().map(file -> FileResponse.builder()
                 .id(file.getId())
                 .name(file.getOriginalName())
@@ -71,12 +78,14 @@ public class FileService {
         ).toList();
     }
 
+    // --- SMART UPLOAD LOGIC WITH GROUPS ---
+    @Transactional
     public FileEntity uploadSecureFile(
             MultipartFile encryptedBlob, String originalName, String fileType,
             Long sizeBytes, Boolean compressed, String encryptedFileKey,
-            String iv, User owner
-    ) throws IOException {
+            String iv, User currentUser, Integer groupId) throws IOException {
 
+        // 1. Save Physical File
         File directory = new File(UPLOAD_DIR);
         if (!directory.exists()) {
             directory.mkdirs();
@@ -86,6 +95,7 @@ public class FileService {
         Path filePath = Paths.get(UPLOAD_DIR + uniqueFileName);
         Files.write(filePath, encryptedBlob.getBytes());
 
+        // 2. Build Database Entity
         FileEntity fileEntity = FileEntity.builder()
                 .originalName(originalName)
                 .fileType(fileType)
@@ -95,8 +105,25 @@ public class FileService {
                 .encryptedFileKey(encryptedFileKey)
                 .iv(iv)
                 .filePath(filePath.toString())
-                .owner(owner)
+                .owner(currentUser)
+                .uploadedAt(LocalDateTime.now())
+                .isDeleted(false) // Assuming this is your soft-delete flag
                 .build();
+
+        // 3. NEW: Link the group if one was provided
+        if (groupId != null) {
+            GroupEntity group = groupRepository.findById(groupId)
+                    .orElseThrow(() -> new RuntimeException("Group not found"));
+
+            // Security Check: Ensure the user uploading is actually in this group!
+            groupMemberRepository.findByGroupAndUser(group, currentUser)
+                    .orElseThrow(() -> new RuntimeException("You are not a member of this group."));
+
+            fileEntity.setGroup(group);
+
+            // Log the upload to the group audit trail!
+            auditService.logEvent(group, currentUser.getFullName(), "Uploaded File", fileEntity.getOriginalName(), "info");
+        }
 
         return fileRepository.save(fileEntity);
     }
@@ -190,10 +217,8 @@ public class FileService {
         }
         return meta;
     }
+
     // --- TRASH BIN LOGIC ---
-
-
-    // NEW: Fetch ONLY trashed files for the "Trash Page"
     public List<FileResponse> getTrashedFiles(User owner) {
         List<FileEntity> trashedFiles = fileRepository.findAllByOwnerAndIsDeletedTrue(owner);
 
@@ -211,8 +236,6 @@ public class FileService {
         ).collect(Collectors.toList());
     }
 
-
-    // 1. Soft Delete (Move to Trash)
     public void moveToTrash(Integer fileId, User owner) {
         FileEntity file = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
@@ -226,7 +249,6 @@ public class FileService {
         fileRepository.save(file);
     }
 
-    // 2. Restore from Trash
     public void restoreFile(Integer fileId, User owner) {
         FileEntity file = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
@@ -240,7 +262,6 @@ public class FileService {
         fileRepository.save(file);
     }
 
-    // 3. Hard Delete (Permanent)
     public void permanentlyDelete(Integer fileId, User owner) {
         FileEntity file = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
@@ -249,16 +270,28 @@ public class FileService {
             throw new RuntimeException("Only the owner can delete this file.");
         }
 
-        // TODO: In a production environment, you would also delete the file from AWS S3 here!
+        try {
+            Path filePath = Paths.get(file.getFilePath());
+            Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            System.err.println("Failed to delete physical file: " + e.getMessage());
+        }
         fileRepository.delete(file);
     }
 
-    // 4. Empty Trash
     public void emptyTrash(User owner) {
         List<FileEntity> trashFiles = fileRepository.findAllByOwnerAndIsDeletedTrue(owner);
-        // TODO: Delete from S3 in a loop here
+        for (FileEntity file : trashFiles) {
+            try {
+                Path filePath = Paths.get(file.getFilePath());
+                Files.deleteIfExists(filePath);
+            } catch (IOException e) {
+                System.err.println("Failed to delete physical file: " + e.getMessage());
+            }
+        }
         fileRepository.deleteAll(trashFiles);
     }
+
     // --- MANAGE ACCESS LOGIC ---
     public List<ShareAccessResponse> getFileAccessList(Integer fileId, User owner) {
         FileEntity file = fileRepository.findById(fileId)
@@ -292,19 +325,17 @@ public class FileService {
         FileShare share = fileShareRepository.findByFile_IdAndSharedWith_Id(fileId, receiver.getId())
                 .orElseThrow(() -> new RuntimeException("Access record not found."));
 
-        // THE KILL SWITCH: Delete the permission record!
         fileShareRepository.delete(share);
     }
+
     // --- UPDATED SMART SHARE LOGIC ---
     public void shareFile(Integer fileId, ShareFileRequest request, User sender) {
         FileEntity file = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
 
-        // 1. Check Ownership & Permissions
         boolean isOwner = file.getOwner().getId().equals(sender.getId());
 
         if (!isOwner) {
-            // If they are not the owner, check if they have a share record with canReshare = true
             FileShare senderShareRecord = fileShareRepository.findByFile_IdAndSharedWith_Id(fileId, sender.getId())
                     .orElseThrow(() -> new RuntimeException("You do not have access to this file!"));
 
@@ -313,14 +344,12 @@ public class FileService {
             }
         }
 
-        // 2. Find Receiver
         User receiver = userRepository.findBySearchTag(request.getTargetSearchTag())
                 .orElseThrow(() -> new RuntimeException("Receiver not found"));
 
         var existingShare = fileShareRepository.findByFile_IdAndSharedWith_Id(fileId, receiver.getId());
         FileShare fileShare;
 
-        // 3. Update or Create Share Record
         if (existingShare.isPresent()) {
             fileShare = existingShare.get();
             fileShare.setMaxDownloads(request.getMaxDownloads());
@@ -340,7 +369,6 @@ public class FileService {
         }
         fileShareRepository.save(fileShare);
 
-        // 4. Create Transaction Receipts
         FileTransaction sentLog = new FileTransaction();
         sentLog.setFileId(file.getId().toString());
         sentLog.setFileName(file.getOriginalName());

@@ -6,7 +6,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback,AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
 // --- IMPORT THE AUTH CONTEXT ---
@@ -27,6 +27,7 @@ interface Notification {
 
 export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
   const navigate = useNavigate();
+  const [profileImg, setProfileImg] = useState<string | null>(localStorage.getItem("profileImage"));
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -53,7 +54,17 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
   const initials = getInitials(currentUser.name);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
-
+  useEffect(() => {
+    const handleImageUpdate = () => {
+      setProfileImg(localStorage.getItem("profileImage"));
+    };
+    
+    // Listen for the signal from ProfilePage
+    window.addEventListener("profileImageUpdated", handleImageUpdate);
+    
+    // Cleanup
+    return () => window.removeEventListener("profileImageUpdated", handleImageUpdate);
+  }, []);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) setShowNotifications(false);
@@ -95,7 +106,8 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
         <div className="relative" ref={profileRef}>
           <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted">
             <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">{initials}</AvatarFallback>
+              <AvatarImage src={profileImg || undefined} className="object-cover" />
+             <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">{initials}</AvatarFallback>
             </Avatar>
             <div className="hidden flex-col items-start lg:flex">
               <span className="text-sm font-medium text-foreground">{currentUser.name}</span>
@@ -109,8 +121,9 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
               <div className="border-b border-border p-4 bg-muted/30">
                 <div className="flex items-center gap-3 mb-4">
                   <Avatar className="h-12 w-12 ring-2 ring-primary/20">
-                    <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">{initials}</AvatarFallback>
-                  </Avatar>
+                  <AvatarImage src={profileImg || undefined} className="object-cover" />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">{initials}</AvatarFallback>
+                    </Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-foreground truncate">{currentUser.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>

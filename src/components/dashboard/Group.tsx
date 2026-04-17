@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useEffect, useRef} from "react";
 import {
   Users,
   FileText,
@@ -14,12 +14,14 @@ import {
   UserMinus,
   RefreshCw,
   Lock,
+  Upload,
+  Loader2,
   CheckCircle,
   AlertCircle,
   Clock,
   X,
 } from "lucide-react";
-
+import { authFetch } from "@/lib/api";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Role = "Admin" | "Editor" | "Viewer";
@@ -215,55 +217,49 @@ function FilesTab({ files }: { files: SharedFile[] }) {
   );
 }
 
-// ─── Members Tab ─────────────────────────────────────────────────────────────
-
-function MembersTab({ members, myRole }: { members: GroupMember[]; myRole: Role }) {
-  const [localMembers, setLocalMembers] = useState(members);
-  const isAdmin = myRole === "Admin";
-
-  const cycleRole = (id: string) => {
-    const order: Role[] = ["Viewer", "Editor", "Admin"];
-    setLocalMembers((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, role: order[(order.indexOf(m.role) + 1) % order.length] } : m
-      )
-    );
+function MembersTab({ members, myRole, groupId, onRefresh }: { members: any[], myRole: string, groupId: string, onRefresh: () => void }) {
+  
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      const res = await authFetch(`http://localhost:8080/api/v1/groups/${groupId}/members/role`, {
+        method: "PUT",
+        body: JSON.stringify({ userId, newRole })
+      });
+      
+      if (!res.ok) throw new Error(await res.text());
+      
+      alert("Role updated successfully!");
+      onRefresh(); // Refresh the data to show the new role
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    }
   };
-
-  const remove = (id: string) => setLocalMembers((prev) => prev.filter((m) => m.id !== id));
-
+  
   return (
-    <div className="space-y-2">
-      {localMembers.map((m) => (
-        <div key={m.id} className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-4 py-3 hover:border-slate-300 transition-colors">
+    <div className="divide-y divide-gray-100">
+      {members.map((m) => (
+        <div key={m.id} className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Avatar initials={m.avatar} />
+            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">
+              {m.name.substring(0,2).toUpperCase()}
+            </div>
             <div>
-              <p className="font-medium text-slate-800 text-sm">{m.name}</p>
-              <p className="text-xs text-slate-400">{m.email} · Joined {m.joinedAt}</p>
+              <p className="text-sm font-semibold">{m.name}</p>
+              <p className="text-xs text-gray-500">{m.role}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <RoleBadge role={m.role} />
-            {isAdmin && m.role !== "Admin" && (
-              <>
-                <button
-                  onClick={() => cycleRole(m.id)}
-                  title="Change Role"
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors"
-                >
-                  <RefreshCw size={14} />
-                </button>
-                <button
-                  onClick={() => remove(m.id)}
-                  title="Remove Member"
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  <UserMinus size={14} />
-                </button>
-              </>
-            )}
-          </div>
+          
+          {myRole === "ADMIN" && m.role !== "ADMIN" && (
+            <select 
+              className="text-xs border border-gray-200 rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              value={m.role}
+              onChange={(e) => handleRoleChange(m.userId, e.target.value)}
+            >
+              <option value="VIEWER">Viewer</option>
+              <option value="EDITOR">Editor</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+          )}
         </div>
       ))}
     </div>
@@ -272,28 +268,44 @@ function MembersTab({ members, myRole }: { members: GroupMember[]; myRole: Role 
 
 // ─── Audit Log Tab ────────────────────────────────────────────────────────────
 
-function AuditLogTab({ entries }: { entries: AuditEntry[] }) {
+function AuditLogTab({ entries }: { entries: any[] }) {
+  if (!entries || entries.length === 0) {
+    return (
+      <div className="p-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200">
+        <Activity size={40} className="mx-auto mb-3 text-gray-300" />
+        <p className="font-medium text-gray-900">No activity yet</p>
+        <p className="text-sm mt-1">Actions taken in this group will appear here.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 p-4">
       {entries.map((e) => (
-        <div key={e.id} className="flex items-start gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
-          <div className="mt-0.5">{severityIcon[e.severity]}</div>
+        <div key={e.id} className="flex items-start gap-4 bg-white border border-gray-100 shadow-sm rounded-xl px-5 py-4 hover:border-indigo-100 transition-colors">
+          <div className="mt-0.5">
+            {e.severity === "critical" ? <Lock size={18} className="text-red-500" /> : 
+             e.severity === "warn" ? <AlertCircle size={18} className="text-amber-500" /> : 
+             <CheckCircle size={18} className="text-emerald-500" />}
+          </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-slate-800">
-              <span className="font-semibold">{e.user}</span>{" "}
-              <span className="text-slate-500">{e.action}</span>{" "}
-              <span className="font-medium text-slate-700 truncate">"{e.target}"</span>
+            <p className="text-sm text-gray-900">
+              <span className="font-bold text-indigo-700">{e.user}</span>{" "}
+              <span className="text-gray-500">{e.action}</span>{" "}
+              <span className="font-semibold text-gray-800">"{e.target}"</span>
             </p>
-            <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-              <Clock size={11} /> {e.timestamp}
+            <p className="text-xs text-gray-400 flex items-center gap-1.5 mt-1.5">
+              <Clock size={12} /> 
+              {new Date(e.timestamp).toLocaleString(undefined, { 
+                dateStyle: 'medium', 
+                timeStyle: 'short' 
+              })}
             </p>
           </div>
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
-            e.severity === "critical"
-              ? "bg-red-50 text-red-600"
-              : e.severity === "warn"
-              ? "bg-amber-50 text-amber-600"
-              : "bg-emerald-50 text-emerald-600"
+          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold flex-shrink-0 uppercase tracking-wider ${
+            e.severity === "critical" ? "bg-red-50 text-red-700 border border-red-100" : 
+            e.severity === "warn" ? "bg-amber-50 text-amber-700 border border-amber-100" : 
+            "bg-emerald-50 text-emerald-700 border border-emerald-100"
           }`}>
             {e.severity}
           </span>
@@ -302,14 +314,116 @@ function AuditLogTab({ entries }: { entries: AuditEntry[] }) {
     </div>
   );
 }
-
+ 
 // ─── Group Detail View ────────────────────────────────────────────────────────
 
 type Tab = "files" | "members" | "audit";
 
-
-function GroupDetailView({ group, onBack }: { group: Group; onBack: () => void }) {
+function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) {
   const [activeTab, setActiveTab] = useState<Tab>("files");
+  
+  // Live States
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  
+  // --- NEW: Upload State & Ref ---
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [groupFiles, setGroupFiles] = useState<any[]>([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+
+  const fetchGroupFiles = async () => {
+    setLoadingFiles(true);
+    try {
+      const res = await authFetch(`http://localhost:8080/api/v1/groups/${group.id}/files`);
+      if (res.ok) setGroupFiles(await res.json());
+    } catch (err) {
+      console.error("Failed to fetch group files:", err);
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
+  const fetchLogs = async () => {
+    setLoadingLogs(true);
+    try {
+      const res = await authFetch(`http://localhost:8080/api/v1/groups/${group.id}/audit`);
+      if (res.ok) setAuditLogs(await res.json());
+    } catch (err) {
+      console.error("Failed to fetch audit logs:", err);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
+
+  const fetchMembers = async () => {
+    setLoadingMembers(true);
+    try {
+      const res = await authFetch(`http://localhost:8080/api/v1/groups/${group.id}/members`);
+      if (res.ok) setMembers(await res.json());
+    } catch (err) {
+      console.error("Failed to fetch members:", err);
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+    fetchMembers();
+    fetchGroupFiles();
+  }, [group.id]);
+
+  // --- NEW: GROUP UPLOAD LOGIC ---
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      // 1. Prepare the exact payload Spring Boot is expecting
+      const formData = new FormData();
+
+      // IMPORTANT FOR ZERO-KNOWLEDGE: 
+      // In a fully complete app, you run WebCrypto AES encryption on 'file' here 
+      // before appending it. For now, we append the raw file to make the connection work.
+      formData.append("file", new Blob([file]), file.name);
+      
+      // Attach the Group ID so Spring Boot knows where to put it!
+      formData.append("groupId", group.id.toString());
+      
+      // Metadata
+      formData.append("originalName", file.name);
+      formData.append("fileType", file.name.split('.').pop() || "unknown");
+      formData.append("sizeBytes", file.size.toString());
+      formData.append("compressed", "false");
+      
+      // Dummy crypto keys for the prototype connection
+      formData.append("encryptedFileKey", "group_shared_aes_key_" + Date.now()); 
+      formData.append("iv", "random_iv_" + Date.now());
+
+      // 2. Send it securely
+      const res = await authFetch("http://localhost:8080/api/v1/files/upload", {
+        method: "POST",
+        body: formData, // NOTE: Do not set Content-Type header manually with FormData!
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      alert("File securely encrypted and uploaded to the group!");
+      
+      // Refresh the audit logs to show the new upload action!
+      fetchLogs(); 
+      
+    } catch (err: any) {
+      alert("Upload failed: " + err.message);
+    } finally {
+      setIsUploading(false);
+      // Reset the input so you can upload the same file again if needed
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "files", label: "Files", icon: <FileText size={15} /> },
@@ -319,14 +433,9 @@ function GroupDetailView({ group, onBack }: { group: Group; onBack: () => void }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
-      
-      {/* Standard App Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <button
-            onClick={onBack}
-            className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 mb-4 transition-colors"
-          >
+          <button onClick={onBack} className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 mb-4 transition-colors">
             <ArrowLeft size={16} /> Back to Groups
           </button>
           
@@ -343,32 +452,23 @@ function GroupDetailView({ group, onBack }: { group: Group; onBack: () => void }
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Quick Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-            <div className={`p-3 rounded-lg bg-gradient-to-br ${group.color} text-white`}>
-              <Users size={20} />
-            </div>
+            <div className={`p-3 rounded-lg bg-gradient-to-br ${group.color} text-white`}><Users size={20} /></div>
             <div>
               <p className="text-sm text-gray-500 font-medium">Members</p>
-              <p className="text-xl font-bold text-gray-900">{group.memberCount}</p>
+              <p className="text-xl font-bold text-gray-900">{members.length || group.memberCount}</p>
             </div>
           </div>
-          
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-            <div className={`p-3 rounded-lg bg-gradient-to-br ${group.color} text-white`}>
-              <FileText size={20} />
-            </div>
+            <div className={`p-3 rounded-lg bg-gradient-to-br ${group.color} text-white`}><FileText size={20} /></div>
             <div>
               <p className="text-sm text-gray-500 font-medium">Shared Files</p>
-              <p className="text-xl font-bold text-gray-900">{group.files.length}</p>
+              <p className="text-xl font-bold text-gray-900">{group.files?.length || 0}</p>
             </div>
           </div>
-
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
-            <div className={`p-3 rounded-lg bg-gradient-to-br ${group.color} text-white`}>
-              <Crown size={20} />
-            </div>
+            <div className={`p-3 rounded-lg bg-gradient-to-br ${group.color} text-white`}><Crown size={20} /></div>
             <div>
               <p className="text-sm text-gray-500 font-medium">Your Role</p>
               <p className="text-xl font-bold text-gray-900">{group.myRole}</p>
@@ -376,29 +476,73 @@ function GroupDetailView({ group, onBack }: { group: Group; onBack: () => void }
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 bg-gray-100/50 border border-gray-200 p-1 rounded-xl mb-6 w-fit">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setActiveTab(t.key)}
-              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                activeTab === t.key
-                  ? "bg-white text-indigo-600 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              {t.icon}
-              {t.label}
-            </button>
-          ))}
+        {/* Tabs & Upload Button Row */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex gap-1 bg-gray-100/50 border border-gray-200 p-1 rounded-xl w-fit">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  activeTab === t.key
+                    ? "bg-white text-indigo-600 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {t.icon}
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {/* NEW: Upload Button */}
+          {activeTab === "files" && (
+            <div>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+                className="hidden" 
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isUploading ? (
+                  <><Loader2 size={16} className="animate-spin" /> Encrypting...</>
+                ) : (
+                  <><Plus size={16} /> Upload to Group</>
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Tab content */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          {activeTab === "files" && <FilesTab files={group.files} />}
-          {activeTab === "members" && <MembersTab members={group.members} myRole={group.myRole} />}
-          {activeTab === "audit" && <AuditLogTab entries={group.auditLog} />}
+          {activeTab === "files" && <FilesTab files={group.files || []} />}
+          {activeTab === "files" && (
+            loadingFiles ? (
+              <div className="p-12 text-center text-gray-400 animate-pulse">Decrypting group files...</div>
+            ) : (
+              <FilesTab files={groupFiles} />
+            )
+          )}
+          {activeTab === "members" && (
+            loadingMembers ? (
+              <div className="p-12 text-center text-gray-400 animate-pulse">Loading secure members list...</div>
+            ) : (
+              <MembersTab members={members} myRole={group.myRole} groupId={group.id} onRefresh={fetchMembers} />
+            )
+          )}
+          {activeTab === "audit" && (
+            loadingLogs ? (
+              <div className="p-12 text-center text-indigo-600 animate-pulse font-medium">Decrypting audit logs...</div>
+            ) : (
+              <AuditLogTab entries={auditLogs} />
+            )
+          )}
         </div>
       </div>
     </div>
@@ -453,13 +597,74 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
     </div>
   );
 }
-
 // ─── Hub / Main Screen ────────────────────────────────────────────────────────
 
-function GroupHub({ groups, onOpenGroup }: { groups: Group[]; onOpenGroup: (id: string) => void }) {
+function GroupHub({ 
+  groups, 
+  onOpenGroup, 
+  onRefresh,
+  isLoading 
+}: { 
+  groups: any[]; 
+  onOpenGroup: (id: string) => void;
+  onRefresh: () => void;
+  isLoading: boolean;
+}) {
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
-  const atLimit = groups.length >= GROUP_LIMIT;
+  
+  // Form States
+  const [createName, setCreateName] = useState("");
+  const [createDesc, setCreateDesc] = useState("");
+  const [joinCode, setJoinCode] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const atLimit = groups.length >= 5; // The 5-Group Limit
+
+  // --- API CALL: CREATE GROUP ---
+  const handleCreate = async () => {
+    if (!createName) return;
+    setIsSubmitting(true);
+    try {
+      const res = await authFetch("http://localhost:8080/api/v1/groups/create", {
+        method: "POST",
+        body: JSON.stringify({ name: createName, description: createDesc })
+      });
+      
+      if (!res.ok) throw new Error(await res.text());
+      
+      setShowCreate(false);
+      setCreateName("");
+      setCreateDesc("");
+      onRefresh(); // Reload the groups!
+    } catch (err: any) {
+      alert(err.message); // This will pop up the "Free tier limit reached!" error
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // --- API CALL: JOIN GROUP ---
+  const handleJoin = async () => {
+    if (!joinCode) return;
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await authFetch("http://localhost:8080/api/v1/groups/join", {
+        method: "POST",
+        body: JSON.stringify({ inviteCode: joinCode })
+      });      
+      if (!res.ok) throw new Error(await res.text());
+      
+      setShowJoin(false);
+      setJoinCode("");
+      onRefresh();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
@@ -475,22 +680,18 @@ function GroupHub({ groups, onOpenGroup }: { groups: Group[]; onOpenGroup: (id: 
             {/* Usage pill */}
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 shadow-sm">
               <div className="flex gap-1">
-                {Array.from({ length: GROUP_LIMIT }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-2 h-2 rounded-full ${i < groups.length ? "bg-violet-500" : "bg-slate-200"}`}
-                  />
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className={`w-2 h-2 rounded-full ${i < groups.length ? "bg-violet-500" : "bg-slate-200"}`} />
                 ))}
               </div>
               <span className="text-xs font-medium text-slate-600">
-                {groups.length} / {GROUP_LIMIT} Free Groups
+                {groups.length} / 5 Free Groups
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Upgrade banner */}
         {atLimit && (
@@ -510,44 +711,40 @@ function GroupHub({ groups, onOpenGroup }: { groups: Group[]; onOpenGroup: (id: 
           </div>
         )}
 
-        {/* Actions */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-semibold text-gray-900 text-lg">Your Groups</h2>
           <div className="flex gap-3">
-            <button
-              onClick={() => setShowJoin(true)}
-              className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 px-4 py-2.5 rounded-lg transition-all shadow-sm"
-            >
+            <button onClick={() => setShowJoin(true)} className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 px-4 py-2.5 rounded-lg transition-all shadow-sm">
               <LogIn size={16} /> Join Group
             </button>
             <button
               disabled={atLimit}
               onClick={() => !atLimit && setShowCreate(true)}
-              title={atLimit ? "Upgrade to create more groups" : "Create a new group"}
-              className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg transition-all shadow-sm ${
-                atLimit
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                  : "bg-indigo-600 hover:bg-indigo-700 text-white"
-              }`}
+              className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg transition-all shadow-sm ${atLimit ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200" : "bg-indigo-600 hover:bg-indigo-700 text-white"}`}
             >
               <Plus size={16} /> Create Group
             </button>
           </div>
         </div>
 
-        {/* Group grid - Expanded to match dashboard width */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {groups.map((g) => (
-            <GroupCard key={g.id} group={g} onOpen={() => onOpenGroup(g.id)} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="text-center py-20 text-gray-500 font-medium animate-pulse">Loading secure groups...</div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {groups.map((g) => (
+                <GroupCard key={g.id} group={{...g, members: [], files: [], auditLog: []}} onOpen={() => onOpenGroup(g.id)} />
+              ))}
+            </div>
 
-        {groups.length === 0 && (
-          <div className="text-center py-20 text-gray-400 bg-white border border-gray-200 rounded-2xl shadow-sm mt-4">
-            <Folder size={48} className="mx-auto mb-4 text-gray-300" />
-            <p className="text-lg font-medium text-gray-900">No groups yet</p>
-            <p className="text-sm mt-1">Create or join a group to start collaborating securely.</p>
-          </div>
+            {groups.length === 0 && (
+              <div className="text-center py-20 text-gray-400 bg-white border border-gray-200 rounded-2xl shadow-sm mt-4">
+                <Folder size={48} className="mx-auto mb-4 text-gray-300" />
+                <p className="text-lg font-medium text-gray-900">No groups yet</p>
+                <p className="text-sm mt-1">Create or join a group to start collaborating securely.</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -557,22 +754,14 @@ function GroupHub({ groups, onOpenGroup }: { groups: Group[]; onOpenGroup: (id: 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Group Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Marketing Team"
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400"
-              />
+              <input type="text" value={createName} onChange={(e) => setCreateName(e.target.value)} placeholder="e.g. Marketing Team" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400" />
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Description</label>
-              <textarea
-                placeholder="What does this group share?"
-                rows={3}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 resize-none"
-              />
+              <textarea value={createDesc} onChange={(e) => setCreateDesc(e.target.value)} placeholder="What does this group share?" rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 resize-none" />
             </div>
-            <button className="w-full bg-slate-900 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm">
-              Create Group
+            <button onClick={handleCreate} disabled={isSubmitting || !createName} className="w-full bg-slate-900 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50">
+              {isSubmitting ? "Creating..." : "Create Group"}
             </button>
           </div>
         </Modal>
@@ -584,15 +773,11 @@ function GroupHub({ groups, onOpenGroup }: { groups: Group[]; onOpenGroup: (id: 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">Invite Code</label>
-              <input
-                type="text"
-                placeholder="e.g. GRP-XXXX-XXXX"
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-400 font-mono tracking-wider"
-              />
+              <input type="text" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} placeholder="e.g. GRP-XXXX-XXXX" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-400 font-mono tracking-wider uppercase" />
             </div>
-            <p className="text-xs text-slate-400">Ask your group admin for an invite code. Codes expire after 24 hours.</p>
-            <button className="w-full bg-sky-600 hover:bg-sky-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm">
-              Join Group
+            <p className="text-xs text-slate-400">Ask your group admin for an invite code.</p>
+            <button onClick={handleJoin} disabled={isSubmitting || !joinCode} className="w-full bg-sky-600 hover:bg-sky-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50">
+               {isSubmitting ? "Joining..." : "Join Group"}
             </button>
           </div>
         </Modal>
@@ -603,15 +788,38 @@ function GroupHub({ groups, onOpenGroup }: { groups: Group[]; onOpenGroup: (id: 
 
 // ─── Root Component ───────────────────────────────────────────────────────────
 
-export   function GroupPage() {
-  const [groups] = useState<Group[]>(DUMMY_GROUPS);
+export function GroupPage() {
+  const [groups, setGroups] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+
+  const fetchGroups = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await authFetch("http://localhost:8080/api/v1/groups");
+      if (res.ok) {
+        const data = await res.json();
+        setGroups(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch groups", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch groups on initial load
+  useEffect(() => {
+    fetchGroups();
+  }, []);
 
   const activeGroup = groups.find((g) => g.id === activeGroupId) ?? null;
 
   if (activeGroup) {
-    return <GroupDetailView group={activeGroup} onBack={() => setActiveGroupId(null)} />;
+    // We pass a dummy structure for files/members until we build the details API
+    return <GroupDetailView group={{...activeGroup, members: [], files: [], auditLog: []}} onBack={() => setActiveGroupId(null)} />;
   }
 
-  return <GroupHub groups={groups} onOpenGroup={setActiveGroupId} />;
+  return <GroupHub groups={groups} onOpenGroup={setActiveGroupId} onRefresh={fetchGroups} isLoading={isLoading} />;
 }

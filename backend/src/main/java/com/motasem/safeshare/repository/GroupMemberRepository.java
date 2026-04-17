@@ -9,7 +9,13 @@ import java.util.List;
 import java.util.Optional;
 
 public interface GroupMemberRepository extends JpaRepository<GroupMember, Integer> {
-    List<GroupMember> findAllByUser(User user); // For the "Group Hub" list
-    long countByGroup(GroupEntity group); // Used to check the 10-member limit
+
     Optional<GroupMember> findByGroupAndUser(GroupEntity group, User user);
+
+    long countByGroup(GroupEntity group);
+
+    List<GroupMember> findAllByUser(User user);
+
+    // Add this exact line to fix your error:
+    List<GroupMember> findAllByGroup(GroupEntity group);
 }

@@ -44,8 +44,11 @@ public class FileEntity {
 
     @Column(nullable = false)
     private String filePath; // The path where we save the scrambled bytes on the server's hard drive
+    
+    @ManyToOne
+    @JoinColumn(name = "group_id")
+    private GroupEntity group; // If null, it's a private file. If set, it's a group file.
 
-    // --- RELATIONSHIPS ---
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 

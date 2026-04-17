@@ -42,7 +42,8 @@ public class User implements UserDetails {
     private String otpCode;
     @Column(name = "otp_expiry")
     private LocalDateTime otpExpiry;
-
+    @Column(columnDefinition = "TEXT")
+    private String profileImage;
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { useFolders, FileItem } from "@/components/dashboard/FoldersContext";
 import { CreateFolderDialog } from "@/components/dashboard/Createfolderdialog";
 import { UploadFileDialog } from "@/components/dashboard/UploadFileDialog";
-
+import { authFetch } from "@/lib/api";
 // --- IMPORT YOUR EXISTING ENCRYPTION MATH ---
 import { decryptKeyWithRSA, decryptFile, encryptKeyWithRSA } from "@/lib/encryption";
 
@@ -31,7 +31,20 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
   const [maxViews, setMaxViews] = useState<string>(""); 
   const [maxDownloads, setMaxDownloads] = useState<string>("");
   const [canReshare, setCanReshare] = useState(false);
-
+  const handleShareToGroup = async (fileId: string, groupId: string) => {
+  // Logic: 
+  // 1. Fetch the file metadata.
+  // 2. Re-encrypt the file key for the group (or simply move the record if using a shared group key).
+  // 3. Call the backend to update the file's groupId.
+  try {
+    await authFetch(`http://localhost:8080/api/v1/files/${fileId}/share-to-group/${groupId}`, {
+      method: "POST"
+    });
+    alert("File shared with group successfully!");
+  } catch (err) {
+    console.error(err);
+  }
+};
   const handleShareSubmit = async () => {
     // Basic validation to ensure the tag starts with @
     const formattedTag = searchTag.startsWith("@") ? searchTag : `@${searchTag}`;

@@ -10,7 +10,7 @@ import {
 import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
 import { QuickCreateButtons } from "@/components/dashboard/QuickCreateButtons";
 import { Progress } from "@/components/ui/progress";
-
+import { authFetch } from "@/lib/api";
 // --- TYPES ---
 interface DashboardStats {
   totalFiles: number;
@@ -37,12 +37,7 @@ export default function DashboardHome() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("Authentication token missing");
-
-        const response = await fetch("http://localhost:8080/api/v1/files/stats", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await authFetch("http://localhost:8080/api/v1/files/stats");
 
         if (!response.ok) throw new Error("Failed to load dashboard statistics");
 

@@ -1,139 +1,84 @@
-import { FileText, Folder, Image, Eye, Download, Share2 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-interface Activity {
-  id: string;
-  user: {
-    name: string;
-    avatar?: string;
-    initials: string;
-  };
-  action: "opened" | "created" | "shared" | "downloaded" | "deleted";
-  target: {
-    type: "file" | "folder" | "image";
-    name: string;
-  };
-  timestamp: string;
-}
-
-const recentActivities: Activity[] = [
-  {
-    id: "1",
-    user: { name: "Sarah Chen", initials: "SC", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face" },
-    action: "opened",
-    target: { type: "file", name: "Q4 Report.pdf" },
-    timestamp: "2 min ago",
-  },
-  {
-    id: "2",
-    user: { name: "Hassan Dajah", initials: "MJ" },
-    action: "created",
-    target: { type: "folder", name: "Marketing Assets" },
-    timestamp: "15 min ago",
-  },
-  {
-    id: "3",
-    user: { name: "Emily Davis", initials: "ED", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" },
-    action: "shared",
-    target: { type: "image", name: "Brand Logo.png" },
-    timestamp: "1 hour ago",
-  },
-  {
-    id: "4",
-    user: { name: "Alex Turner", initials: "AT" },
-    action: "downloaded",
-    target: { type: "file", name: "Invoice_2024.xlsx" },
-    timestamp: "2 hours ago",
-  },
-  {
-    id: "5",
-    user: { name: "Lisa Wang", initials: "LW", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop&crop=face" },
-    action: "opened",
-    target: { type: "folder", name: "Design System" },
-    timestamp: "3 hours ago",
-  },
-];
-
-const getFileIcon = (type: string) => {
-  switch (type) {
-    case "folder":
-      return <Folder className="h-4 w-4 text-warning" />;
-    case "image":
-      return <Image className="h-4 w-4 text-info" />;
-    default:
-      return <FileText className="h-4 w-4 text-primary" />;
-  }
-};
-
-const getActionIcon = (action: string) => {
-  switch (action) {
-    case "opened":
-      return <Eye className="h-3 w-3" />;
-    case "downloaded":
-      return <Download className="h-3 w-3" />;
-    case "shared":
-      return <Share2 className="h-3 w-3" />;
-    default:
-      return null;
-  }
-};
-
-const getActionColor = (action: string) => {
-  switch (action) {
-    case "created":
-      return "text-activity-create";
-    case "opened":
-      return "text-activity-view";
-    case "shared":
-      return "text-activity-edit";
-    case "downloaded":
-      return "text-info";
-    case "deleted":
-      return "text-activity-delete";
-    default:
-      return "text-muted-foreground";
-  }
-};
+import { useState, useEffect } from "react";
+import { FileText, Folder, Share2, Download, Eye, Activity } from "lucide-react";
+import { authFetch } from "@/lib/api";
 
 export function RecentActivityFeed() {
-  return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-card">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-card-foreground">Recent Activity</h3>
-        <button className="text-sm font-medium text-primary hover:underline"> </button>
+  const [activities, setActivities] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchActivity = async () => {
+      try {
+        const res = await authFetch("http://localhost:8080/api/v1/activity/recent");
+        if (res.ok) {
+          setActivities(await res.json());
+        }
+      } catch (error) {
+        console.error("Failed to fetch recent activity", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchActivity();
+  }, []);
+
+  // Helper to pick the right icon based on the target name
+  const getIcon = (target: string) => {
+    if (target.toLowerCase().includes("group")) return <Folder size={14} className="text-amber-500" />;
+    return <FileText size={14} className="text-emerald-500" />;
+  };
+
+  // Helper to color-code the action words
+  const getActionColor = (action: string) => {
+    switch (action) {
+      case "created": return "text-emerald-500";
+      case "shared": return "text-blue-500";
+      case "downloaded": return "text-sky-500";
+      case "opened": return "text-teal-500";
+      case "joined": return "text-indigo-500";
+      default: return "text-gray-500";
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-6 text-center text-gray-400 animate-pulse">Loading live activity...</div>;
+  }
+
+  if (activities.length === 0) {
+    return (
+      <div className="p-8 text-center text-gray-400 flex flex-col items-center">
+        <Activity size={32} className="mb-2 text-gray-300" />
+        <p className="text-sm">No recent activity found.</p>
+        <p className="text-xs mt-1">Create groups and files to see activity here!</p>
       </div>
+    );
+  }
 
-      <div className="space-y-4">
-        {recentActivities.map((activity, index) => (
-          <div
-            key={activity.id}
-            className="animate-fade-in flex items-start gap-3"
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <Avatar className="h-9 w-9">
-              <AvatarImage src={activity.user.avatar} alt={activity.user.name} />
-              <AvatarFallback className="bg-muted text-xs font-medium text-muted-foreground">
-                {activity.user.initials}
-              </AvatarFallback>
-            </Avatar>
-
-            <div className="flex-1 min-w-0">
-              <p className="text-sm">
-                <span className="font-medium text-foreground">{activity.user.name}</span>
-                <span className={`mx-1.5 ${getActionColor(activity.action)}`}>
-                  {activity.action}
-                </span>
+  return (
+    <div className="space-y-4">
+      {activities.map((activity) => (
+        <div key={activity.id} className="flex items-start justify-between group">
+          <div className="flex items-start gap-3">
+            {/* Generate a quick avatar based on the user's initials */}
+            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 flex-shrink-0">
+              {activity.user.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
+            </div>
+            
+            <div>
+              <p className="text-sm text-gray-900">
+                <span className="font-semibold">{activity.user}</span>{" "}
+                <span className={getActionColor(activity.action)}>{activity.action}</span>
               </p>
-              <div className="mt-0.5 flex items-center gap-1.5">
-                {getFileIcon(activity.target.type)}
-                <span className="truncate text-sm text-muted-foreground">{activity.target.name}</span>
+              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-500">
+                {getIcon(activity.target)}
+                <span>{activity.target}</span>
               </div>
             </div>
-
-            <span className="flex-shrink-0 text-xs text-muted-foreground">{activity.timestamp}</span>
           </div>
-        ))}
-      </div>
+          <span className="text-xs text-gray-400 whitespace-nowrap">{activity.timeAgo}</span>
+        </div>
+      ))}
     </div>
   );
 }

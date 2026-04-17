@@ -22,9 +22,11 @@ public class FileController {
 
     private final FileService fileService;
 
+
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(
             @RequestParam("file") MultipartFile encryptedBlob,
+            @RequestParam(value = "groupId", required = false) Integer groupId, // NEW: Optional Group ID
             @RequestParam("originalName") String originalName,
             @RequestParam("fileType") String fileType,
             @RequestParam("sizeBytes") Long sizeBytes,
@@ -34,9 +36,10 @@ public class FileController {
             @AuthenticationPrincipal User currentUser
     ) {
         try {
+            // PASS THE groupId HERE!
             fileService.uploadSecureFile(
                     encryptedBlob, originalName, fileType, sizeBytes,
-                    compressed, encryptedFileKey, iv, currentUser
+                    compressed, encryptedFileKey, iv, currentUser, groupId
             );
             return ResponseEntity.ok("File uploaded and secured successfully!");
         } catch (Exception e) {
