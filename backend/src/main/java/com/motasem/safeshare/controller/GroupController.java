@@ -1,14 +1,25 @@
 package com.motasem.safeshare.controller;
 
 import com.motasem.safeshare.model.GroupEntity;
+import com.motasem.safeshare.model.GroupMember;
+import com.motasem.safeshare.model.GroupRole;
 import com.motasem.safeshare.model.User;
 import com.motasem.safeshare.services.GroupService;
+import com.motasem.safeshare.services.AuditService;
+import com.motasem.safeshare.repository.GroupRepository;
+import com.motasem.safeshare.repository.GroupMemberRepository;
+import com.motasem.safeshare.repository.AuditLogRepository;
+import com.motasem.safeshare.repository.UserRepository;
+import com.motasem.safeshare.repository.FileRepository;
+import jakarta.transaction.Transactional;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import com.motasem.safeshare.repository.GroupRepository;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/groups")
@@ -16,26 +27,24 @@ import com.motasem.safeshare.repository.GroupRepository;
 public class GroupController {
 
     private final GroupService groupService;
-    private final com.motasem.safeshare.repository.FileRepository fileRepository;
-    // You will need to import com.motasem.safeshare.repository.GroupRepository
-    private final com.motasem.safeshare.repository.AuditLogRepository auditLogRepository;
-    private final com.motasem.safeshare.repository.GroupRepository groupRepository;
-    private final com.motasem.safeshare.repository.GroupMemberRepository groupMemberRepository;
+    private final AuditService auditService;
+    private final AuditLogRepository auditLogRepository;
+    private final GroupRepository groupRepository;
+    private final GroupMemberRepository groupMemberRepository;
+    private final UserRepository userRepository;
+    private final FileRepository fileRepository;
+
     @GetMapping("/{groupId}/audit")
     public ResponseEntity<?> getGroupAuditLogs(
             @PathVariable Integer groupId,
             @AuthenticationPrincipal User currentUser) {
         try {
-            // 1. Verify the group exists
             var group = groupRepository.findById(groupId)
                     .orElseThrow(() -> new RuntimeException("Group not found"));
 
-            // 2. Security Check: In a real app, verify `currentUser` is actually in this group here!
-
-            // 3. Fetch and format the logs for React
             var logs = auditLogRepository.findAllByGroupIdOrderByTimestampDesc(groupId);
 
-            var responseList = logs.stream().map(log -> java.util.Map.of(
+            var responseList = logs.stream().map(log -> Map.of(
                     "id", log.getId().toString(),
                     "user", log.getActorName(),
                     "action", log.getAction(),
@@ -45,51 +54,14 @@ public class GroupController {
             )).toList();
 
             return ResponseEntity.ok(responseList);
-
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    // A small Request Class to hold the incoming JSON data
-    @Data
-    public static class CreateGroupRequest {
-        private String name;
-        private String description;
-    }
-    // --- FETCH GROUP FILES ---
-    @GetMapping("/{groupId}/files")
-    public ResponseEntity<?> getGroupFiles(
-            @PathVariable Integer groupId,
-            @AuthenticationPrincipal User currentUser) {
-        try {
-            GroupEntity group = groupRepository.findById(groupId)
-                    .orElseThrow(() -> new RuntimeException("Group not found"));
 
-            // Security check
-            groupMemberRepository.findByGroupAndUser(group, currentUser)
-                    .orElseThrow(() -> new RuntimeException("Access denied"));
-
-            var files = fileRepository.findAllByGroupAndIsDeletedFalse(group);
-
-            var response = files.stream().map(f -> java.util.Map.of(
-                    "id", f.getId().toString(),
-                    "name", f.getOriginalName(),
-                    "size", (f.getSizeBytes() != null ? (f.getSizeBytes() / 1024) + " KB" : "Unknown"),
-                    "uploadedBy", f.getOwner().getFullName(),
-                    "uploadedAt", f.getUploadedAt() != null ? f.getUploadedAt().toLocalDate().toString() : "Today",
-                    "type", f.getFileType() != null ? f.getFileType() : "unknown"
-            )).toList();
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
     @GetMapping
-    public ResponseEntity<java.util.List<GroupResponse>> getMyGroups(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<List<GroupResponse>> getMyGroups(@AuthenticationPrincipal User currentUser) {
         var groups = groupService.getUserGroups(currentUser);
-
-        // Array of Tailwind gradients to make the UI look premium
         String[] colors = {"from-violet-500 to-purple-600", "from-sky-500 to-cyan-600", "from-amber-500 to-orange-600", "from-emerald-500 to-teal-600", "from-rose-500 to-pink-600"};
 
         var responseList = java.util.stream.IntStream.range(0, groups.size())
@@ -102,12 +74,41 @@ public class GroupController {
                             .inviteCode(g.getInviteCode())
                             .memberCount(g.getMembers().size())
                             .myRole(groupService.getUserRoleInGroup(g, currentUser))
-                            .color(colors[i % colors.length]) // Cycle through colors
+                            .color(colors[i % colors.length])
                             .build();
                 }).toList();
 
         return ResponseEntity.ok(responseList);
     }
+
+    @GetMapping("/{groupId}/files")
+    public ResponseEntity<?> getGroupFiles(
+            @PathVariable Integer groupId,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            GroupEntity group = groupRepository.findById(groupId)
+                    .orElseThrow(() -> new RuntimeException("Group not found"));
+
+            groupMemberRepository.findByGroupAndUser(group, currentUser)
+                    .orElseThrow(() -> new RuntimeException("Access denied"));
+
+            var files = fileRepository.findAllByGroupAndIsDeletedFalse(group);
+
+            var response = files.stream().map(f -> java.util.Map.of(
+                    "id", f.getId().toString(),
+                    "name", f.getOriginalName(), // FIXED
+                    "size", (f.getSizeBytes() != null ? (f.getSizeBytes() / 1024) + " KB" : "Unknown"),
+                    "uploadedBy", f.getOwner().getFullName(),
+                    "uploadedAt", f.getUploadedAt() != null ? f.getUploadedAt().toLocalDate().toString() : "Today", // FIXED
+                    "type", f.getFileType() != null ? f.getFileType() : "unknown"
+            )).toList();
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @GetMapping("/{groupId}/members")
     public ResponseEntity<?> getGroupMembers(
             @PathVariable Integer groupId,
@@ -116,7 +117,6 @@ public class GroupController {
             GroupEntity group = groupRepository.findById(groupId)
                     .orElseThrow(() -> new RuntimeException("Group not found"));
 
-            // Check if the current user is actually in this group
             groupMemberRepository.findByGroupAndUser(group, currentUser)
                     .orElseThrow(() -> new RuntimeException("Access denied"));
 
@@ -135,7 +135,25 @@ public class GroupController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    // Request object for joining
+
+    @Data
+    public static class CreateGroupRequest {
+        private String name;
+        private String description;
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<?> createGroup(
+            @RequestBody CreateGroupRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            var newGroup = groupService.createGroup(request.getName(), request.getDescription(), currentUser);
+            return ResponseEntity.ok(newGroup);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @Data
     public static class JoinGroupRequest {
         private String inviteCode;
@@ -152,15 +170,44 @@ public class GroupController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    @PostMapping("/create")
-    public ResponseEntity<?> createGroup(
-            @RequestBody CreateGroupRequest request,
-            @AuthenticationPrincipal User currentUser) {
+
+    @Data
+    public static class RoleUpdateRequest {
+        private Integer userId;
+        private GroupRole newRole;
+    }
+
+    @PutMapping("/{groupId}/members/role")
+    @Transactional
+    public ResponseEntity<?> updateMemberRole(
+            @PathVariable Integer groupId,
+            @RequestBody RoleUpdateRequest request,
+            @AuthenticationPrincipal User actor) {
         try {
-            var newGroup = groupService.createGroup(request.getName(), request.getDescription(), currentUser);
-            return ResponseEntity.ok(newGroup);
+            GroupEntity group = groupRepository.findById(groupId)
+                    .orElseThrow(() -> new RuntimeException("Group not found"));
+
+            GroupMember requester = groupMemberRepository.findByGroupAndUser(group, actor)
+                    .orElseThrow(() -> new RuntimeException("Unauthorized"));
+
+            if (requester.getRole() != GroupRole.ADMIN) {
+                return ResponseEntity.status(403).body("Only Admins can change permissions.");
+            }
+
+            User targetUser = userRepository.findById(request.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            GroupMember member = groupMemberRepository.findByGroupAndUser(group, targetUser)
+                    .orElseThrow(() -> new RuntimeException("Member not found in this group"));
+
+            member.setRole(request.getNewRole());
+            groupMemberRepository.save(member);
+
+            auditService.logEvent(group, actor.getFullName(), "Updated Role",
+                    "User: " + targetUser.getFullName() + " to " + request.getNewRole(), "warn");
+
+            return ResponseEntity.ok("Member role updated successfully.");
         } catch (Exception e) {
-            // This will send back the "Free tier limit reached!" message if they fail the check
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
