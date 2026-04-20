@@ -128,18 +128,20 @@ export function DashboardSidebar({ collapsed, onToggle, activeItem, onItemClick 
 
       {/* Settings at bottom */}
       <div className="absolute bottom-0 left-0 right-0 border-t border-sidebar-border p-3">
-        <button
+       
+        <Link
+          to="/settings"
           onClick={() => onItemClick("settings")}
           className={cn(
             "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-            activeItem === "settings"
+            activeItem === "settings" || location.pathname === "/settings"
               ? "bg-sidebar-primary text-sidebar-primary-foreground"
               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
         >
           <Settings className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
           {!collapsed && <span>Settings</span>}
-        </button>
+        </Link>
 
         {/* Collapse Toggle */}
         <button

@@ -4,17 +4,15 @@ import {
   FileText, Image as ImageIcon, File, Video, Music, Archive, Download,
   Trash2, Shield, ShieldCheck, AlertCircle, Package, X, Mail, Copy, Check,
   FolderPlus, ArrowLeft, AlertTriangle, Users, Clock, Eye, Link as LinkIcon, 
-  CheckCircle, Loader2, AtSign, Settings2, CheckSquare, Square // <--- THESE WERE MISSING!
+  CheckCircle, Loader2, AtSign, Settings2, CheckSquare, Square
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFolders, FileItem } from "@/components/dashboard/FoldersContext";
 import { CreateFolderDialog } from "@/components/dashboard/Createfolderdialog";
 import { UploadFileDialog } from "@/components/dashboard/UploadFileDialog";
 import { authFetch } from "@/lib/api";
-// --- IMPORT YOUR EXISTING ENCRYPTION MATH ---
 import { decryptKeyWithRSA, decryptFile, encryptKeyWithRSA } from "@/lib/encryption";
-
-// --- UPDATED SHARE DIALOG PROPS ---
+import { toast } from "sonner";
 interface ShareDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -26,29 +24,13 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
   const [isSharing, setIsSharing] = useState(false);
   const [shareMessage, setShareMessage] = useState({ type: "", text: "" });
   
-  // New Permission States
   const [showPermissions, setShowPermissions] = useState(false);
   const [maxViews, setMaxViews] = useState<string>(""); 
   const [maxDownloads, setMaxDownloads] = useState<string>("");
   const [canReshare, setCanReshare] = useState(false);
-  const handleShareToGroup = async (fileId: string, groupId: string) => {
-  // Logic: 
-  // 1. Fetch the file metadata.
-  // 2. Re-encrypt the file key for the group (or simply move the record if using a shared group key).
-  // 3. Call the backend to update the file's groupId.
-  try {
-    await authFetch(`http://localhost:8080/api/v1/files/${fileId}/share-to-group/${groupId}`, {
-      method: "POST"
-    });
-    alert("File shared with group successfully!");
-  } catch (err) {
-    console.error(err);
-  }
-};
+  
   const handleShareSubmit = async () => {
-    // Basic validation to ensure the tag starts with @
     const formattedTag = searchTag.startsWith("@") ? searchTag : `@${searchTag}`;
-    
     if (!file || !searchTag) return;
     setIsSharing(true);
     setShareMessage({ type: "", text: "" });
@@ -61,8 +43,6 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
         throw new Error("Security Error: Missing cryptographic keys. Please log in again.");
       }
 
-      // 1. Search for the friend's SearchTag and get their Public Key
-      // Ensure your backend endpoint is updated to accept ?tag= instead of ?email=
       const searchRes = await fetch(`http://localhost:8080/api/v1/files/search-user?searchTag=${encodeURIComponent(formattedTag)}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -70,13 +50,9 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
       if (!searchRes.ok) throw new Error("User not found! Check the @SearchTag.");
       const receiver = await searchRes.json();
 
-      // 2. Unlock the AES key using YOUR private key
       const aesKey = await decryptKeyWithRSA(file.encryptedFileKey, privateKey);
-
-      // 3. Re-lock the AES key using THEIR public key!
       const receiverEncryptedKey = await encryptKeyWithRSA(aesKey, receiver.publicKey);
 
-      // 4. Send the new lock AND the permissions back to the database
       const shareRes = await fetch(`http://localhost:8080/api/v1/files/${file.id}/share`, {
         method: "POST",
         headers: {
@@ -86,7 +62,6 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
         body: JSON.stringify({
           targetSearchTag: receiver.searchTag || formattedTag,
           encryptedKey: receiverEncryptedKey,
-          // Convert empty strings to null for unlimited access
           maxViews: maxViews === "" ? null : parseInt(maxViews),
           maxDownloads: maxDownloads === "" ? null : parseInt(maxDownloads),
           canReshare: canReshare
@@ -101,7 +76,6 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
       setShareMessage({ type: "success", text: `Successfully shared with ${formattedTag}!` });
       setTimeout(() => {
         onClose();
-        // Reset states
         setShareMessage({ type: "", text: "" });
         setSearchTag("");
         setMaxViews("");
@@ -123,7 +97,6 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="relative w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-          {/* Header */}
           <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6 py-5 sticky top-0 z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -148,7 +121,6 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
               </div>
             )}
 
-            {/* Recipient Input */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Enter recipient's Search Tag
@@ -165,7 +137,6 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
               </div>
             </div>
 
-            {/* Advanced Permissions Toggle */}
             <div className="border-t border-gray-100 pt-4">
               <button 
                 onClick={() => setShowPermissions(!showPermissions)}
@@ -175,11 +146,8 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
                 {showPermissions ? "Hide Access Controls" : "Set Access Controls (Optional)"}
               </button>
 
-              {/* Permissions Panel */}
               {showPermissions && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-xl space-y-4 border border-gray-100">
-                  
-                  {/* View Limits */}
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-white rounded-md shadow-sm text-gray-500"><Eye className="h-4 w-4" /></div>
@@ -198,7 +166,6 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
                     />
                   </div>
 
-                  {/* Download Limits */}
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-white rounded-md shadow-sm text-gray-500"><Download className="h-4 w-4" /></div>
@@ -217,7 +184,6 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
                     />
                   </div>
 
-                  {/* Reshare Permission */}
                   <div 
                     className="flex items-center justify-between gap-4 cursor-pointer pt-2"
                     onClick={() => setCanReshare(!canReshare)}
@@ -233,7 +199,6 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
                       {canReshare ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5 text-gray-400" />}
                     </div>
                   </div>
-
                 </div>
               )}
             </div>
@@ -243,22 +208,11 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
               End-to-End Encrypted: The file key is re-encrypted in your browser using the recipient's public key. The server cannot read the contents.
             </p>
 
-            {/* Action Buttons */}
             <div className="flex gap-3 pt-2">
-              <button
-                onClick={onClose}
-                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
-              >
+              <button onClick={onClose} className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors">
                 Cancel
               </button>
-              <button
-                onClick={handleShareSubmit}
-                disabled={!searchTag || isSharing}
-                className={cn(
-                  "flex-1 px-4 py-2.5 font-medium rounded-lg transition-colors flex items-center justify-center gap-2",
-                  searchTag && !isSharing ? "bg-indigo-600 text-white hover:bg-indigo-700" : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                )}
-              >
+              <button onClick={handleShareSubmit} disabled={!searchTag || isSharing} className={cn("flex-1 px-4 py-2.5 font-medium rounded-lg transition-colors flex items-center justify-center gap-2", searchTag && !isSharing ? "bg-indigo-600 text-white hover:bg-indigo-700" : "bg-gray-100 text-gray-400 cursor-not-allowed")}>
                 {isSharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
                 {isSharing ? "Encrypting..." : "Share Securely"}
               </button>
@@ -278,23 +232,51 @@ export function MyFolders() {
   const [currentFolder, setCurrentFolder] = useState<FileItem | null>(null);
   const [isDownloading, setIsDownloading] = useState<string | null>(null); 
 
-  const [deleteDialog, setDeleteDialog] = useState<{
-    isOpen: boolean;
-    itemId: string;
-    itemName: string;
-  }>({ isOpen: false, itemId: "", itemName: "" });
+  const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; itemId: string; itemName: string; }>({ isOpen: false, itemId: "", itemName: "" });
   
-  // --- UPDATED SHARE DIALOG STATE ---
-  const [shareDialog, setShareDialog] = useState<{
-    isOpen: boolean;
-    file: FileItem | null;
-  }>({ isOpen: false, file: null });
+  const [shareDialog, setShareDialog] = useState<{ isOpen: boolean; file: FileItem | null; }>({ isOpen: false, file: null });
+
+  // --- GROUP SHARE STATES MOVED INSIDE COMPONENT ---
+  const [showGroupModal, setShowGroupModal] = useState(false);
+  const [selectedFileIdToShare, setSelectedFileIdToShare] = useState<string | null>(null);
+  const [userGroups, setUserGroups] = useState<any[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState("");
+  const [isSharingToGroup, setIsSharingToGroup] = useState(false);
 
   const { files, addFolder, addFile, moveToTrash, getFilesInFolder, fetchFiles, isLoading } = useFolders();
 
   useEffect(() => { fetchFiles(); }, []);
 
   const currentFiles = currentFolder ? getFilesInFolder(currentFolder.id) : files;
+
+  // --- GROUP SHARE LOGIC MOVED INSIDE COMPONENT ---
+  const openGroupShareModal = async (fileId: string) => {
+    setSelectedFileIdToShare(fileId);
+    setShowGroupModal(true);
+    try {
+      const res = await authFetch("http://localhost:8080/api/v1/groups");
+      if (res.ok) setUserGroups(await res.json());
+    } catch (err) {
+      console.error("Failed to load groups", err);
+    }
+  };
+
+  const handleShareToGroup = async () => {
+    if (!selectedFileIdToShare || !selectedGroupId) return;
+    setIsSharingToGroup(true);
+    try {
+      const res = await authFetch(`http://localhost:8080/api/v1/files/${selectedFileIdToShare}/share/group/${selectedGroupId}`, {
+        method: "POST"
+      });
+      if (!res.ok) throw new Error(await res.text());
+toast.success("File successfully shared to the group!"); 
+      setShowGroupModal(false);
+    } catch (err: any) {
+      toast.error("Error sharing to group: " + err.message);
+    } finally {
+            setIsSharingToGroup(false);
+    }
+  };
 
   const getFileIcon = (item: FileItem) => {
     if (item.type === "folder") return <FolderOpen className="h-5 w-5 text-amber-500" />;
@@ -316,23 +298,10 @@ export function MyFolders() {
     }
   };
 
-  const handleShare = (item: FileItem) => {
-    setShareDialog({ isOpen: true, file: item });
-  };
-
-  const handleDelete = (id: string, name: string) => {
-    setDeleteDialog({ isOpen: true, itemId: id, itemName: name });
-  };
-
-  const confirmDelete = () => {
-    moveToTrash(deleteDialog.itemId);
-    setDeleteDialog({ isOpen: false, itemId: "", itemName: "" });
-  };
-
-  const handleFolderClick = (folder: FileItem) => {
-    if (folder.type === "folder") setCurrentFolder(folder);
-  };
-
+  const handleShare = (item: FileItem) => setShareDialog({ isOpen: true, file: item });
+  const handleDelete = (id: string, name: string) => setDeleteDialog({ isOpen: true, itemId: id, itemName: name });
+  const confirmDelete = () => { moveToTrash(deleteDialog.itemId); setDeleteDialog({ isOpen: false, itemId: "", itemName: "" }); };
+  const handleFolderClick = (folder: FileItem) => { if (folder.type === "folder") setCurrentFolder(folder); };
   const handleBackClick = () => setCurrentFolder(null);
 
   const handleUploadFiles = async (newFiles: any[]) => {
@@ -351,9 +320,7 @@ export function MyFolders() {
         formData.append("iv", file.iv);
 
         const response = await fetch("http://localhost:8080/api/v1/files/upload", {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${token}` },
-          body: formData,
+          method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: formData,
         });
 
         if (!response.ok) throw new Error(await response.text());
@@ -375,13 +342,10 @@ export function MyFolders() {
         throw new Error("Missing cryptographic data.");
       }
 
-      const response = await fetch(`http://localhost:8080/api/v1/files/${file.id}/download`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-
+      const response = await fetch(`http://localhost:8080/api/v1/files/${file.id}/download`, { headers: { "Authorization": `Bearer ${token}` } });
       if (!response.ok) throw new Error("Failed to download file from server");
+      
       const encryptedArrayBuffer = await response.arrayBuffer();
-
       const aesKey = await decryptKeyWithRSA(file.encryptedFileKey, privateKeyBase64);
       const decryptedBlob = await decryptFile(encryptedArrayBuffer, aesKey, file.iv);
 
@@ -421,12 +385,8 @@ export function MyFolders() {
 
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                {currentFolder ? currentFolder.name : "My Folders"}
-              </h1>
-              <p className="text-sm text-gray-600">
-                {filteredFiles.length} items • {filteredFiles.filter((f) => f.type === "folder").length} folders
-              </p>
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">{currentFolder ? currentFolder.name : "My Folders"}</h1>
+              <p className="text-sm text-gray-600">{filteredFiles.length} items • {filteredFiles.filter((f) => f.type === "folder").length} folders</p>
             </div>
 
             <div className="flex items-center gap-3">
@@ -448,13 +408,7 @@ export function MyFolders() {
           <div className="flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search files and folders..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
+              <input type="text" placeholder="Search files and folders..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
             <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg">
               <button onClick={() => setViewMode("list")} className={cn("p-2 rounded transition-all", viewMode === "list" ? "bg-white shadow-sm text-indigo-600" : "text-gray-600 hover:text-gray-900")}><List className="h-4 w-4" /></button>
@@ -504,9 +458,15 @@ export function MyFolders() {
                     <td className="px-6 py-4 text-sm text-gray-600">{file.uploadedAt ? new Date(file.uploadedAt).toLocaleDateString() : ""}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleShare(file)} className="p-1.5 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 rounded-lg transition-colors" title="Share">
+                        <button onClick={() => handleShare(file)} className="p-1.5 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 rounded-lg transition-colors" title="Share with User">
                           <Share2 className="h-4 w-4" />
                         </button>
+                        {/* --- NEW BUTTON: SHARE TO GROUP --- */}
+                        {file.type === "file" && (
+                          <button onClick={() => openGroupShareModal(file.id)} className="p-1.5 hover:bg-purple-50 text-gray-600 hover:text-purple-600 rounded-lg transition-colors" title="Share to Group">
+                            <Users className="h-4 w-4" />
+                          </button>
+                        )}
                         {file.type === "file" && (
                           <button onClick={() => handleDownload(file)} disabled={isDownloading === file.id} className="p-1.5 hover:bg-blue-50 text-gray-600 hover:text-blue-600 rounded-lg transition-colors" title="Download">
                             {isDownloading === file.id ? <Loader2 className="h-4 w-4 animate-spin text-blue-600" /> : <Download className="h-4 w-4" />}
@@ -537,9 +497,15 @@ export function MyFolders() {
                   {getVirusScanBadge(file.virusScan)}
                 </div>
                 <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
-                  <button onClick={() => handleShare(file)} className="flex-1 px-3 py-2 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-lg hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2">
-                    <Share2 className="h-3.5 w-3.5" /> Share
+                  <button onClick={() => handleShare(file)} className="p-2 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 rounded-lg transition-colors" title="Share with User">
+                    <Share2 className="h-4 w-4" />
                   </button>
+                  {/* --- NEW BUTTON: SHARE TO GROUP --- */}
+                  {file.type === "file" && (
+                    <button onClick={() => openGroupShareModal(file.id)} className="p-2 hover:bg-purple-50 text-gray-600 hover:text-purple-600 rounded-lg transition-colors" title="Share to Group">
+                      <Users className="h-4 w-4" />
+                    </button>
+                  )}
                   {file.type === "file" && (
                     <button onClick={() => handleDownload(file)} disabled={isDownloading === file.id} className="p-2 hover:bg-blue-50 text-gray-600 hover:text-blue-600 rounded-lg transition-colors">
                       {isDownloading === file.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
@@ -571,12 +537,38 @@ export function MyFolders() {
         </div>
       )}
 
-      {/* RENDER THE SHARE DIALOG */}
-      <ShareDialog 
-        isOpen={shareDialog.isOpen} 
-        onClose={() => setShareDialog({ isOpen: false, file: null })} 
-        file={shareDialog.file} 
-      />
+      <ShareDialog isOpen={shareDialog.isOpen} onClose={() => setShareDialog({ isOpen: false, file: null })} file={shareDialog.file} />
+      
+      {showGroupModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h2 className="font-semibold text-slate-900 text-lg mb-4">Share to Group Drive</h2>
+            
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Select a Group</label>
+            <select 
+              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6"
+              value={selectedGroupId}
+              onChange={(e) => setSelectedGroupId(e.target.value)}
+            >
+              <option value="" disabled>-- Choose a group --</option>
+              {userGroups.map(g => (
+                <option key={g.id} value={g.id}>{g.name} ({g.myRole})</option>
+              ))}
+            </select>
+
+            <div className="flex gap-3">
+              <button onClick={() => setShowGroupModal(false)} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-xl transition-colors text-sm">Cancel</button>
+              <button 
+                onClick={handleShareToGroup} 
+                disabled={!selectedGroupId || isSharingToGroup} 
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50"
+              >
+                {isSharingToGroup ? "Sharing..." : "Share to Group"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -210,5 +210,87 @@ public class GroupController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+
+    }
+    // ==========================================
+    // 1. KICK A MEMBER (Admins Only)
+    // ==========================================
+    @DeleteMapping("/{groupId}/members/{userId}")
+    @Transactional
+    public ResponseEntity<?> removeMember(
+            @PathVariable Integer groupId,
+            @PathVariable Integer userId,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            GroupEntity group = groupRepository.findById(groupId).orElseThrow(() -> new RuntimeException("Group not found"));
+            GroupMember actor = groupMemberRepository.findByGroupAndUser(group, currentUser).orElseThrow(() -> new RuntimeException("Unauthorized"));
+
+            if (actor.getRole() != GroupRole.ADMIN) return ResponseEntity.status(403).body("Only Admins can remove members.");
+
+            User targetUser = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+            GroupMember targetMember = groupMemberRepository.findByGroupAndUser(group, targetUser).orElseThrow(() -> new RuntimeException("Member not in group"));
+
+            groupMemberRepository.delete(targetMember);
+            auditService.logEvent(group, currentUser.getFullName(), "Removed Member", targetUser.getFullName(), "critical");
+
+            return ResponseEntity.ok("Member removed successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // ==========================================
+    // 2. LEAVE A GROUP (Any Member)
+    // ==========================================
+    @DeleteMapping("/{groupId}/leave")
+    @Transactional
+    public ResponseEntity<?> leaveGroup(
+            @PathVariable Integer groupId,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            GroupEntity group = groupRepository.findById(groupId).orElseThrow(() -> new RuntimeException("Group not found"));
+            GroupMember member = groupMemberRepository.findByGroupAndUser(group, currentUser).orElseThrow(() -> new RuntimeException("You are not in this group"));
+
+            groupMemberRepository.delete(member);
+            auditService.logEvent(group, currentUser.getFullName(), "Left Group", currentUser.getFullName(), "warn");
+
+            return ResponseEntity.ok("You have successfully left the group.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // ==========================================
+    // 3. DELETE A GROUP FILE (Admins & Editors)
+    // ==========================================
+    @DeleteMapping("/{groupId}/files/{fileId}")
+    @Transactional
+    public ResponseEntity<?> deleteGroupFile(
+            @PathVariable Integer groupId,
+            @PathVariable Integer fileId,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            GroupEntity group = groupRepository.findById(groupId).orElseThrow(() -> new RuntimeException("Group not found"));
+            GroupMember actor = groupMemberRepository.findByGroupAndUser(group, currentUser).orElseThrow(() -> new RuntimeException("Unauthorized"));
+
+            if (actor.getRole() == GroupRole.VIEWER) {
+                return ResponseEntity.status(403).body("Viewers cannot delete files.");
+            }
+
+            var file = fileRepository.findById(fileId).orElseThrow(() -> new RuntimeException("File not found"));
+            if (file.getGroup() == null || !file.getGroup().getId().equals(groupId)) {
+                return ResponseEntity.status(403).body("File does not belong to this group.");
+            }
+
+            // Soft delete the file
+            file.setDeleted(true);
+            fileRepository.save(file);
+
+            auditService.logEvent(group, currentUser.getFullName(), "Deleted File", file.getOriginalName(), "critical");
+
+            return ResponseEntity.ok("File deleted successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

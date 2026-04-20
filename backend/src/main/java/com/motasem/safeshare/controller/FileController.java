@@ -22,6 +22,18 @@ public class FileController {
 
     private final FileService fileService;
 
+    @PostMapping("/{fileId}/share/group/{groupId}")
+    public ResponseEntity<?> shareFileToGroup(
+            @PathVariable Integer fileId,
+            @PathVariable Integer groupId,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            fileService.copyFileToGroup(fileId, groupId, currentUser);
+            return ResponseEntity.ok("File successfully shared to the group!");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
     @PostMapping("/upload")
     public ResponseEntity<?> uploadFile(

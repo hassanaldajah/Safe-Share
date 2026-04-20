@@ -110,57 +110,108 @@ public class FileService {
                 .isDeleted(false) // Assuming this is your soft-delete flag
                 .build();
 
-        // 3. NEW: Link the group if one was provided
+        // 3. NEW: Link the group and check roles
         if (groupId != null) {
             GroupEntity group = groupRepository.findById(groupId)
                     .orElseThrow(() -> new RuntimeException("Group not found"));
 
-            // Security Check: Ensure the user uploading is actually in this group!
-            groupMemberRepository.findByGroupAndUser(group, currentUser)
+            // Security Check: Get the member
+            var member = groupMemberRepository.findByGroupAndUser(group, currentUser)
                     .orElseThrow(() -> new RuntimeException("You are not a member of this group."));
+
+            // ENFORCE ROLE PERMISSION
+            if (member.getRole() == com.motasem.safeshare.model.GroupRole.VIEWER) {
+                throw new RuntimeException("Security Exception: Viewers are not allowed to upload files.");
+            }
 
             fileEntity.setGroup(group);
 
-            // Log the upload to the group audit trail!
+            // This is already logging the upload to your Group Audit Log!
             auditService.logEvent(group, currentUser.getFullName(), "Uploaded File", fileEntity.getOriginalName(), "info");
         }
 
         return fileRepository.save(fileEntity);
     }
+    // --- CROSS-VAULT SHARING (SHARE TO GROUP) ---
+    @Transactional
+    public void copyFileToGroup(Integer fileId, Integer groupId, User currentUser) {
+        // 1. Get the original private file
+        FileEntity originalFile = fileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found"));
 
-    // --- SMART DOWNLOAD LOGIC WITH ACTION TYPE ---
+        if (!originalFile.getOwner().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("Only the owner can share this file to a group.");
+        }
+
+        // 2. Verify Group Access & Permissions
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+
+        var member = groupMemberRepository.findByGroupAndUser(group, currentUser)
+                .orElseThrow(() -> new RuntimeException("You are not a member of this group."));
+
+        if (member.getRole() == com.motasem.safeshare.model.GroupRole.VIEWER) {
+            throw new RuntimeException("Viewers cannot share files to this group.");
+        }
+
+        // 3. Data Deduplication: Create new metadata pointing to the same physical file
+        FileEntity groupFile = FileEntity.builder()
+                .originalName(originalFile.getOriginalName())
+                .fileType(originalFile.getFileType())
+                .sizeBytes(originalFile.getSizeBytes())
+                .compressed(originalFile.getCompressed())
+                .virusScanStatus(originalFile.getVirusScanStatus())
+                .encryptedFileKey(originalFile.getEncryptedFileKey())
+                .iv(originalFile.getIv())
+                .filePath(originalFile.getFilePath()) // <-- MAGIC HAPPENS HERE
+                .owner(currentUser)
+                .uploadedAt(LocalDateTime.now())
+                .isDeleted(false)
+                .group(group) // <-- LINK TO THE GROUP
+                .build();
+
+        fileRepository.save(groupFile);
+
+        // 4. Log the action
+        auditService.logEvent(group, currentUser.getFullName(), "Shared to Group", originalFile.getOriginalName() + " (from Private Vault)", "info");
+    }
+    // --- SMART DOWNLOAD LOGIC WITH GROUPS & AUDIT ---
     public Resource downloadSecureFile(Integer fileId, User currentUser, String action) {
         FileEntity fileEntity = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found!"));
 
         boolean isOwner = fileEntity.getOwner().getId().equals(currentUser.getId());
-        var shareRecord = fileShareRepository.findByFile_IdAndSharedWith_Id(fileId, currentUser.getId());
 
-        if (!isOwner && shareRecord.isEmpty()) {
-            throw new RuntimeException("Unauthorized access to file!");
+        // --- NEW: IS THIS A GROUP FILE? ---
+        if (fileEntity.getGroup() != null) {
+            // 1. Verify the user is in this group
+            groupMemberRepository.findByGroupAndUser(fileEntity.getGroup(), currentUser)
+                    .orElseThrow(() -> new RuntimeException("Unauthorized: You are not in this group!"));
+
+            // 2. Log the download to the group's Audit Log
+            auditService.logEvent(fileEntity.getGroup(), currentUser.getFullName(), "Downloaded File", fileEntity.getOriginalName(), "info");
         }
+        // --- IF NOT A GROUP FILE, CHECK PRIVATE SHARES ---
+        else if (!isOwner) {
+            var shareRecord = fileShareRepository.findByFile_IdAndSharedWith_Id(fileId, currentUser.getId())
+                    .orElseThrow(() -> new RuntimeException("Unauthorized access to file!"));
 
-        if (!isOwner && shareRecord.isPresent()) {
-            FileShare share = shareRecord.get();
-
+            FileShare share = shareRecord;
             if ("view".equalsIgnoreCase(action)) {
                 if (share.getMaxViews() != null) {
-                    if (share.getMaxViews() <= 0) {
-                        throw new RuntimeException("Security Exception: View limit reached for this file.");
-                    }
+                    if (share.getMaxViews() <= 0) throw new RuntimeException("View limit reached.");
                     share.setMaxViews(share.getMaxViews() - 1);
                 }
             } else {
                 if (share.getMaxDownloads() != null) {
-                    if (share.getMaxDownloads() <= 0) {
-                        throw new RuntimeException("Security Exception: Download limit reached for this file.");
-                    }
+                    if (share.getMaxDownloads() <= 0) throw new RuntimeException("Download limit reached.");
                     share.setMaxDownloads(share.getMaxDownloads() - 1);
                 }
             }
             fileShareRepository.save(share);
         }
 
+        // Return the physical file
         try {
             Path filePath = Paths.get(fileEntity.getFilePath());
             Resource resource = new UrlResource(filePath.toUri());
