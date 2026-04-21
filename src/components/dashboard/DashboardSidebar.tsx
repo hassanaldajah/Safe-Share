@@ -33,10 +33,13 @@ const navItems = [
 
 export function DashboardSidebar({ collapsed, onToggle, activeItem, onItemClick }: SidebarProps) {
   const location = useLocation();
-
-  // Determine which item should be active based on the current route
+// Determine which item should be active based on the current route
   const getActiveItem = () => {
     const currentPath = location.pathname;
+    
+    // NEW: Intercept hardcoded bottom-links or top-nav links
+    if (currentPath.startsWith("/settings")) return "settings";
+    if (currentPath.startsWith("/profile")) return "profile";
     
     // Find the nav item that matches the current path
     const matchedItem = navItems.find(item => item.path === currentPath);
@@ -44,11 +47,13 @@ export function DashboardSidebar({ collapsed, onToggle, activeItem, onItemClick 
       return matchedItem.id;
     }
     
-    // Fallback to the activeItem prop
+    // Fallback to the activeItem prop if it's an unknown route
     return activeItem;
   };
 
   const currentActiveItem = getActiveItem();
+
+  
 
   return (
     <aside
@@ -134,7 +139,7 @@ export function DashboardSidebar({ collapsed, onToggle, activeItem, onItemClick 
           onClick={() => onItemClick("settings")}
           className={cn(
             "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-            activeItem === "settings" || location.pathname === "/settings"
+            currentActiveItem === "settings" // <-- CHANGED: Now simply relies on our smart function above
               ? "bg-sidebar-primary text-sidebar-primary-foreground"
               : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
           )}
@@ -142,7 +147,6 @@ export function DashboardSidebar({ collapsed, onToggle, activeItem, onItemClick 
           <Settings className={cn("h-5 w-5 flex-shrink-0", collapsed && "mx-auto")} />
           {!collapsed && <span>Settings</span>}
         </Link>
-
         {/* Collapse Toggle */}
         <button
           onClick={onToggle}

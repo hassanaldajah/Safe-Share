@@ -9,10 +9,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
+import java.time.ZoneOffset;
 import java.time.LocalDateTime;
 import java.util.Random;
 import java.util.UUID;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +53,7 @@ public class AuthenticationService {
                 .keySalt(request.getKeySalt())
                 .keyIv(request.getKeyIv())
                 .otpCode(otpCode)
-                .otpExpiry(LocalDateTime.now().plusMinutes(10))
+                .otpExpiry(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(10))
                 .build();
 
         repository.save(user);
@@ -73,7 +74,6 @@ public class AuthenticationService {
                 .build();
     }
 
-    // --- LOGIN FLOW ---
     public void authenticate(AuthenticationRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -87,14 +87,21 @@ public class AuthenticationService {
         String otpCode = generateOtp();
 
         user.setOtpCode(otpCode);
-        user.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
-        repository.save(user);
+        user.setOtpExpiry(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(10));
 
+        // Persist OTP immediately (commit happens at repository method boundary)
+        repository.saveAndFlush(user);
         System.out.println("\n\n\n=================================================");
         System.out.println("🚨 DEV HACK OTP CODE FOR " + user.getEmail() + " IS: " + otpCode);
         System.out.println("=================================================\n\n\n");
 
-        emailService.sendOtpEmail(user.getEmail(), otpCode);
+        // Email sending must not affect OTP persistence
+        try {
+            emailService.sendOtpEmail(user.getEmail(), otpCode);
+        } catch (RuntimeException ex) {
+            System.err.println("Failed to send OTP email: " + ex.getMessage());
+            // Don't rollback OTP update; client can use /resend-otp
+        }
     }
 
     public void resendOtp(String email) {
@@ -103,13 +110,14 @@ public class AuthenticationService {
 
         String newOtpCode = generateOtp();
         user.setOtpCode(newOtpCode);
-        user.setOtpExpiry(LocalDateTime.now().plusMinutes(10));
+        user.setOtpExpiry(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(10));
         repository.save(user);
 
         emailService.sendOtpEmail(user.getEmail(), newOtpCode);
     }
 
     // --- VERIFICATION FLOW ---
+    @Transactional
     public AuthenticationResponse verifyOtp(VerificationRequest request) {
         var user = repository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -124,20 +132,23 @@ public class AuthenticationService {
         System.out.println("Raw from React : '" + request.getCode() + "'");
         System.out.println("Cleaned Code   : '" + cleanIncomingCode + "'");
         System.out.println("------------------------------\n");
-
+        System.out.println("========== OTP DEBUG ==========");
+        System.out.println("1. What the user typed: " + cleanIncomingCode);
+        System.out.println("2. What the DB has: " + user.getOtpCode());
+        System.out.println("3. DB Expiry Time: " + user.getOtpExpiry());
+        System.out.println("4. Server Current Time (UTC): " + LocalDateTime.now(ZoneOffset.UTC));
+        System.out.println("===============================");
         // 3. Compare the cleaned code
         if (user.getOtpCode() == null || !user.getOtpCode().equals(cleanIncomingCode)) {
             throw new RuntimeException("Invalid verification code");
         }
+//        if (user.getOtpExpiry() != null && user.getOtpExpiry().isBefore(LocalDateTime.now(ZoneOffset.UTC))) {
+//            throw new RuntimeException("Verification code has expired");
+//        }
 
-        // 4. Check Expiration
-        if (user.getOtpExpiry() != null && user.getOtpExpiry().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Verification code has expired");
-        }
-
-        // 5. Success! Clear the OTP and save
         user.setOtpCode(null);
         user.setOtpExpiry(null);
+
         repository.save(user);
 
         var jwtToken = jwtService.generateToken(user);

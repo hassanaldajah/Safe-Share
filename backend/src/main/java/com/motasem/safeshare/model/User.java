@@ -44,6 +44,10 @@ public class User implements UserDetails {
     private LocalDateTime otpExpiry;
     @Column(columnDefinition = "TEXT")
     private String profileImage;
+    @Column(name = "theme", length = 20)
+    private String theme = "system";
+    @Column(name = "language", length = 10)
+    private String language = "en";
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();

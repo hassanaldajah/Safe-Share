@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -14,8 +15,8 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    // ─── 1. EXISTING SEARCH ENDPOINT ────────────────────────────────────────────────
     @GetMapping("/search")
     public ResponseEntity<UserSearchResponse> searchUserByTag(@RequestParam String tag) {
 
@@ -31,7 +32,38 @@ public class UserController {
 
         return ResponseEntity.ok(response);
     }
+    // ==========================================
+    // GET UI PREFERENCES
+    // ==========================================
+    @GetMapping("/preferences")
+    public ResponseEntity<?> getPreferences(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(java.util.Map.of(
+                "theme", currentUser.getTheme() != null ? currentUser.getTheme() : "system",
+                "language", currentUser.getLanguage() != null ? currentUser.getLanguage() : "en"
+        ));
+    }
 
+    // ==========================================
+    // UPDATE UI PREFERENCES
+    // ==========================================
+    @PutMapping("/preferences")
+    public ResponseEntity<?> updatePreferences(
+            @RequestBody java.util.Map<String, String> request,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            if (request.containsKey("theme")) {
+                currentUser.setTheme(request.get("theme"));
+            }
+            if (request.containsKey("language")) {
+                currentUser.setLanguage(request.get("language"));
+            }
+
+            userRepository.save(currentUser);
+            return ResponseEntity.ok("Preferences updated successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error updating preferences.");
+        }
+    }
     // ─── 2. NEW PROFILE IMAGE UPLOAD ────────────────────────────────────────────────
     @Data
     public static class ImageUpdateRequest {
@@ -54,6 +86,30 @@ public class UserController {
             return ResponseEntity.ok("Profile image updated successfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    // ==========================================
+    // CHANGE PASSWORD ENDPOINT
+    // ==========================================
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @RequestBody java.util.Map<String, String> request,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            String currentPassword = request.get("currentPassword");
+            String newPassword = request.get("newPassword");
+
+            // 1. Verify the current password matches what is in the database
+            if (!passwordEncoder.matches(currentPassword, currentUser.getPassword())) {
+                return ResponseEntity.badRequest().body("Incorrect current password.");
+            }
+
+            currentUser.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(currentUser);
+
+            return ResponseEntity.ok("Password updated successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error updating password.");
         }
     }
 }
