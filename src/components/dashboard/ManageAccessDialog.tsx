@@ -74,35 +74,35 @@ export function ManageAccessDialog({ isOpen, onClose, fileId, fileName }: Manage
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-2xl bg-background rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         
         <div className="bg-gradient-to-r from-red-500 to-rose-600 px-6 py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg"><ShieldAlert className="h-5 w-5 text-white" /></div>
+            <div className="p-2 bg-background/20 backdrop-blur-sm rounded-lg"><ShieldAlert className="h-5 w-5 text-white" /></div>
             <div>
               <h2 className="text-lg font-semibold text-white">Manage Access</h2>
               <p className="text-sm text-white/80">{fileName}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"><X className="h-5 w-5 text-white" /></button>
+          <button onClick={onClose} className="p-1.5 hover:bg-background/20 rounded-lg transition-colors"><X className="h-5 w-5 text-white" /></button>
         </div>
 
         <div className="p-6 max-h-[60vh] overflow-y-auto">
           {isLoading ? (
             <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-rose-600" /></div>
           ) : accessList.length === 0 ? (
-            <div className="text-center py-10 text-gray-500 flex flex-col items-center">
+            <div className="text-center py-10 text-muted-foreground flex flex-col items-center">
               <Users className="h-10 w-10 mb-2 text-gray-300" />
               <p>This file is not currently shared with anyone.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {accessList.map((access) => (
-                <div key={access.receiverTag} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                <div key={access.receiverTag} className="flex items-center justify-between p-4 bg-background border border-border rounded-xl">
                   
                   <div>
-                    <p className="font-semibold text-gray-900">{access.receiverTag}</p>
-                    <div className="flex gap-4 mt-1 text-xs text-gray-500 font-medium">
+                    <p className="font-semibold text-foreground">{access.receiverTag}</p>
+                    <div className="flex gap-4 mt-1 text-xs text-muted-foreground font-medium">
                       <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {access.maxViews === null ? "Unlimited" : `${access.maxViews} left`}</span>
                       <span className="flex items-center gap-1"><Download className="h-3.5 w-3.5" /> {access.maxDownloads === null ? "Unlimited" : `${access.maxDownloads} left`}</span>
                       {access.canReshare && <span className="flex items-center gap-1 text-purple-600 bg-purple-100 px-2 rounded-full"><Share2 className="h-3 w-3" /> Reshare active</span>}

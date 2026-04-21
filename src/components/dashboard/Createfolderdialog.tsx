@@ -63,13 +63,13 @@ export function CreateFolderDialog({
         className="relative w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300"
         onClick={(e) => e.stopPropagation()} // Prevents clicks inside the modal from closing it
       >
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
+        <div className="bg-background rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
           
           {/* Header */}
           <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6 py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
+                <div className="p-2 bg-background/20 backdrop-blur-sm rounded-lg">
                   <FolderPlus className="h-5 w-5 text-white" />
                 </div>
                 <div>
@@ -79,7 +79,7 @@ export function CreateFolderDialog({
               </div>
               <button
                 onClick={handleClose}
-                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors text-white"
+                className="p-1.5 hover:bg-background/20 rounded-lg transition-colors text-white"
                 aria-label="Close dialog"
               >
                 <X className="h-5 w-5" />
@@ -104,7 +104,7 @@ export function CreateFolderDialog({
                 className={cn(
                   "w-full px-4 py-2.5 border rounded-lg transition-all",
                   "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
-                  "text-gray-900 placeholder:text-gray-400 bg-white", // Added specific colors for clarity
+                  "text-foreground placeholder:text-gray-400 bg-background", // Added specific colors for clarity
                   error ? "border-red-300 bg-red-50/30" : "border-gray-300"
                 )}
                 autoFocus

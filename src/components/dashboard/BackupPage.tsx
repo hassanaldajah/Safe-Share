@@ -113,7 +113,7 @@ export function BackupPage() {
       <div className="max-w-3xl mx-auto space-y-8">
         
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
             <Cloud className="h-8 w-8 text-indigo-600" />
             Cloud Key Escrow
           </h1>
@@ -128,10 +128,10 @@ export function BackupPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="flex border-b border-gray-200">
-            <button onClick={() => setMode("backup")} className={cn("flex-1 py-4 font-medium text-center transition-colors", mode === "backup" ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50" : "text-gray-500 hover:bg-gray-50")}>Backup Key to Cloud</button>
-            <button onClick={() => setMode("restore")} className={cn("flex-1 py-4 font-medium text-center transition-colors", mode === "restore" ? "text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50/50" : "text-gray-500 hover:bg-gray-50")}>Restore Key from Cloud</button>
+        <div className="bg-background rounded-2xl shadow-sm border border-border overflow-hidden">
+          <div className="flex border-b border-border">
+            <button onClick={() => setMode("backup")} className={cn("flex-1 py-4 font-medium text-center transition-colors", mode === "backup" ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50" : "text-muted-foreground hover:bg-background")}>Backup Key to Cloud</button>
+            <button onClick={() => setMode("restore")} className={cn("flex-1 py-4 font-medium text-center transition-colors", mode === "restore" ? "text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50/50" : "text-muted-foreground hover:bg-background")}>Restore Key from Cloud</button>
           </div>
 
           <div className="p-8 space-y-6">

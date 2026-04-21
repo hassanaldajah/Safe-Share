@@ -106,12 +106,12 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="relative w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="bg-background rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6 py-5 sticky top-0 z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
+                <div className="p-2 bg-background/20 backdrop-blur-sm rounded-lg">
                   <Share2 className="h-5 w-5 text-white" />
                 </div>
                 <div>
@@ -119,7 +119,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
                   <p className="text-sm text-white/80">{transaction.fileName}</p>
                 </div>
               </div>
-              <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors">
+              <button onClick={onClose} className="p-1.5 hover:bg-background/20 rounded-lg transition-colors">
                 <X className="h-5 w-5 text-white" />
               </button>
             </div>
@@ -161,15 +161,15 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
 
               {/* Permissions Panel */}
               {showPermissions && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-xl space-y-4 border border-gray-100">
+                <div className="mt-4 p-4 bg-background rounded-xl space-y-4 border border-gray-100">
                   
                   {/* View Limits */}
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-md shadow-sm text-gray-500"><Eye className="h-4 w-4" /></div>
+                      <div className="p-2 bg-background rounded-md shadow-sm text-muted-foreground"><Eye className="h-4 w-4" /></div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">View Limit</p>
-                        <p className="text-xs text-gray-500">Max times file can be opened</p>
+                        <p className="text-sm font-medium text-foreground">View Limit</p>
+                        <p className="text-xs text-muted-foreground">Max times file can be opened</p>
                       </div>
                     </div>
                     <input 
@@ -185,10 +185,10 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
                   {/* Download Limits */}
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-md shadow-sm text-gray-500"><Download className="h-4 w-4" /></div>
+                      <div className="p-2 bg-backgroundrounded-md shadow-sm text-muted-foreground"><Download className="h-4 w-4" /></div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Download Limit</p>
-                        <p className="text-xs text-gray-500">Max times file can be saved</p>
+                        <p className="text-sm font-medium text-foreground">Download Limit</p>
+                        <p className="text-xs text-muted-foreground">Max times file can be saved</p>
                       </div>
                     </div>
                     <input 
@@ -207,10 +207,10 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
                     onClick={() => setCanReshare(!canReshare)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-md shadow-sm text-gray-500"><Share2 className="h-4 w-4" /></div>
+                      <div className="p-2 bg-background rounded-md shadow-sm text-muted-foreground"><Share2 className="h-4 w-4" /></div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Allow Re-sharing</p>
-                        <p className="text-xs text-gray-500">Can they share this with others?</p>
+                        <p className="text-sm font-medium text-foreground">Allow Re-sharing</p>
+                        <p className="text-xs text-muted-foreground">Can they share this with others?</p>
                       </div>
                     </div>
                     <div className="text-indigo-600">
@@ -222,7 +222,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
               )}
             </div>
 
-            <p className="text-xs text-gray-500 flex items-center gap-1.5 bg-blue-50 p-3 rounded-lg border border-blue-100">
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5 bg-blue-50 p-3 rounded-lg border border-blue-100">
               <ShieldCheck className="h-4 w-4 text-blue-600 flex-shrink-0" />
               End-to-End Encrypted: The file key is re-encrypted in your browser using the recipient's public key. The server cannot read the contents.
             </p>

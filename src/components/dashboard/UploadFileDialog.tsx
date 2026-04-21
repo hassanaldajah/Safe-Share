@@ -203,12 +203,12 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="relative w-full max-w-3xl max-h-[90vh] animate-in fade-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
           {/* Header */}
           <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6 py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
+                <div className="p-2 bg-background/20 backdrop-blur-sm rounded-lg">
                   <Upload className="h-5 w-5 text-white" />
                 </div>
                 <div>
@@ -221,7 +221,7 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
               <button
                 onClick={onClose}
                 disabled={isEncrypting}
-                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50"
+                className="p-1.5 hover:bg-background/20 rounded-lg transition-colors disabled:opacity-50"
               >
                 <X className="h-5 w-5 text-white" />
               </button>
@@ -240,13 +240,13 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
                 "border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer",
                 dragActive
                   ? "border-indigo-500 bg-indigo-50"
-                  : "border-gray-300 hover:border-indigo-400 hover:bg-gray-50",
+                  : "border-gray-300 hover:border-indigo-400 hover:bg-background",
                 isEncrypting && "opacity-50 cursor-not-allowed"
               )}
               onClick={() => !isEncrypting && fileInputRef.current?.click()}
             >
               <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <p className="text-lg font-medium text-gray-900 mb-1">
+              <p className="text-lg font-medium text-foreground mb-1">
                 Drop files here or click to browse
               </p>
               <p className="text-sm text-gray-600">
@@ -265,26 +265,26 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
             {/* Uploading Files List */}
             {uploadingFiles.length > 0 && (
               <div className="mt-6 space-y-3">
-                <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wide">
+                <h3 className="font-semibold text-foreground text-sm uppercase tracking-wide">
                   Files ({uploadingFiles.length})
                 </h3>
                 {uploadingFiles.map((file) => (
-                  <div key={file.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div key={file.id} className="bg-background rounded-lg p-4 border border-border">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         {/* File Icon */}
-                        <div className="p-2 bg-white rounded-lg flex-shrink-0">
+                        <div className="p-2 bg-background rounded-lg flex-shrink-0">
                           {getFileType(file.file.name) === "document" && <FileText className="h-5 w-5 text-blue-500" />}
                           {getFileType(file.file.name) === "image" && <Image className="h-5 w-5 text-purple-500" />}
                           {getFileType(file.file.name) === "video" && <Video className="h-5 w-5 text-red-500" />}
                           {getFileType(file.file.name) === "audio" && <Music className="h-5 w-5 text-green-500" />}
                           {getFileType(file.file.name) === "archive" && <Archive className="h-5 w-5 text-orange-500" />}
-                          {getFileType(file.file.name) === "other" && <File className="h-5 w-5 text-gray-500" />}
+                          {getFileType(file.file.name) === "other" && <File className="h-5 w-5 text-muted-foreground" />}
                         </div>
 
                         {/* File Info */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 truncate">{file.file.name}</p>
+                          <p className="font-medium text-foreground truncate">{file.file.name}</p>
                           <p className="text-sm text-gray-600">
                             {formatFileSize(file.sizeBytes)}
                             {file.compressed && (
@@ -357,7 +357,7 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-200 p-6 bg-gray-50">
+          <div className="border-t border-border p-6 bg-background">
             <div className="flex items-center justify-between gap-3">
               <div className="text-sm text-gray-600">
                 {uploadingFiles.length > 0 && (
@@ -371,7 +371,7 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
                 <button
                   onClick={onClose}
                   disabled={isEncrypting}
-                  className="px-4 py-2.5 bg-white text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="px-4 py-2.5 bg-background text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-background transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -382,7 +382,7 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
                     "px-6 py-2.5 font-medium rounded-lg transition-colors flex items-center gap-2",
                     canUpload && !isEncrypting
                       ? "bg-indigo-600 text-white hover:bg-indigo-700"
-                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-gray-300 text-muted-foreground cursor-not-allowed"
                   )}
                 >
                   {isEncrypting && <Loader2 className="h-4 w-4 animate-spin" />}

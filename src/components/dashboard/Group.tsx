@@ -29,16 +29,16 @@ function RoleBadge({ role }: { role: string }) {
 function FilesTab({ files, myRole, onDownload, onDelete }: { files: any[], myRole: string, onDownload: (id: string, name: string) => void, onDelete: (id: string, name: string) => void }) {
   if (!files || files.length === 0) {
     return (
-      <div className="p-12 text-center text-gray-500 bg-white">
+      <div className="p-12 text-center text-muted-foreground bg-background">
         <Folder size={40} className="mx-auto mb-3 text-gray-300" />
-        <p className="font-medium text-gray-900">No files yet</p>
+        <p className="font-medium text-foreground">No files yet</p>
       </div>
     );
   }
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200">
       <table className="w-full text-sm">
-        <tbody className="divide-y divide-slate-100 bg-white">
+        <tbody className="divide-y divide-slate-100 bg-background">
           {files.map((f) => (
             <tr key={f.id} className="hover:bg-slate-50/60 transition-colors">
               <td className="px-4 py-3"><div className="flex items-center gap-2"><span className="text-lg">📄</span><span className="font-medium text-slate-800">{f.name}</span></div></td>
@@ -78,12 +78,12 @@ function MembersTab({ members, myRole, groupId, onRefresh, onRemove }: { members
         <div key={m.userId} className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">{m.name.substring(0, 2).toUpperCase()}</div>
-            <div><p className="text-sm font-semibold">{m.name}</p><p className="text-xs text-gray-500">{m.role}</p></div>
+            <div><p className="text-sm font-semibold">{m.name}</p><p className="text-xs text-muted-foreground">{m.role}</p></div>
           </div>
           
           {myRole === "ADMIN" && m.role !== "ADMIN" && (
             <div className="flex items-center gap-2">
-              <select className="text-xs border border-gray-200 rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" value={m.role} onChange={(e) => handleRoleChange(m.userId, e.target.value)}>
+              <select className="text-xs border border-border rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" value={m.role} onChange={(e) => handleRoleChange(m.userId, e.target.value)}>
                 <option value="VIEWER">Viewer</option><option value="EDITOR">Editor</option><option value="ADMIN">Admin</option>
               </select>
               <button onClick={() => onRemove(m.userId, m.name)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Remove Member"><UserMinus size={16} /></button>
@@ -98,25 +98,25 @@ function MembersTab({ members, myRole, groupId, onRefresh, onRemove }: { members
 function AuditLogTab({ entries }: { entries: any[] }) {
   if (!entries || entries.length === 0) {
     return (
-      <div className="p-12 text-center text-gray-500 bg-white">
+      <div className="p-12 text-center text-muted-foreground bg-background">
         <Activity size={40} className="mx-auto mb-3 text-gray-300" />
-        <p className="font-medium text-gray-900">No activity yet</p>
+        <p className="font-medium text-foreground">No activity yet</p>
       </div>
     );
   }
   return (
     <div className="space-y-2 p-4">
       {entries.map((e) => (
-        <div key={e.id} className="flex items-start gap-4 bg-white border border-gray-100 shadow-sm rounded-xl px-5 py-4">
+        <div key={e.id} className="flex items-start gap-4 bg-background border border-gray-100 shadow-sm rounded-xl px-5 py-4">
           <div className="mt-0.5">
             {e.severity === "critical" ? <Lock size={18} className="text-red-500" /> : 
              e.severity === "warn" ? <AlertCircle size={18} className="text-amber-500" /> : 
              <CheckCircle size={18} className="text-emerald-500" />}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-gray-900">
+            <p className="text-sm text-foreground">
               <span className="font-bold text-indigo-700">{e.user}</span>{" "}
-              <span className="text-gray-500">{e.action}</span>{" "}
+              <span className="text-muted-foreground">{e.action}</span>{" "}
               <span className="font-semibold text-gray-800">"{e.target}"</span>
             </p>
             <p className="text-xs text-gray-400 mt-1.5">{new Date(e.timestamp).toLocaleString()}</p>
@@ -283,16 +283,16 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 relative">
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <button onClick={onBack} className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-indigo-600 mb-4 transition-colors">
+          <button onClick={onBack} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-indigo-600 mb-4 transition-colors">
             <ArrowLeft size={16} /> Back to Groups
           </button>
           
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-2xl font-bold text-gray-900">{group.name}</h1>
+                <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
                 <RoleBadge role={group.myRole} />
               </div>
               <p className="text-sm text-gray-600">{group.description}</p>
@@ -320,33 +320,33 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
 
       <div className="max-w-7xl mx-auto px-6 py-8">
 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+          <div className="bg-background p-4 rounded-xl border border-border shadow-sm flex items-center gap-4">
             <div className="p-3 rounded-lg bg-indigo-50 text-indigo-700"><Users size={20} /></div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Members</p>
-              <p className="text-xl font-bold text-gray-900">{members.length || group.memberCount}</p>
+              <p className="text-sm text-muted-foreground font-medium">Members</p>
+              <p className="text-xl font-bold text-foreground">{members.length || group.memberCount}</p>
             </div>
           </div>
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+          <div className="bg-background p-4 rounded-xl border border-border shadow-sm flex items-center gap-4">
             <div className="p-3 rounded-lg bg-sky-50 text-sky-700"><FileText size={20} /></div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Shared Files</p>
-              <p className="text-xl font-bold text-gray-900">{groupFiles.length}</p>
+              <p className="text-sm text-muted-foreground font-medium">Shared Files</p>
+              <p className="text-xl font-bold text-foreground">{groupFiles.length}</p>
             </div>
           </div>
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+          <div className="bg-background p-4 rounded-xl border border-border shadow-sm flex items-center gap-4">
             <div className="p-3 rounded-lg bg-violet-50 text-violet-700"><Crown size={20} /></div>
             <div>
-              <p className="text-sm text-gray-500 font-medium">Your Role</p>
-              <p className="text-xl font-bold text-gray-900">{group.myRole}</p>
+              <p className="text-sm text-muted-foreground font-medium">Your Role</p>
+              <p className="text-xl font-bold text-foreground">{group.myRole}</p>
             </div>
           </div>
         </div>
         <div className="flex items-center justify-between mb-6">
-          <div className="flex gap-1 bg-gray-100/50 border border-gray-200 p-1 rounded-xl w-fit">
-            <button onClick={() => setActiveTab("files")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "files" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}><FileText size={15} /> Files</button>
-            <button onClick={() => setActiveTab("members")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "members" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}><Users size={15} /> Members</button>
-            <button onClick={() => setActiveTab("audit")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "audit" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"}`}><Activity size={15} /> Audit Log</button>
+          <div className="flex gap-1 bg-gray-100/50 border border-border p-1 rounded-xl w-fit">
+            <button onClick={() => setActiveTab("files")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "files" ? "bg-background text-indigo-600 shadow-sm" : "text-muted-foreground hover:text-gray-700 hover:bg-background"}`}><FileText size={15} /> Files</button>
+            <button onClick={() => setActiveTab("members")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "members" ? "bg-background text-indigo-600 shadow-sm" : "text-muted-foreground hover:text-gray-700 hover:bg-background"}`}><Users size={15} /> Members</button>
+            <button onClick={() => setActiveTab("audit")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "audit" ? "bg-background text-indigo-600 shadow-sm" : "text-muted-foreground hover:text-gray-700 hover:bg-background"}`}><Activity size={15} /> Audit Log</button>
           </div>
 
           {activeTab === "files" && group.myRole !== "VIEWER" && (
@@ -359,7 +359,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
           )}
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-h-[300px]">
+        <div className="bg-background rounded-2xl border border-border shadow-sm overflow-hidden min-h-[300px]">
           {activeTab === "files" && (loadingFiles ? <div className="p-12 text-center text-gray-400 animate-pulse">Decrypting group files...</div> : <FilesTab files={groupFiles} myRole={group.myRole} onDownload={handleDownloadFile} onDelete={handleDeleteGroupFile} />)}
           {activeTab === "members" && (loadingMembers ? <div className="p-12 text-center text-gray-400 animate-pulse">Loading members...</div> : <MembersTab members={members} myRole={group.myRole} groupId={group.id} onRefresh={() => { fetchMembers(); fetchLogs(); }} onRemove={handleRemoveMember} />)}
           
@@ -371,9 +371,9 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
       {/* --- NEW CONFIRMATION MODAL --- */}
       {confirmDialog.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-background rounded-2xl shadow-xl max-w-sm w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">{confirmDialog.title}</h3>
+              <h3 className="text-lg font-bold text-foreground mb-2">{confirmDialog.title}</h3>
               <p className="text-sm text-gray-600 mb-6 leading-relaxed">{confirmDialog.message}</p>
               <div className="flex gap-3 justify-end">
                 <button onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
@@ -390,7 +390,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
 
 function GroupCard({ group, onOpen }: { group: any; onOpen: () => void }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
+    <div className="bg-background border border-slate-200 rounded-2xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
       <div className={`h-2 bg-gradient-to-r ${group.color || 'from-indigo-500 to-purple-600'}`} />
       <div className="p-5 flex-1 flex flex-col">
         <div className="flex items-start justify-between mb-3">
@@ -414,7 +414,7 @@ function GroupCard({ group, onOpen }: { group: any; onOpen: () => void }) {
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+      <div className="bg-background rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-semibold text-slate-900 text-lg">{title}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700 transition-colors"><X size={18} /></button>
@@ -470,11 +470,11 @@ function GroupHub({ groups, onOpenGroup, onRefresh, isLoading }: { groups: any[]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">Groups</h1>
+              <h1 className="text-2xl font-bold text-foreground mb-1">Groups</h1>
               <p className="text-sm text-gray-600">Manage your secure collaborative workspaces</p>
             </div>
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 shadow-sm">
@@ -486,15 +486,15 @@ function GroupHub({ groups, onOpenGroup, onRefresh, isLoading }: { groups: any[]
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="font-semibold text-gray-900 text-lg">Your Groups</h2>
+          <h2 className="font-semibold text-foreground text-lg">Your Groups</h2>
           <div className="flex gap-3">
-            <button onClick={() => setShowJoin(true)} className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 px-4 py-2.5 rounded-lg transition-all shadow-sm"><LogIn size={16} /> Join Group</button>
+            <button onClick={() => setShowJoin(true)} className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 bg-background border border-gray-300 hover:bg-background px-4 py-2.5 rounded-lg transition-all shadow-sm"><LogIn size={16} /> Join Group</button>
             <button disabled={atLimit} onClick={() => !atLimit && setShowCreate(true)} className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg transition-all shadow-sm ${atLimit ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 text-white"}`}><Plus size={16} /> Create Group</button>
           </div>
         </div>
 
         {isLoading ? (
-          <div className="text-center py-20 text-gray-500 font-medium animate-pulse">Loading secure groups...</div>
+          <div className="text-center py-20 text-muted-foreground font-medium animate-pulse">Loading secure groups...</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {groups.map((g) => <GroupCard key={g.id} group={g} onOpen={() => onOpenGroup(g.id)} />)}

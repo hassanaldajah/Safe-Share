@@ -188,7 +188,7 @@ export function AiAssistantPage() {
   return (
     <div className="h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 flex flex-col">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 flex-shrink-0">
+      <div className="bg-background border-b border-border flex-shrink-0">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -196,7 +196,7 @@ export function AiAssistantPage() {
                 <Bot className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
                   AI Assistant
                   <Sparkles className="h-4 w-4 text-purple-500" />
                 </h1>
@@ -219,13 +219,13 @@ export function AiAssistantPage() {
                 <button
                   key={action.id}
                   onClick={() => handleSend(action.prompt)}
-                  className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all duration-200 text-left group"
+                  className="flex items-start gap-4 p-4 bg-background rounded-xl border border-border hover:border-purple-300 hover:shadow-md transition-all duration-200 text-left group"
                 >
                   <div className="p-2.5 bg-purple-50 rounded-lg group-hover:bg-purple-100 transition-colors">
                     <action.icon className="h-5 w-5 text-purple-600" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">
+                    <h3 className="font-semibold text-foreground mb-1">
                       {action.title}
                     </h3>
                     <p className="text-sm text-gray-600">{action.description}</p>
@@ -255,7 +255,7 @@ export function AiAssistantPage() {
                   "max-w-3xl rounded-2xl px-5 py-4 group",
                   message.type === "user"
                     ? "bg-purple-600 text-white"
-                    : "bg-white border border-gray-200 text-gray-900"
+                    : "bg-background border border-border text-foreground"
                 )}
               >
                 <div
@@ -287,7 +287,7 @@ export function AiAssistantPage() {
 
                 {/* Suggestions */}
                 {message.suggestions && message.suggestions.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-border">
                     {message.suggestions.map((suggestion, i) => (
                       <button
                         key={i}
@@ -304,7 +304,7 @@ export function AiAssistantPage() {
                 {message.type === "assistant" && (
                   <button
                     onClick={() => handleCopy(message.content, message.id)}
-                    className="mt-3 text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="mt-3 text-xs text-muted-foreground hover:text-gray-700 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     {copiedId === message.id ? (
                       <>
@@ -335,7 +335,7 @@ export function AiAssistantPage() {
               <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
                 <Bot className="h-5 w-5 text-white" />
               </div>
-              <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
+              <div className="bg-background border border-border rounded-2xl px-5 py-4">
                 <div className="flex items-center gap-2 text-gray-600">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span className="text-sm">Thinking...</span>
@@ -349,7 +349,7 @@ export function AiAssistantPage() {
       </div>
 
       {/* Input Area */}
-      <div className="bg-white border-t border-gray-200 flex-shrink-0">
+      <div className="bg-background border-t border-border flex-shrink-0">
         <div className="max-w-5xl mx-auto px-6 py-4">
           <div className="flex gap-3">
             <input
@@ -374,7 +374,7 @@ export function AiAssistantPage() {
               Send
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-2 text-center">
+          <p className="text-xs text-muted-foreground mt-2 text-center">
             AI responses are generated based on your file data. Always verify
             important information.
           </p>

@@ -34,8 +34,19 @@ export default function SettingsPage() {
   const [passwords, setPasswords] = useState({ current: "", newPass: "", confirm: "" });
   const [showPass, setShowPass] = useState({ current: false, newPass: false, confirm: false });
   const [passError, setPassError] = useState("");
+  const handleThemeChange = (newTheme: Theme) => {
+    setTheme(newTheme); // Move the green border
+    
+    const root = window.document.documentElement;
+    root.classList.remove("light", "dark");
 
-  // --- 1. LOAD SAVED PREFERENCES FROM DATABASE ON MOUNT ---
+    if (newTheme === "system") {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      root.classList.add(systemTheme);
+    } else {
+      root.classList.add(newTheme);
+    }
+  };
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -91,7 +102,6 @@ export default function SettingsPage() {
 
       if (!prefRes.ok) throw new Error("Failed to save preferences.");
       
-      // Apply dark mode class to HTML
       if (theme === "dark") document.documentElement.classList.add("dark");
       else if (theme === "light") document.documentElement.classList.remove("dark");
       else {
@@ -131,7 +141,7 @@ export default function SettingsPage() {
               <p className="text-sm font-medium text-foreground mb-3">Theme</p>
               <div className="grid grid-cols-3 gap-2">
                 {([{ value: "light", label: "Light", icon: <Sun className="h-4 w-4" /> }, { value: "dark", label: "Dark", icon: <Moon className="h-4 w-4" /> }, { value: "system", label: "System", icon: <Monitor className="h-4 w-4" /> }].map((t) => (
-                  <button key={t.value} onClick={() => setTheme(t.value as Theme)} className={`flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all ${theme === t.value ? "border-primary bg-primary/5 text-primary" : "border-border bg-muted/30 text-muted-foreground hover:border-border hover:bg-muted"}`}>
+                  <button key={t.value} onClick={() => handleThemeChange(t.value as Theme)} className={`flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all ${theme === t.value ? "border-primary bg-primary/5 text-primary" : "border-border bg-muted/30 text-muted-foreground hover:border-border hover:bg-muted"}`}>
                     {t.icon} <span className="text-xs font-medium">{t.label}</span>
                   </button>
                 )))}

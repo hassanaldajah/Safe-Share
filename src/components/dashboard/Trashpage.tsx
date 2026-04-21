@@ -40,7 +40,7 @@ export function TrashPage() {
       case "video": return <Video className="h-5 w-5 text-red-500" />;
       case "audio": return <Music className="h-5 w-5 text-green-500" />;
       case "archive": return <Archive className="h-5 w-5 text-orange-500" />;
-      default: return <File className="h-5 w-5 text-gray-500" />;
+      default: return <File className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -93,11 +93,11 @@ export function TrashPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
                 <Trash2 className="h-6 w-6" /> Trash
               </h1>
               <p className="text-sm text-gray-600">
@@ -134,7 +134,7 @@ export function TrashPage() {
         </div>
       </div>
 
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-md">
@@ -149,8 +149,8 @@ export function TrashPage() {
             </div>
 
             <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg">
-              <button onClick={() => setViewMode("list")} className={cn("p-2 rounded transition-all duration-200", viewMode === "list" ? "bg-white shadow-sm text-indigo-600" : "text-gray-600 hover:text-gray-900")}><List className="h-4 w-4" /></button>
-              <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded transition-all duration-200", viewMode === "grid" ? "bg-white shadow-sm text-indigo-600" : "text-gray-600 hover:text-gray-900")}><Grid3x3 className="h-4 w-4" /></button>
+              <button onClick={() => setViewMode("list")} className={cn("p-2 rounded transition-all duration-200", viewMode === "list" ? "bg-background shadow-sm text-indigo-600" : "text-gray-600 hover:text-foreground")}><List className="h-4 w-4" /></button>
+              <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded transition-all duration-200", viewMode === "grid" ? "bg-background shadow-sm text-indigo-600" : "text-gray-600 hover:text-foreground")}><Grid3x3 className="h-4 w-4" /></button>
             </div>
           </div>
         </div>
@@ -158,9 +158,9 @@ export function TrashPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {viewMode === "list" ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-background rounded-xl shadow-sm border border-border overflow-hidden">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-background border-b border-border">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Size</th>
@@ -176,13 +176,13 @@ export function TrashPage() {
                   const daysRemaining = 30 - daysInTrash;
 
                   return (
-                    <tr key={file.id} className="hover:bg-gray-50 transition-colors group">
+                    <tr key={file.id} className="hover:bg-background transition-colors group">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           {getFileIcon(file)}
                           <div>
-                            <span className="font-medium text-gray-900">{file.name}</span>
-                            {file.originalParentId && <p className="text-xs text-gray-500 mt-0.5">From folder</p>}
+                            <span className="font-medium text-foreground">{file.name}</span>
+                            {file.originalParentId && <p className="text-xs text-muted-foreground mt-0.5">From folder</p>}
                           </div>
                         </div>
                       </td>
@@ -198,7 +198,7 @@ export function TrashPage() {
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-600">
                           {daysInTrash === 0 ? "Today" : `${daysInTrash}d ago`}
-                          <p className={cn("text-xs mt-0.5", daysRemaining <= 7 ? "text-red-600" : "text-gray-500")}>{daysRemaining}d left</p>
+                          <p className={cn("text-xs mt-0.5", daysRemaining <= 7 ? "text-red-600" : "text-muted-foreground")}>{daysRemaining}d left</p>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -230,13 +230,13 @@ export function TrashPage() {
               const daysRemaining = 30 - daysInTrash;
 
               return (
-                <div key={file.id} className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-200 group">
+                <div key={file.id} className="bg-background rounded-xl border border-border p-4 hover:shadow-lg transition-all duration-200 group">
                   <div className="flex items-start justify-between mb-3">
                     <div className="p-3 bg-gradient-to-br from-red-50 to-orange-50 rounded-lg">{getFileIcon(file)}</div>
                     <div className={cn("text-xs px-2 py-1 rounded-full font-medium", daysRemaining <= 7 ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-700")}>{daysRemaining}d left</div>
                   </div>
 
-                  <h3 className="font-medium text-gray-900 mb-1 truncate">{file.name}</h3>
+                  <h3 className="font-medium text-foreground mb-1 truncate">{file.name}</h3>
                   <p className="text-sm text-gray-600 mb-3">{file.size || "Folder"}</p>
 
                   <div className="flex items-center gap-2 mb-3">
@@ -272,7 +272,7 @@ export function TrashPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
               <Trash2 className="h-8 w-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Trash is empty</h3>
+            <h3 className="text-lg font-medium text-foreground mb-2">Trash is empty</h3>
             <p className="text-gray-600">{searchQuery ? "No items match your search" : "Deleted items will appear here"}</p>
           </div>
         )}
@@ -281,10 +281,10 @@ export function TrashPage() {
       {showEmptyConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="relative w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="bg-background rounded-2xl shadow-2xl overflow-hidden">
               <div className="bg-gradient-to-br from-red-500 to-pink-500 px-6 py-5">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
+                  <div className="p-2 bg-background/20 backdrop-blur-sm rounded-lg">
                     <AlertTriangle className="h-5 w-5 text-white" />
                   </div>
                   <div>

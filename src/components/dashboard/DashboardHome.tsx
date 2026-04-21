@@ -93,7 +93,7 @@ export default function DashboardHome() {
         <div className="mb-8 space-y-6">
           
           {/* Storage Hero Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden">
+          <div className="bg-background rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-5">
               <HardDrive className="h-32 w-32" />
             </div>
@@ -127,7 +127,7 @@ export default function DashboardHome() {
           {/* 3 Quick Stat Cards */}
           <div className="grid gap-4 md:grid-cols-3">
             {/* Total Files */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+            <div className="bg-background rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
                 <HardDrive className="h-6 w-6" />
               </div>
@@ -138,7 +138,7 @@ export default function DashboardHome() {
             </div>
 
             {/* Links Sent */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+            <div className="bg-background rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                 <Send className="h-6 w-6" />
               </div>
@@ -149,7 +149,7 @@ export default function DashboardHome() {
             </div>
 
             {/* Links Received */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+            <div className="bg-background rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
                 <Inbox className="h-6 w-6" />
               </div>

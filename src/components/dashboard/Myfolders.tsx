@@ -96,11 +96,11 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="relative w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="bg-background rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
           <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6 py-5 sticky top-0 z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
+                <div className="p-2 bg-background/20 backdrop-blur-sm rounded-lg">
                   <Share2 className="h-5 w-5 text-white" />
                 </div>
                 <div>
@@ -108,7 +108,7 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
                   <p className="text-sm text-white/80">{file.name}</p>
                 </div>
               </div>
-              <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors">
+              <button onClick={onClose} className="p-1.5 hover:bg-background/20 rounded-lg transition-colors">
                 <X className="h-5 w-5 text-white" />
               </button>
             </div>
@@ -147,13 +147,13 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
               </button>
 
               {showPermissions && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-xl space-y-4 border border-gray-100">
+                <div className="mt-4 p-4 bg-background rounded-xl space-y-4 border border-gray-100">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-md shadow-sm text-gray-500"><Eye className="h-4 w-4" /></div>
+                      <div className="p-2 bg-background rounded-md shadow-sm text-muted-foreground"><Eye className="h-4 w-4" /></div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">View Limit</p>
-                        <p className="text-xs text-gray-500">Max times file can be opened</p>
+                        <p className="text-sm font-medium text-foreground">View Limit</p>
+                        <p className="text-xs text-muted-foreground">Max times file can be opened</p>
                       </div>
                     </div>
                     <input 
@@ -168,10 +168,10 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
 
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-md shadow-sm text-gray-500"><Download className="h-4 w-4" /></div>
+                      <div className="p-2 bg-background rounded-md shadow-sm text-muted-foreground"><Download className="h-4 w-4" /></div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Download Limit</p>
-                        <p className="text-xs text-gray-500">Max times file can be saved</p>
+                        <p className="text-sm font-medium text-foreground">Download Limit</p>
+                        <p className="text-xs text-muted-foreground">Max times file can be saved</p>
                       </div>
                     </div>
                     <input 
@@ -189,10 +189,10 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
                     onClick={() => setCanReshare(!canReshare)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-md shadow-sm text-gray-500"><Share2 className="h-4 w-4" /></div>
+                      <div className="p-2 bg-background rounded-md shadow-sm text-muted-foreground"><Share2 className="h-4 w-4" /></div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Allow Re-sharing</p>
-                        <p className="text-xs text-gray-500">Can they share this with others?</p>
+                        <p className="text-sm font-medium text-foreground">Allow Re-sharing</p>
+                        <p className="text-xs text-muted-foreground">Can they share this with others?</p>
                       </div>
                     </div>
                     <div className="text-indigo-600">
@@ -203,7 +203,7 @@ function ShareDialog({ isOpen, onClose, file }: ShareDialogProps) {
               )}
             </div>
 
-            <p className="text-xs text-gray-500 flex items-center gap-1.5 bg-blue-50 p-3 rounded-lg border border-blue-100">
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5 bg-blue-50 p-3 rounded-lg border border-blue-100">
               <ShieldCheck className="h-4 w-4 text-blue-600 flex-shrink-0" />
               End-to-End Encrypted: The file key is re-encrypted in your browser using the recipient's public key. The server cannot read the contents.
             </p>
@@ -286,7 +286,7 @@ toast.success("File successfully shared to the group!");
       case "video": return <Video className="h-5 w-5 text-red-500" />;
       case "audio": return <Music className="h-5 w-5 text-green-500" />;
       case "archive": return <Archive className="h-5 w-5 text-orange-500" />;
-      default: return <File className="h-5 w-5 text-gray-500" />;
+      default: return <File className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -372,11 +372,11 @@ toast.success("File successfully shared to the group!");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-4">
           {currentFolder && (
             <div className="flex items-center gap-2 mb-4">
-              <button onClick={handleBackClick} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+              <button onClick={handleBackClick} className="flex items-center gap-2 text-gray-600 hover:text-foreground transition-colors">
                 <ArrowLeft className="h-4 w-4" />
                 <span className="text-sm font-medium">Back to My Folders</span>
               </button>
@@ -385,7 +385,7 @@ toast.success("File successfully shared to the group!");
 
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">{currentFolder ? currentFolder.name : "My Folders"}</h1>
+              <h1 className="text-2xl font-bold text-foreground mb-1">{currentFolder ? currentFolder.name : "My Folders"}</h1>
               <p className="text-sm text-gray-600">{filteredFiles.length} items • {filteredFiles.filter((f) => f.type === "folder").length} folders</p>
             </div>
 
@@ -403,7 +403,7 @@ toast.success("File successfully shared to the group!");
         </div>
       </div>
 
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-md">
@@ -411,8 +411,8 @@ toast.success("File successfully shared to the group!");
               <input type="text" placeholder="Search files and folders..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
             <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg">
-              <button onClick={() => setViewMode("list")} className={cn("p-2 rounded transition-all", viewMode === "list" ? "bg-white shadow-sm text-indigo-600" : "text-gray-600 hover:text-gray-900")}><List className="h-4 w-4" /></button>
-              <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded transition-all", viewMode === "grid" ? "bg-white shadow-sm text-indigo-600" : "text-gray-600 hover:text-gray-900")}><Grid3x3 className="h-4 w-4" /></button>
+              <button onClick={() => setViewMode("list")} className={cn("p-2 rounded transition-all", viewMode === "list" ? "bg-background shadow-sm text-indigo-600" : "text-gray-600 hover:text-foreground")}><List className="h-4 w-4" /></button>
+              <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded transition-all", viewMode === "grid" ? "bg-background shadow-sm text-indigo-600" : "text-gray-600 hover:text-foreground")}><Grid3x3 className="h-4 w-4" /></button>
             </div>
           </div>
         </div>
@@ -425,9 +425,9 @@ toast.success("File successfully shared to the group!");
             <span className="ml-3 text-gray-600 font-medium">Loading your secure files...</span>
           </div>
         ) : viewMode === "list" ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-background rounded-xl shadow-sm border border-border overflow-hidden">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-background border-b border-border">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Size</th>
@@ -439,11 +439,11 @@ toast.success("File successfully shared to the group!");
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredFiles.map((file) => (
-                  <tr key={file.id} className="hover:bg-gray-50 transition-colors group" onDoubleClick={() => file.type === "folder" && handleFolderClick(file)}>
+                  <tr key={file.id} className="hover:bg-background transition-colors group" onDoubleClick={() => file.type === "folder" && handleFolderClick(file)}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3 cursor-pointer" onClick={() => file.type === "folder" && handleFolderClick(file)}>
                         {getFileIcon(file)}
-                        <span className="font-medium text-gray-900">{file.name}</span>
+                        <span className="font-medium text-foreground">{file.name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600">{file.size || "—"}</td>
@@ -485,13 +485,13 @@ toast.success("File successfully shared to the group!");
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredFiles.map((file) => (
-              <div key={file.id} className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg transition-all duration-200 group cursor-pointer" onDoubleClick={() => file.type === "folder" && handleFolderClick(file)}>
+              <div key={file.id} className="bg-background rounded-xl border border-border p-4 hover:shadow-lg transition-all duration-200 group cursor-pointer" onDoubleClick={() => file.type === "folder" && handleFolderClick(file)}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="p-3 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg" onClick={() => file.type === "folder" && handleFolderClick(file)}>
                     {getFileIcon(file)}
                   </div>
                 </div>
-                <h3 className="font-medium text-gray-900 mb-1 truncate">{file.name}</h3>
+                <h3 className="font-medium text-foreground mb-1 truncate">{file.name}</h3>
                 <p className="text-sm text-gray-600 mb-3">{file.size || "Folder"}</p>
                 <div className="flex items-center gap-2 mb-3">
                   {getVirusScanBadge(file.virusScan)}
@@ -526,8 +526,8 @@ toast.success("File successfully shared to the group!");
 
       {deleteDialog.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-           <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
-              <h2 className="text-lg font-bold text-gray-900 mb-2">Move to Trash</h2>
+           <div className="bg-background rounded-2xl p-6 max-w-sm w-full mx-4">
+              <h2 className="text-lg font-bold text-foreground mb-2">Move to Trash</h2>
               <p className="text-gray-600 mb-6">Are you sure you want to move "{deleteDialog.itemName}" to trash?</p>
               <div className="flex gap-3 justify-end">
                 <button onClick={() => setDeleteDialog({ isOpen: false, itemId: "", itemName: "" })} className="px-4 py-2 font-medium text-gray-700 hover:bg-gray-100 rounded-lg">Cancel</button>
@@ -541,7 +541,7 @@ toast.success("File successfully shared to the group!");
       
       {showGroupModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <div className="bg-background rounded-2xl shadow-2xl w-full max-w-md p-6">
             <h2 className="font-semibold text-slate-900 text-lg mb-4">Share to Group Drive</h2>
             
             <label className="block text-sm font-medium text-slate-700 mb-1.5">Select a Group</label>

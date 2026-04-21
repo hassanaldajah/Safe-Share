@@ -236,7 +236,7 @@ export function Chatpage() {
       case "video": return <Video className="h-5 w-5 text-red-500" />;
       case "audio": return <Music className="h-5 w-5 text-green-500" />;
       case "archive": return <Archive className="h-5 w-5 text-orange-500" />;
-      default: return <File className="h-5 w-5 text-gray-500" />;
+      default: return <File className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
@@ -257,11 +257,11 @@ export function Chatpage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">File Sharing Transactions</h1>
+              <h1 className="text-2xl font-bold text-foreground mb-1">File Sharing Transactions</h1>
               <p className="text-sm text-gray-600">View all files and folders you've sent or received securely.</p>
             </div>
           </div>
@@ -272,9 +272,9 @@ export function Chatpage() {
               <input type="text" value={searchUserId} onChange={(e) => setSearchUserId(e.target.value)} placeholder="Search by User Tag (e.g., @motasem)" className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
             <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
-              <button onClick={() => setFilterType("all")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm", filterType === "all" ? "bg-white shadow-sm text-indigo-600" : "text-gray-600 hover:text-gray-900")}>All</button>
-              <button onClick={() => setFilterType("sent")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "sent" ? "bg-white shadow-sm text-indigo-600" : "text-gray-600 hover:text-gray-900")}><ArrowUpRight className="h-4 w-4" /> Sent</button>
-              <button onClick={() => setFilterType("received")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "received" ? "bg-white shadow-sm text-indigo-600" : "text-gray-600 hover:text-gray-900")}><ArrowDownLeft className="h-4 w-4" /> Received</button>
+              <button onClick={() => setFilterType("all")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm", filterType === "all" ? "bg-background shadow-sm text-indigo-600" : "text-gray-600 hover:text-foreground")}>All</button>
+              <button onClick={() => setFilterType("sent")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "sent" ? "bg-background shadow-sm text-indigo-600" : "text-gray-600 hover:text-foreground")}><ArrowUpRight className="h-4 w-4" /> Sent</button>
+              <button onClick={() => setFilterType("received")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "received" ? "bg-background shadow-sm text-indigo-600" : "text-gray-600 hover:text-foreground")}><ArrowDownLeft className="h-4 w-4" /> Received</button>
             </div>
           </div>
         </div>
@@ -291,25 +291,25 @@ export function Chatpage() {
         {isLoading ? (
           <div className="flex flex-col justify-center items-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-4" />
-            <p className="text-gray-500 font-medium">Decrypting transaction history...</p>
+            <p className="text-muted-foreground font-medium">Decrypting transaction history...</p>
           </div>
         ) : Object.keys(groupedByUser).length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-50 rounded-full mb-4 border border-gray-100"><User className="h-8 w-8 text-gray-400" /></div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No transactions found</h3>
+          <div className="text-center py-16 bg-background rounded-2xl border border-border">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-background rounded-full mb-4 border border-gray-100"><User className="h-8 w-8 text-gray-400" /></div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">No transactions found</h3>
           </div>
         ) : (
           <div className="space-y-6">
             {Object.entries(groupedByUser).map(([userId, userTransactions]) => (
-              <div key={userId} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+              <div key={userId} className="bg-background rounded-xl border border-border overflow-hidden shadow-sm">
                 
-                <div className="bg-slate-50 px-6 py-4 border-b border-gray-200">
+                <div className="bg-slate-50 px-6 py-4 border-b border-border">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center shadow-sm"><User className="h-5 w-5 text-white" /></div>
                       <div>
-                        <p className="font-semibold text-gray-900 flex items-center gap-2">{userId}</p>
-                        <p className="text-sm text-gray-500">{userTransactions.length} transaction{userTransactions.length !== 1 ? "s" : ""}</p>
+                        <p className="font-semibold text-foreground flex items-center gap-2">{userId}</p>
+                        <p className="text-sm text-muted-foreground">{userTransactions.length} transaction{userTransactions.length !== 1 ? "s" : ""}</p>
                       </div>
                     </div>
                   </div>
@@ -324,15 +324,15 @@ export function Chatpage() {
                           {transaction.transactionType === "sent" ? <ArrowUpRight className="h-4 w-4 text-emerald-600" /> : <ArrowDownLeft className="h-4 w-4 text-blue-600" />}
                         </div>
 
-                        <div className="p-2.5 bg-white border border-gray-100 rounded-lg shadow-sm">
+                        <div className="p-2.5 bg-background border border-gray-100 rounded-lg shadow-sm">
                           {getFileIcon(transaction.fileType, transaction.fileCategory)}
                         </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium text-gray-900 truncate">{transaction.fileName}</p>
+                            <p className="font-medium text-foreground truncate">{transaction.fileName}</p>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-gray-500 font-medium">
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium">
                             {transaction.fileSize && <span>{transaction.fileSize}</span>}
                             <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{formatTimestamp(transaction.timestamp)}</span>
                             <span className={cn("px-2 py-0.5 rounded-full", transaction.transactionType === "sent" ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700")}>
@@ -346,25 +346,25 @@ export function Chatpage() {
                           
                           {/* SHARE BUTTON */}
                           {(transaction.transactionType === "sent" || transaction.canReshare) && (
-                            <button onClick={() => handleShare(transaction)} className="p-2 hover:bg-purple-50 text-gray-500 hover:text-purple-600 rounded-lg transition-colors" title="Share File">
+                            <button onClick={() => handleShare(transaction)} className="p-2 hover:bg-purple-50 text-muted-foreground hover:text-purple-600 rounded-lg transition-colors" title="Share File">
                               <Share2 className="h-4 w-4" />
                             </button>
                           )}
 
                           {/* MANAGE ACCESS BUTTON */}
                           {transaction.transactionType === "sent" && (
-                            <button onClick={() => setManagingFile(transaction)} className="p-2 hover:bg-rose-50 text-gray-500 hover:text-rose-600 rounded-lg transition-colors" title="Manage Access">
+                            <button onClick={() => setManagingFile(transaction)} className="p-2 hover:bg-rose-50 text-muted-foreground hover:text-rose-600 rounded-lg transition-colors" title="Manage Access">
                               <ShieldAlert className="h-4 w-4" />
                             </button>
                           )}
 
                           {/* VIEW BUTTON */}
-                          <button onClick={() => handleView(transaction)} disabled={isViewing === transaction.id} className="p-2 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-lg transition-colors" title="View File">
+                          <button onClick={() => handleView(transaction)} disabled={isViewing === transaction.id} className="p-2 hover:bg-blue-50 text-muted-foreground hover:text-blue-600 rounded-lg transition-colors" title="View File">
                             {isViewing === transaction.id ? <Loader2 className="h-4 w-4 animate-spin text-blue-600" /> : <Eye className="h-4 w-4" />}
                           </button>
 
                           {/* DOWNLOAD BUTTON */}
-                          <button onClick={() => handleDownload(transaction)} disabled={isDownloading === transaction.id} className="p-2 hover:bg-indigo-50 text-gray-500 hover:text-indigo-600 rounded-lg transition-colors" title="Download File">
+                          <button onClick={() => handleDownload(transaction)} disabled={isDownloading === transaction.id} className="p-2 hover:bg-indigo-50 text-muted-foreground hover:text-indigo-600 rounded-lg transition-colors" title="Download File">
                             {isDownloading === transaction.id ? <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> : <Download className="h-4 w-4" />}
                           </button>
 

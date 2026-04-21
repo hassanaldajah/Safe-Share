@@ -197,7 +197,7 @@ export function BackupPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -205,7 +205,7 @@ export function BackupPage() {
                 <Database className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Backup & Recovery</h1>
+                <h1 className="text-2xl font-bold text-foreground">Backup & Recovery</h1>
                 <p className="text-sm text-gray-600">Automatic backups • 30-day retention • Point-in-time recovery</p>
               </div>
             </div>
@@ -216,14 +216,14 @@ export function BackupPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center gap-1 mt-6 border-b border-gray-200">
+          <div className="flex items-center gap-1 mt-6 border-b border-border">
             {["overview", "history", "schedule", "key-recovery"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab as any)}
                 className={cn(
                   "px-4 py-2 text-sm font-medium border-b-2 transition-colors capitalize",
-                  activeTab === tab ? "border-blue-600 text-blue-600" : "border-transparent text-gray-600 hover:text-gray-900"
+                  activeTab === tab ? "border-blue-600 text-blue-600" : "border-transparent text-gray-600 hover:text-foreground"
                 )}
               >
                 {tab.replace("-", " ")}
@@ -240,22 +240,22 @@ export function BackupPage() {
         {activeTab === "overview" && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4"><div className="p-2 bg-green-50 rounded-lg"><CheckCircle className="h-5 w-5 text-green-600" /></div><span className="text-xs text-gray-500">Last 24 hours</span></div>
+              <div className="bg-background rounded-xl border border-border p-6">
+                <div className="flex items-center justify-between mb-4"><div className="p-2 bg-green-50 rounded-lg"><CheckCircle className="h-5 w-5 text-green-600" /></div><span className="text-xs text-muted-foreground">Last 24 hours</span></div>
                 <h3 className="text-sm font-medium text-gray-600 mb-1">Last Backup</h3>
-                <p className="text-2xl font-bold text-gray-900">{formatDate(backupHistory[0].endTime!).split(",")[0]}</p>
+                <p className="text-2xl font-bold text-foreground">{formatDate(backupHistory[0].endTime!).split(",")[0]}</p>
                 <p className="text-sm text-gray-600 mt-1">{backupHistory[0].filesCount} files • {backupHistory[0].size}</p>
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4"><div className="p-2 bg-blue-50 rounded-lg"><Clock className="h-5 w-5 text-blue-600" /></div><span className="text-xs text-gray-500">Scheduled</span></div>
+              <div className="bg-background rounded-xl border border-border p-6">
+                <div className="flex items-center justify-between mb-4"><div className="p-2 bg-blue-50 rounded-lg"><Clock className="h-5 w-5 text-blue-600" /></div><span className="text-xs text-muted-foreground">Scheduled</span></div>
                 <h3 className="text-sm font-medium text-gray-600 mb-1">Next Backup</h3>
-                <p className="text-2xl font-bold text-gray-900">{formatDate(backupSchedule[0].nextRun).split(",")[0]}</p>
+                <p className="text-2xl font-bold text-foreground">{formatDate(backupSchedule[0].nextRun).split(",")[0]}</p>
                 <p className="text-sm text-gray-600 mt-1">{backupSchedule[0].frequency} at {backupSchedule[0].time}</p>
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4"><div className="p-2 bg-purple-50 rounded-lg"><HardDrive className="h-5 w-5 text-purple-600" /></div><span className="text-xs text-gray-500">Current</span></div>
+              <div className="bg-background rounded-xl border border-border p-6">
+                <div className="flex items-center justify-between mb-4"><div className="p-2 bg-purple-50 rounded-lg"><HardDrive className="h-5 w-5 text-purple-600" /></div><span className="text-xs text-muted-foreground">Current</span></div>
                 <h3 className="text-sm font-medium text-gray-600 mb-1">Backup Size</h3>
-                <p className="text-2xl font-bold text-gray-900">{storage.usedFormatted}</p>
+                <p className="text-2xl font-bold text-foreground">{storage.usedFormatted}</p>
               </div>
             </div>
           </div>
@@ -263,16 +263,16 @@ export function BackupPage() {
 
         {/* --- HISTORY TAB --- */}
         {activeTab === "history" && (
-           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-             <div className="p-4 bg-gray-50 border-b border-gray-200"><h3 className="font-semibold text-gray-900">Recent Backups</h3></div>
+           <div className="bg-background rounded-xl border border-border overflow-hidden">
+             <div className="p-4 bg-background border-b border-border"><h3 className="font-semibold text-foreground">Recent Backups</h3></div>
              <div className="divide-y divide-gray-200">
                {backupHistory.map((backup) => (
-                 <div key={backup.id} className="p-6 hover:bg-gray-50 transition-colors group">
+                 <div key={backup.id} className="p-6 hover:bg-background transition-colors group">
                    <div className="flex items-start gap-4">
                      {getStatusIcon(backup.status)}
                      <div>
-                       <h4 className="font-medium text-gray-900">{backup.name}</h4>
-                       <p className="text-sm text-gray-500">{formatDate(backup.startTime)} • {backup.size}</p>
+                       <h4 className="font-medium text-foreground">{backup.name}</h4>
+                       <p className="text-sm text-muted-foreground">{formatDate(backup.startTime)} • {backup.size}</p>
                      </div>
                    </div>
                  </div>
@@ -283,12 +283,12 @@ export function BackupPage() {
 
         {/* --- SCHEDULE TAB --- */}
         {activeTab === "schedule" && (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-             <h3 className="font-semibold text-gray-900 mb-4">Automatic Backup Schedule</h3>
+          <div className="bg-background rounded-xl border border-border p-6">
+             <h3 className="font-semibold text-foreground mb-4">Automatic Backup Schedule</h3>
              {backupSchedule.map((schedule) => (
-               <div key={schedule.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+               <div key={schedule.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                  <div>
-                   <p className="font-medium text-gray-900">{schedule.frequency} Backup</p>
+                   <p className="font-medium text-foreground">{schedule.frequency} Backup</p>
                    <p className="text-sm text-gray-600">Every day at {schedule.time}</p>
                  </div>
                </div>
@@ -307,10 +307,10 @@ export function BackupPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="flex border-b border-gray-200">
-                <button onClick={() => setKeyMode("backup")} className={cn("flex-1 py-4 font-medium text-center transition-colors", keyMode === "backup" ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50" : "text-gray-500 hover:bg-gray-50")}>Backup Key to Cloud</button>
-                <button onClick={() => setKeyMode("restore")} className={cn("flex-1 py-4 font-medium text-center transition-colors", keyMode === "restore" ? "text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50/50" : "text-gray-500 hover:bg-gray-50")}>Restore Key from Cloud</button>
+            <div className="bg-background rounded-2xl shadow-sm border border-border overflow-hidden">
+              <div className="flex border-b border-border">
+                <button onClick={() => setKeyMode("backup")} className={cn("flex-1 py-4 font-medium text-center transition-colors", keyMode === "backup" ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50" : "text-muted-foreground hover:bg-background")}>Backup Key to Cloud</button>
+                <button onClick={() => setKeyMode("restore")} className={cn("flex-1 py-4 font-medium text-center transition-colors", keyMode === "restore" ? "text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50/50" : "text-muted-foreground hover:bg-background")}>Restore Key from Cloud</button>
               </div>
 
               <div className="p-8 space-y-6">

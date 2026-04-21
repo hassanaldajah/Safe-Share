@@ -37,7 +37,7 @@ export function RecentActivityFeed() {
       case "downloaded": return "text-sky-500";
       case "opened": return "text-teal-500";
       case "joined": return "text-indigo-500";
-      default: return "text-gray-500";
+      default: return "text-muted-foreground";
     }
   };
 
@@ -66,11 +66,11 @@ export function RecentActivityFeed() {
             </div>
             
             <div>
-              <p className="text-sm text-gray-900">
+              <p className="text-sm text-foreground">
                 <span className="font-semibold">{activity.user}</span>{" "}
                 <span className={getActionColor(activity.action)}>{activity.action}</span>
               </p>
-              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-500">
+              <div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
                 {getIcon(activity.target)}
                 <span>{activity.target}</span>
               </div>
