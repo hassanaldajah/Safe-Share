@@ -1,12 +1,12 @@
-import { 
-  Search, Bell, ChevronDown, Home, X, FileText, Users, 
+import {
+  Search, Bell, ChevronDown, Home, X, FileText, Users,
   MessageSquare, Clock, LogOut, User, Settings, HelpCircle,
-  Copy, Check, ShieldCheck 
+  Copy, Check, ShieldCheck, Menu
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback,AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
 // --- IMPORT THE AUTH CONTEXT ---
@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext"; // Adjust this path if your Aut
 
 interface TopBarProps {
   sidebarCollapsed: boolean;
+  onHamburgerClick: () => void;
 }
 
 interface Notification {
@@ -25,20 +26,20 @@ interface Notification {
   read: boolean;
 }
 
-export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
+export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarProps) {
   const navigate = useNavigate();
   const [profileImg, setProfileImg] = useState<string | null>(localStorage.getItem("profileImage"));
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [copied, setCopied] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  
+
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
   // --- PULL REAL DATA FROM CONTEXT ---
   const { user, logout } = useAuth();
-  
+
   // Fallback just in case the context hasn't loaded yet
   const currentUser = user || {
     name: "Loading...",
@@ -58,10 +59,10 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
     const handleImageUpdate = () => {
       setProfileImg(localStorage.getItem("profileImage"));
     };
-    
+
     // Listen for the signal from ProfilePage
     window.addEventListener("profileImageUpdated", handleImageUpdate);
-    
+
     // Cleanup
     return () => window.removeEventListener("profileImageUpdated", handleImageUpdate);
   }, []);
@@ -89,14 +90,23 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
 
   return (
     <header
-      className="fixed right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-6 transition-all duration-300"
-      style={{ left: sidebarCollapsed ? "64px" : "256px" }}
+      className={`fixed right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6 transition-all duration-300 left-0 ${sidebarCollapsed ? 'lg:left-16' : 'lg:left-64'}`}
     >
-      <Link to="/" className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+      {/* Hamburger — mobile only */}
+      <button
+        onClick={onHamburgerClick}
+        className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+        aria-label="Open menu"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {/* Home icon — desktop only */}
+      <Link to="/" className="hidden lg:flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
         <Home className="h-5 w-5" />
       </Link>
 
-      <div className="relative w-full max-w-md">
+      <div className="relative hidden sm:block w-full max-w-xs lg:max-w-md mx-4">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input type="search" placeholder="Search files and folders..." className="h-10 w-full border-muted bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground focus-visible:ring-primary" />
       </div>
@@ -107,7 +117,7 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
           <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted">
             <Avatar className="h-8 w-8 ring-2 ring-primary/20">
               <AvatarImage src={profileImg || undefined} className="object-cover" />
-             <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">{initials}</AvatarFallback>
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">{initials}</AvatarFallback>
             </Avatar>
             <div className="hidden flex-col items-start lg:flex">
               <span className="text-sm font-medium text-foreground">{currentUser.name}</span>
@@ -121,9 +131,9 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
               <div className="border-b border-border p-4 bg-muted/30">
                 <div className="flex items-center gap-3 mb-4">
                   <Avatar className="h-12 w-12 ring-2 ring-primary/20">
-                  <AvatarImage src={profileImg || undefined} className="object-cover" />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">{initials}</AvatarFallback>
-                    </Avatar>
+                    <AvatarImage src={profileImg || undefined} className="object-cover" />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">{initials}</AvatarFallback>
+                  </Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-foreground truncate">{currentUser.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
@@ -155,7 +165,7 @@ export function DashboardTopBar({ sidebarCollapsed }: TopBarProps) {
                 </Link>
                 <Link to="/settings" className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground transition-colors hover:bg-muted" onClick={() => setShowProfileMenu(false)}>
                   <Settings className="h-4 w-4 text-muted-foreground" />
-                  <span>Security Settings</span>
+                  <span>Settings</span>
                 </Link>
               </div>
 

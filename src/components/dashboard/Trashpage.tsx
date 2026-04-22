@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Trash2,
   RefreshCw,
@@ -30,7 +30,15 @@ export function TrashPage() {
   const [isDeleting, setIsDeleting] = useState<string | null>(null); // Track deletion state
   const [isEmptying, setIsEmptying] = useState(false); // Track empty trash state
   
-  const { trashedFiles, restoreFromTrash, permanentlyDelete, emptyTrash, getTotalStorage } = useFolders();
+  const { files, trashedFiles, restoreFromTrash, permanentlyDelete, emptyTrash, getTotalStorage, fetchFiles } = useFolders();
+
+  // --- NEW: Fetch files on mount if the state is empty (survives hard refresh) ---
+  useEffect(() => {
+    if (files.length === 0 && trashedFiles.length === 0) {
+      fetchFiles();
+    }
+  }, []);
+  // -----------------------------------------------------------------------------
 
   const getFileIcon = (item: FileItem) => {
     if (item.type === "folder") return <FolderOpen className="h-5 w-5 text-amber-500" />;
@@ -92,15 +100,15 @@ export function TrashPage() {
   const storageInfo = getTotalStorage();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
+    <div className="min-h-screen bg-background">
       <div className="bg-background border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
                 <Trash2 className="h-6 w-6" /> Trash
               </h1>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 {filteredFiles.length} items • Items are deleted forever after 30 days
               </p>
             </div>
@@ -135,39 +143,39 @@ export function TrashPage() {
       </div>
 
       <div className="bg-background border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search trash..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
               />
             </div>
 
-            <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-lg">
-              <button onClick={() => setViewMode("list")} className={cn("p-2 rounded transition-all duration-200", viewMode === "list" ? "bg-background shadow-sm text-indigo-600" : "text-gray-600 hover:text-foreground")}><List className="h-4 w-4" /></button>
-              <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded transition-all duration-200", viewMode === "grid" ? "bg-background shadow-sm text-indigo-600" : "text-gray-600 hover:text-foreground")}><Grid3x3 className="h-4 w-4" /></button>
+            <div className="flex items-center gap-2 p-1 bg-muted rounded-lg">
+              <button onClick={() => setViewMode("list")} className={cn("p-2 rounded transition-all duration-200", viewMode === "list" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}><List className="h-4 w-4" /></button>
+              <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded transition-all duration-200", viewMode === "grid" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}><Grid3x3 className="h-4 w-4" /></button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="px-6 lg:px-8 py-6 lg:py-8">
         {viewMode === "list" ? (
-          <div className="bg-background rounded-xl shadow-sm border border-border overflow-hidden">
+          <div className="bg-background rounded-xl shadow-sm border border-border overflow-hidden overflow-x-auto">
             <table className="w-full">
               <thead className="bg-background border-b border-border">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Size</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Compressed</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Deleted</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Size</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Compressed</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Deleted</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -186,7 +194,7 @@ export function TrashPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{file.size || "—"}</td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">{file.size || "—"}</td>
                       <td className="px-6 py-4">
                         {file.type === "file" && (
                           <div className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium", file.compressed ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")}>
@@ -196,7 +204,7 @@ export function TrashPage() {
                       </td>
                       <td className="px-6 py-4">{getVirusScanBadge(file.virusScan)}</td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm text-muted-foreground">
                           {daysInTrash === 0 ? "Today" : `${daysInTrash}d ago`}
                           <p className={cn("text-xs mt-0.5", daysRemaining <= 7 ? "text-red-600" : "text-muted-foreground")}>{daysRemaining}d left</p>
                         </div>
@@ -233,11 +241,11 @@ export function TrashPage() {
                 <div key={file.id} className="bg-background rounded-xl border border-border p-4 hover:shadow-lg transition-all duration-200 group">
                   <div className="flex items-start justify-between mb-3">
                     <div className="p-3 bg-gradient-to-br from-red-50 to-orange-50 rounded-lg">{getFileIcon(file)}</div>
-                    <div className={cn("text-xs px-2 py-1 rounded-full font-medium", daysRemaining <= 7 ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-700")}>{daysRemaining}d left</div>
+                    <div className={cn("text-xs px-2 py-1 rounded-full font-medium", daysRemaining <= 7 ? "bg-red-100 text-red-700" : "bg-muted text-muted-foreground")}>{daysRemaining}d left</div>
                   </div>
 
                   <h3 className="font-medium text-foreground mb-1 truncate">{file.name}</h3>
-                  <p className="text-sm text-gray-600 mb-3">{file.size || "Folder"}</p>
+                  <p className="text-sm text-muted-foreground mb-3">{file.size || "Folder"}</p>
 
                   <div className="flex items-center gap-2 mb-3">
                     {getVirusScanBadge(file.virusScan)}
@@ -248,7 +256,7 @@ export function TrashPage() {
                     )}
                   </div>
 
-                  <div className="flex flex-col gap-2 pt-3 border-t border-gray-100">
+                  <div className="flex flex-col gap-2 pt-3 border-t border-border">
                     <button onClick={() => handleRestore(file.id)} className="w-full px-3 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center gap-2">
                       <RefreshCw className="h-3.5 w-3.5" /> Restore
                     </button>
@@ -269,11 +277,11 @@ export function TrashPage() {
 
         {filteredFiles.length === 0 && (
           <div className="text-center py-16">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
-              <Trash2 className="h-8 w-8 text-gray-400" />
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-muted rounded-full mb-4">
+              <Trash2 className="h-8 w-8 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-medium text-foreground mb-2">Trash is empty</h3>
-            <p className="text-gray-600">{searchQuery ? "No items match your search" : "Deleted items will appear here"}</p>
+            <p className="text-muted-foreground">{searchQuery ? "No items match your search" : "Deleted items will appear here"}</p>
           </div>
         )}
       </div>
@@ -295,11 +303,11 @@ export function TrashPage() {
               </div>
 
               <div className="p-6">
-                <p className="text-gray-700 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Are you sure you want to permanently delete all {trashedFiles.length} items in
                   trash? You'll free up <strong>{storageInfo.trashedFormatted}</strong> of storage.
                 </p>
-                <p className="text-sm text-gray-600 mb-6">
+                <p className="text-sm text-muted-foreground mb-6">
                   This will permanently delete all files and folders. This action cannot be undone.
                 </p>
 
@@ -307,7 +315,7 @@ export function TrashPage() {
                   <button
                     onClick={() => setShowEmptyConfirm(false)}
                     disabled={isEmptying}
-                    className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                    className="flex-1 px-4 py-2.5 bg-muted text-muted-foreground font-medium rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
                   >
                     Cancel
                   </button>

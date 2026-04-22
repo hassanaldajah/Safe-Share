@@ -329,7 +329,7 @@ const SignUp = () => {
         onClose={() => setShowOTP(false)}
         onVerify={handleOTPVerify}
         email={formData.email}
-        purpose="signin" 
+        purpose="signup" 
       />
     </>
   );

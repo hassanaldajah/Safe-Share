@@ -52,28 +52,38 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
   };
 
- const fetchFiles = async () => {
+  const fetchFiles = async () => {
     setIsLoading(true);
     try {
-      // Clean and simple using authFetch!
-      const response = await authFetch("http://localhost:8080/api/v1/files");
+      // Fetch both active files and trashed files simultaneously
+      const [filesResponse, trashResponse] = await Promise.all([
+        authFetch("http://localhost:8080/api/v1/files"),
+        authFetch("http://localhost:8080/api/v1/files/trash")
+      ]);
       
-      if (response.ok) {
-        const data = await response.json();
-        const mappedFiles: FileItem[] = data.map((f: any) => ({
-          id: f.id.toString(),
-          name: f.name,
-          type: "file",
-          size: formatFileSize(f.sizeBytes),
-          sizeBytes: f.sizeBytes,
-          compressed: f.compressed,
-          virusScan: f.virusScan || "clean",
-          uploadedAt: f.uploadedAt ? f.uploadedAt.split('T')[0] : new Date().toISOString().split('T')[0],
-          fileType: f.fileType || "other",
-          encryptedFileKey: f.encryptedFileKey,
-          iv: f.iv
-        }));
-        setFiles(mappedFiles);
+      const mapFileData = (f: any): FileItem => ({
+        id: f.id.toString(),
+        name: f.name,
+        type: "file",
+        size: formatFileSize(f.sizeBytes),
+        sizeBytes: f.sizeBytes,
+        compressed: f.compressed,
+        virusScan: f.virusScan || "clean",
+        uploadedAt: f.uploadedAt ? f.uploadedAt.split('T')[0] : new Date().toISOString().split('T')[0],
+        fileType: f.fileType || "other",
+        deletedAt: f.deletedAt ? f.deletedAt.split('T')[0] : undefined,
+        encryptedFileKey: f.encryptedFileKey,
+        iv: f.iv
+      });
+
+      if (filesResponse.ok) {
+        const data = await filesResponse.json();
+        setFiles(data.map(mapFileData));
+      }
+      
+      if (trashResponse.ok) {
+        const trashData = await trashResponse.json();
+        setTrashedFiles(trashData.map(mapFileData));
       }
     } catch (error) {
       console.error("Failed to fetch files:", error);
@@ -150,6 +160,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
   };
 
   const moveToTrash = (id: string) => {
+    // 1. Optimistic UI update
     setFiles((prev) => {
       let itemToTrash: FileItem | null = null;
       const filtered = prev.filter((file) => {
@@ -170,9 +181,14 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
       if (itemToTrash) setTrashedFiles((prevTrash) => [itemToTrash!, ...prevTrash]);
       return updateFolderSizes(updated);
     });
+
+    // 2. Background sync with the server
+    authFetch(`http://localhost:8080/api/v1/files/${id}/trash`, { method: "PUT" })
+      .catch((e) => console.error("Failed to move file to trash on server:", e));
   };
 
   const restoreFromTrash = (id: string) => {
+    // 1. Optimistic UI update
     const itemToRestore = trashedFiles.find((item) => item.id === id);
     if (!itemToRestore) return;
     const restoredItem = { ...itemToRestore };
@@ -194,13 +210,17 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
       setFiles((prev) => updateFolderSizes([restoredItem, ...prev]));
     }
     setTrashedFiles((prev) => prev.filter((item) => item.id !== id));
+
+    // 2. Background sync with the server
+    authFetch(`http://localhost:8080/api/v1/files/${id}/restore`, { method: "PUT" })
+      .catch((e) => console.error("Failed to restore file on server:", e));
   };
 
   // --- NEW: THE MAGIC DELETE FUNCTION ---
   const permanentlyDelete = async (id: string) => {
     try {
       // Tell Spring Boot to physically destroy the file using authFetch
-      const response = await authFetch(`http://localhost:8080/api/v1/files/${id}`, {
+      const response = await authFetch(`http://localhost:8080/api/v1/files/${id}/permanent`, {
         method: "DELETE"
       });
 
@@ -219,11 +239,19 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
 
   // --- NEW: THE MAGIC EMPTY TRASH FUNCTION ---
   const emptyTrash = async () => {
-    // Loop through all trashed items and destroy them on the server one by one
-    for (const file of trashedFiles) {
-      if (file.type === "file") {
-        await permanentlyDelete(file.id);
+    try {
+      const response = await authFetch(`http://localhost:8080/api/v1/files/trash/empty`, {
+        method: "DELETE"
+      });
+
+      if (response.ok) {
+        setTrashedFiles([]);
+      } else {
+        console.error("Failed to empty trash:", await response.text());
+        alert("Failed to empty trash on the server.");
       }
+    } catch (error) {
+      console.error("Network error during empty trash:", error);
     }
   };
 

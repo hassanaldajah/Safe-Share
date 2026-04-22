@@ -195,22 +195,20 @@ export function BackupPage() {
   const coverage = { active: files.filter((f) => f.type === "file").length, trashed: trashedFiles.length, total: files.filter((f) => f.type === "file").length + trashedFiles.length };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-background border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl">
-                <Database className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Backup & Recovery</h1>
-                <p className="text-sm text-gray-600">Automatic backups • 30-day retention • Point-in-time recovery</p>
-              </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
+                <Database className="h-6 w-6" />
+                Backup &amp; Recovery
+              </h1>
+              <p className="text-sm text-muted-foreground">Automatic backups • 30-day retention • Point-in-time recovery</p>
             </div>
 
-            <button onClick={handleBackupNow} disabled={isBackingUp} className={cn("px-4 py-2.5 font-medium rounded-lg transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md", isBackingUp ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700")}>
+            <button onClick={handleBackupNow} disabled={isBackingUp} className={cn("px-4 py-2.5 font-medium rounded-lg transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md", isBackingUp ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700")}>
               {isBackingUp ? <><Loader2 className="h-4 w-4 animate-spin" /> Backing up...</> : <><CloudUpload className="h-4 w-4" /> Backup Now</>}
             </button>
           </div>
@@ -223,7 +221,7 @@ export function BackupPage() {
                 onClick={() => setActiveTab(tab as any)}
                 className={cn(
                   "px-4 py-2 text-sm font-medium border-b-2 transition-colors capitalize",
-                  activeTab === tab ? "border-blue-600 text-blue-600" : "border-transparent text-gray-600 hover:text-foreground"
+                  activeTab === tab ? "border-blue-600 text-blue-600" : "border-transparent text-muted-foreground hover:text-foreground"
                 )}
               >
                 {tab.replace("-", " ")}
@@ -234,7 +232,7 @@ export function BackupPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="px-6 lg:px-8 py-6 lg:py-8">
         
         {/* --- OVERVIEW TAB --- */}
         {activeTab === "overview" && (
@@ -242,19 +240,19 @@ export function BackupPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-background rounded-xl border border-border p-6">
                 <div className="flex items-center justify-between mb-4"><div className="p-2 bg-green-50 rounded-lg"><CheckCircle className="h-5 w-5 text-green-600" /></div><span className="text-xs text-muted-foreground">Last 24 hours</span></div>
-                <h3 className="text-sm font-medium text-gray-600 mb-1">Last Backup</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Last Backup</h3>
                 <p className="text-2xl font-bold text-foreground">{formatDate(backupHistory[0].endTime!).split(",")[0]}</p>
-                <p className="text-sm text-gray-600 mt-1">{backupHistory[0].filesCount} files • {backupHistory[0].size}</p>
+                <p className="text-sm text-muted-foreground mt-1">{backupHistory[0].filesCount} files • {backupHistory[0].size}</p>
               </div>
               <div className="bg-background rounded-xl border border-border p-6">
                 <div className="flex items-center justify-between mb-4"><div className="p-2 bg-blue-50 rounded-lg"><Clock className="h-5 w-5 text-blue-600" /></div><span className="text-xs text-muted-foreground">Scheduled</span></div>
-                <h3 className="text-sm font-medium text-gray-600 mb-1">Next Backup</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Next Backup</h3>
                 <p className="text-2xl font-bold text-foreground">{formatDate(backupSchedule[0].nextRun).split(",")[0]}</p>
-                <p className="text-sm text-gray-600 mt-1">{backupSchedule[0].frequency} at {backupSchedule[0].time}</p>
+                <p className="text-sm text-muted-foreground mt-1">{backupSchedule[0].frequency} at {backupSchedule[0].time}</p>
               </div>
               <div className="bg-background rounded-xl border border-border p-6">
                 <div className="flex items-center justify-between mb-4"><div className="p-2 bg-purple-50 rounded-lg"><HardDrive className="h-5 w-5 text-purple-600" /></div><span className="text-xs text-muted-foreground">Current</span></div>
-                <h3 className="text-sm font-medium text-gray-600 mb-1">Backup Size</h3>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">Backup Size</h3>
                 <p className="text-2xl font-bold text-foreground">{storage.usedFormatted}</p>
               </div>
             </div>
@@ -289,7 +287,7 @@ export function BackupPage() {
                <div key={schedule.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                  <div>
                    <p className="font-medium text-foreground">{schedule.frequency} Backup</p>
-                   <p className="text-sm text-gray-600">Every day at {schedule.time}</p>
+                   <p className="text-sm text-muted-foreground">Every day at {schedule.time}</p>
                  </div>
                </div>
              ))}
@@ -309,8 +307,8 @@ export function BackupPage() {
 
             <div className="bg-background rounded-2xl shadow-sm border border-border overflow-hidden">
               <div className="flex border-b border-border">
-                <button onClick={() => setKeyMode("backup")} className={cn("flex-1 py-4 font-medium text-center transition-colors", keyMode === "backup" ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50" : "text-muted-foreground hover:bg-background")}>Backup Key to Cloud</button>
-                <button onClick={() => setKeyMode("restore")} className={cn("flex-1 py-4 font-medium text-center transition-colors", keyMode === "restore" ? "text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50/50" : "text-muted-foreground hover:bg-background")}>Restore Key from Cloud</button>
+                <button onClick={() => setKeyMode("backup")} className={cn("flex-1 py-4 font-medium text-center transition-colors", keyMode === "backup" ? "text-primary border-b-2 border-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>Backup Key to Cloud</button>
+                <button onClick={() => setKeyMode("restore")} className={cn("flex-1 py-4 font-medium text-center transition-colors", keyMode === "restore" ? "text-primary border-b-2 border-primary bg-primary/10" : "text-muted-foreground hover:text-foreground hover:bg-muted/50")}>Restore Key from Cloud</button>
               </div>
 
               <div className="p-8 space-y-6">
@@ -322,19 +320,19 @@ export function BackupPage() {
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Master Recovery Password</label>
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Master Recovery Password</label>
                   <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter a strong password" className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500" />
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter a strong password" className="w-full pl-11 pr-4 py-3 bg-background text-foreground placeholder:text-muted-foreground border border-border rounded-xl focus:ring-2 focus:ring-primary focus:outline-none" />
                   </div>
                 </div>
 
                 {keyMode === "backup" && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                    <label className="block text-sm font-medium text-muted-foreground mb-2">Confirm Password</label>
                     <div className="relative">
-                      <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                      <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm your password" className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500" />
+                      <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm your password" className="w-full pl-11 pr-4 py-3 bg-background text-foreground placeholder:text-muted-foreground border border-border rounded-xl focus:ring-2 focus:ring-primary focus:outline-none" />
                     </div>
                   </div>
                 )}
@@ -342,7 +340,7 @@ export function BackupPage() {
                 <button 
                   onClick={keyMode === "backup" ? handleKeyBackup : handleKeyRestore} 
                   disabled={isKeyLoading || !password || (keyMode === "backup" && !confirmPassword)}
-                  className={cn("w-full py-3.5 rounded-xl font-medium text-white shadow-sm flex items-center justify-center gap-2 transition-colors", isKeyLoading || !password ? "bg-gray-300 cursor-not-allowed" : keyMode === "backup" ? "bg-indigo-600 hover:bg-indigo-700" : "bg-emerald-600 hover:bg-emerald-700")}
+                  className={cn("w-full py-3.5 rounded-xl font-medium text-white shadow-sm flex items-center justify-center gap-2 transition-colors", isKeyLoading || !password ? "bg-secondary cursor-not-allowed" : keyMode === "backup" ? "bg-indigo-600 hover:bg-indigo-700" : "bg-emerald-600 hover:bg-emerald-700")}
                 >
                   {isKeyLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : keyMode === "backup" ? <CloudUpload className="h-5 w-5" /> : <CloudDownload className="h-5 w-5" />}
                   {isKeyLoading ? "Processing..." : keyMode === "backup" ? "Encrypt & Backup to Cloud" : "Download & Unlock Key"}

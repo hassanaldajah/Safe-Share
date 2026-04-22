@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Camera, Mail, Shield, Key, Edit3, Check, X } from "lucide-react";
+import { Camera, Mail, Shield, Key, Edit3, Check, X, Lock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import Motasem from "@/assets/Motasem.jpg"; // Default fallback
 import { authFetch } from "@/lib/api";
+import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext"; // --- GRABBING REAL USER DATA ---
 
 interface EditableField {
@@ -11,10 +12,11 @@ interface EditableField {
   value: string;
   icon: React.ReactNode;
   type?: string;
+  isReadOnly?: boolean;
 }
 
 export default function ProfilePage() {
-  const { user } = useAuth(); // Get the real logged-in user!
+  const { user, updateUser } = useAuth(); // Get the real logged-in user!
   
   const [editingField, setEditingField] = useState<string | null>(null);
   
@@ -84,12 +86,31 @@ export default function ProfilePage() {
 
   const saveEdit = async () => {
     if (editingField) {
-      // Optimistic UI Update
-      setFields((prev) => ({ ...prev, [editingField]: tempValue }));
-      setEditingField(null);
+      const fieldToUpdate = editingField;
+      const newValue = tempValue;
       
-      // Note: If you want changes to Full Name/Email to be permanent, 
-      // you will eventually need an authFetch PUT request here to save it to Spring Boot!
+      try {
+        if (fieldToUpdate === "fullname" || fieldToUpdate === "fullName") {
+          const res = await authFetch("http://localhost:8080/api/v1/users/profile", {
+            method: "PUT",
+            body: JSON.stringify({ fullName: newValue })
+          });
+          if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || "Failed to update profile on server.");
+          }
+          
+          // Update global auth state so the TopBar reflects immediately
+          updateUser({ name: newValue });
+          // Update local state too
+          setFields((prev) => ({ ...prev, fullName: newValue }));
+          toast.success("Profile updated successfully!");
+        }
+      } catch (err: any) {
+        toast.error(err.message || "Failed to update profile");
+      } finally {
+        setEditingField(null);
+      }
     }
   };
 
@@ -100,7 +121,7 @@ export default function ProfilePage() {
 
   const infoRows: EditableField[] = [
     { label: "Full Name", value: fields.fullName, icon: <Edit3 className="h-4 w-4" /> },
-    { label: "Email", value: fields.email, icon: <Mail className="h-4 w-4" />, type: "email" },
+    { label: "Email", value: fields.email, icon: <Mail className="h-4 w-4" />, type: "email", isReadOnly: true },
   ];
 
   return (
@@ -124,7 +145,7 @@ export default function ProfilePage() {
                   <button className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-110">
                     <Camera className="h-3.5 w-3.5" />
                   </button>
-                  <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                  <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden bg-background text-foreground placeholder:text-muted-foreground" />
                 </div>
                 <div className="mb-1">
                   <h1 className="text-xl font-bold text-foreground">{fields.fullName}</h1>
@@ -170,13 +191,18 @@ export default function ProfilePage() {
                       <p className="text-sm font-medium text-foreground truncate">{row.value}</p>
                     )}
                   </div>
-                  {!isEditing && (
+                  {!isEditing && !row.isReadOnly && (
                     <button
                       onClick={() => startEdit(key)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
                     >
                       <Edit3 className="h-3.5 w-3.5" />
                     </button>
+                  )}
+                  {row.isReadOnly && (
+                    <div className="text-muted-foreground cursor-help" title="Email is tied to your cryptographic identity and cannot be changed.">
+                      <Lock className="h-3.5 w-3.5" />
+                    </div>
                   )}
                 </div>
               );

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   Search, FileText, Image as ImageIcon, Video, Music, Archive, File,
   FolderOpen, Download, Eye, ArrowUpRight, ArrowDownLeft, Clock, User,
-  AlertCircle, Loader2, Share2, ShieldAlert
+  AlertCircle, Loader2, Share2, ShieldAlert, ArrowRightLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatShareDialog } from "./ChatShareDialog";
@@ -256,31 +256,34 @@ export function Chatpage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
+    <div className="min-h-screen bg-background">
       <div className="bg-background border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-1">File Sharing Transactions</h1>
-              <p className="text-sm text-gray-600">View all files and folders you've sent or received securely.</p>
+              <h1 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
+                <ArrowRightLeft className="h-6 w-6" />
+                File Sharing Transactions
+              </h1>
+              <p className="text-sm text-muted-foreground">View all files and folders you've sent or received securely.</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="flex-1 max-w-md relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input type="text" value={searchUserId} onChange={(e) => setSearchUserId(e.target.value)} placeholder="Search by User Tag (e.g., @motasem)" className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input type="text" value={searchUserId} onChange={(e) => setSearchUserId(e.target.value)} placeholder="Search by User Tag (e.g., @motasem)" className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-background text-foreground placeholder:text-muted-foreground" />
             </div>
-            <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
-              <button onClick={() => setFilterType("all")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm", filterType === "all" ? "bg-background shadow-sm text-indigo-600" : "text-gray-600 hover:text-foreground")}>All</button>
-              <button onClick={() => setFilterType("sent")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "sent" ? "bg-background shadow-sm text-indigo-600" : "text-gray-600 hover:text-foreground")}><ArrowUpRight className="h-4 w-4" /> Sent</button>
-              <button onClick={() => setFilterType("received")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "received" ? "bg-background shadow-sm text-indigo-600" : "text-gray-600 hover:text-foreground")}><ArrowDownLeft className="h-4 w-4" /> Received</button>
+            <div className="flex gap-2 p-1 bg-muted rounded-lg">
+              <button onClick={() => setFilterType("all")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm", filterType === "all" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}>All</button>
+              <button onClick={() => setFilterType("sent")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "sent" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}><ArrowUpRight className="h-4 w-4" /> Sent</button>
+              <button onClick={() => setFilterType("received")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "received" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}><ArrowDownLeft className="h-4 w-4" /> Received</button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="px-6 lg:px-8 py-6 lg:py-8">
         {error && (
           <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-red-50 text-red-700 border border-red-100">
             <AlertCircle className="h-5 w-5" />
@@ -295,7 +298,7 @@ export function Chatpage() {
           </div>
         ) : Object.keys(groupedByUser).length === 0 ? (
           <div className="text-center py-16 bg-background rounded-2xl border border-border">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-background rounded-full mb-4 border border-gray-100"><User className="h-8 w-8 text-gray-400" /></div>
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-background rounded-full mb-4 border border-border"><User className="h-8 w-8 text-muted-foreground" /></div>
             <h3 className="text-lg font-semibold text-foreground mb-2">No transactions found</h3>
           </div>
         ) : (
@@ -303,7 +306,7 @@ export function Chatpage() {
             {Object.entries(groupedByUser).map(([userId, userTransactions]) => (
               <div key={userId} className="bg-background rounded-xl border border-border overflow-hidden shadow-sm">
                 
-                <div className="bg-slate-50 px-6 py-4 border-b border-border">
+                <div className="bg-background px-6 py-4 border-b border-border">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center shadow-sm"><User className="h-5 w-5 text-white" /></div>
@@ -317,14 +320,14 @@ export function Chatpage() {
 
                 <div className="divide-y divide-gray-100">
                   {userTransactions.map((transaction) => (
-                    <div key={transaction.id} className="p-4 hover:bg-slate-50 transition-colors">
+                    <div key={transaction.id} className="p-4 hover:bg-background transition-colors">
                       <div className="flex items-center gap-4">
                         
                         <div className={cn("p-2.5 rounded-lg", transaction.transactionType === "sent" ? "bg-emerald-50 border border-emerald-100" : "bg-blue-50 border border-blue-100")}>
                           {transaction.transactionType === "sent" ? <ArrowUpRight className="h-4 w-4 text-emerald-600" /> : <ArrowDownLeft className="h-4 w-4 text-blue-600" />}
                         </div>
 
-                        <div className="p-2.5 bg-background border border-gray-100 rounded-lg shadow-sm">
+                        <div className="p-2.5 bg-background border border-border rounded-lg shadow-sm">
                           {getFileIcon(transaction.fileType, transaction.fileCategory)}
                         </div>
 

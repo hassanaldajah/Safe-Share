@@ -63,7 +63,7 @@ export function CreateFolderDialog({
         className="relative w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300"
         onClick={(e) => e.stopPropagation()} // Prevents clicks inside the modal from closing it
       >
-        <div className="bg-background rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
+        <div className="bg-background rounded-2xl shadow-2xl overflow-hidden border border-border">
           
           {/* Header */}
           <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6 py-5">
@@ -90,7 +90,7 @@ export function CreateFolderDialog({
           {/* Form Content */}
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
                 Folder Name
               </label>
               <input
@@ -104,8 +104,8 @@ export function CreateFolderDialog({
                 className={cn(
                   "w-full px-4 py-2.5 border rounded-lg transition-all",
                   "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
-                  "text-foreground placeholder:text-gray-400 bg-background", // Added specific colors for clarity
-                  error ? "border-red-300 bg-red-50/30" : "border-gray-300"
+                  "text-foreground placeholder:text-muted-foreground bg-background", // Added specific colors for clarity
+                  error ? "border-red-300 bg-red-50/30" : "border-border"
                 )}
                 autoFocus
               />
@@ -117,7 +117,7 @@ export function CreateFolderDialog({
               <button
                 type="button"
                 onClick={handleClose}
-                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors"
+                className="flex-1 px-4 py-2.5 bg-muted text-muted-foreground font-semibold rounded-lg hover:bg-muted transition-colors"
               >
                 Cancel
               </button>

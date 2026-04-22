@@ -21,41 +21,44 @@ import ProfilePage from "./pages/ProfilePage";
 import SettingsPage from "./pages/SettingsPage";
 import HelpPage from "./pages/HelpPage";
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeProvider";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
-        <FoldersProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              
-              <Route element={<MainLayoutWithDash />}>
-                <Route path="/dashboard" element={<DashboardHome />} />
-                <Route path="/MyFolders" element={<MyFolders />} />
-                <Route path="/trash" element={<TrashPage />} />
-                <Route path="/groups" element={<GroupPage />} />
-                <Route path="/ai-assistant" element={<AiAssistantPage />} />
-                <Route path="/backup" element={<BackupPage />} />
-                <Route path="/chat" element={<Chatpage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/help" element={<HelpPage />} />
-              </Route> 
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </FoldersProvider>
-      </AuthProvider>
+      <ThemeProvider defaultTheme="system" storageKey="safeshare-theme">
+        <AuthProvider>
+          <FoldersProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/signin" element={<SignIn />} />
+                <Route path="/signup" element={<SignUp />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                
+                <Route element={<MainLayoutWithDash />}>
+                  <Route path="/dashboard" element={<DashboardHome />} />
+                  <Route path="/MyFolders" element={<MyFolders />} />
+                  <Route path="/trash" element={<TrashPage />} />
+                  <Route path="/groups" element={<GroupPage />} />
+                  <Route path="/ai-assistant" element={<AiAssistantPage />} />
+                  <Route path="/backup" element={<BackupPage />} />
+                  <Route path="/chat" element={<Chatpage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/help" element={<HelpPage />} />
+                </Route> 
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </FoldersProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

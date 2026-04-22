@@ -134,23 +134,23 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
 
             {/* Recipient Input */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-muted-foreground mb-2">
                 Enter recipient's Search Tag
               </label>
               <div className="relative">
-                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
                   value={searchTag}
                   onChange={(e) => setSearchTag(e.target.value)}
                   placeholder="username (e.g., mo_alatawnah)"
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </div>
 
             {/* Advanced Permissions Toggle */}
-            <div className="border-t border-gray-100 pt-4">
+            <div className="border-t border-border pt-4">
               <button 
                 onClick={() => setShowPermissions(!showPermissions)}
                 className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
@@ -161,7 +161,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
 
               {/* Permissions Panel */}
               {showPermissions && (
-                <div className="mt-4 p-4 bg-background rounded-xl space-y-4 border border-gray-100">
+                <div className="mt-4 p-4 bg-background rounded-xl space-y-4 border border-border">
                   
                   {/* View Limits */}
                   <div className="flex items-center justify-between gap-4">
@@ -178,7 +178,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
                       placeholder="Unlimited" 
                       value={maxViews}
                       onChange={(e) => setMaxViews(e.target.value)}
-                      className="w-24 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500"
+                      className="w-24 px-3 py-1.5 text-sm border border-border rounded-md focus:ring-indigo-500"
                     />
                   </div>
 
@@ -197,7 +197,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
                       placeholder="Unlimited" 
                       value={maxDownloads}
                       onChange={(e) => setMaxDownloads(e.target.value)}
-                      className="w-24 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500"
+                      className="w-24 px-3 py-1.5 text-sm border border-border rounded-md focus:ring-indigo-500"
                     />
                   </div>
 
@@ -214,7 +214,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
                       </div>
                     </div>
                     <div className="text-indigo-600">
-                      {canReshare ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5 text-gray-400" />}
+                      {canReshare ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5 text-muted-foreground" />}
                     </div>
                   </div>
 
@@ -231,7 +231,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
             <div className="flex gap-3 pt-2">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                className="flex-1 px-4 py-2.5 bg-muted text-muted-foreground font-medium rounded-lg hover:bg-muted transition-colors"
               >
                 Cancel
               </button>
@@ -240,7 +240,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
                 disabled={!searchTag || isSharing}
                 className={cn(
                   "flex-1 px-4 py-2.5 font-medium rounded-lg transition-colors flex items-center justify-center gap-2",
-                  searchTag && !isSharing ? "bg-indigo-600 text-white hover:bg-indigo-700" : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  searchTag && !isSharing ? "bg-indigo-600 text-white hover:bg-indigo-700" : "bg-muted text-muted-foreground cursor-not-allowed"
                 )}
               >
                 {isSharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}

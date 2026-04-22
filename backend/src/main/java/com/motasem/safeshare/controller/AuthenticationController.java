@@ -47,4 +47,25 @@ public class AuthenticationController {
         // This grabs your custom message and sends it back to React cleanly!
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody java.util.Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            service.generatePasswordResetOtp(email);
+            return ResponseEntity.ok("Recovery email sent if the account exists.");
+        } catch (Exception e) {
+            // Always return OK to prevent hackers from guessing emails
+            return ResponseEntity.ok("Recovery email sent if the account exists.");
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        try {
+            service.resetPassword(request);
+            return ResponseEntity.ok("Password has been successfully reset.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

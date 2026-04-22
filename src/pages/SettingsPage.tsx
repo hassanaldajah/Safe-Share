@@ -3,6 +3,7 @@ import { Moon, Sun, Monitor, Lock, Globe, Palette, Eye, EyeOff, Check } from "lu
 import { Input } from "@/components/ui/input";
 import { authFetch } from "@/lib/api"; 
 import { toast } from "sonner"; 
+import { useTheme } from "@/context/ThemeProvider";
 
 type Theme = "light" | "dark" | "system";
 type Language = "en" | "ar" | "fr";
@@ -25,7 +26,7 @@ const SectionCard = ({ icon, title, description, children }: { icon: React.React
 
 // --- 2. MAIN COMPONENT ---
 export default function SettingsPage() {
-  const [theme, setTheme] = useState<Theme>("system");
+  const { theme, setTheme } = useTheme();
   const [language, setLanguage] = useState<Language>("en");
   
   const [saved, setSaved] = useState(false);
@@ -35,17 +36,7 @@ export default function SettingsPage() {
   const [showPass, setShowPass] = useState({ current: false, newPass: false, confirm: false });
   const [passError, setPassError] = useState("");
   const handleThemeChange = (newTheme: Theme) => {
-    setTheme(newTheme); // Move the green border
-    
-    const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
-
-    if (newTheme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(newTheme);
-    }
+    setTheme(newTheme); 
   };
   useEffect(() => {
     const fetchSettings = async () => {
@@ -53,12 +44,9 @@ export default function SettingsPage() {
         const res = await authFetch("http://localhost:8080/api/v1/users/preferences");
         if (res.ok) {
           const data = await res.json();
-          if (data.theme) {
-            setTheme(data.theme);
-            // Apply dark mode immediately
-            if (data.theme === "dark") document.documentElement.classList.add("dark");
-            else if (data.theme === "light") document.documentElement.classList.remove("dark");
-          }
+          // We do not call setTheme(data.theme) here because it would overwrite
+          // the user's current unsaved local theme preview.
+          // The theme is already managed locally by ThemeProvider.
           if (data.language) setLanguage(data.language);
         }
       } catch (err) {
@@ -66,7 +54,7 @@ export default function SettingsPage() {
       }
     };
     fetchSettings();
-  }, []);
+  }, []); // Removed setTheme to prevent infinite re-rendering loop when context updates
   // --- 2. THE MASTER SAVE FUNCTION ---
   const handleSave = async () => {
     setIsSaving(true);
@@ -101,17 +89,6 @@ export default function SettingsPage() {
       });
 
       if (!prefRes.ok) throw new Error("Failed to save preferences.");
-      
-      if (theme === "dark") document.documentElement.classList.add("dark");
-      else if (theme === "light") document.documentElement.classList.remove("dark");
-      else {
-        // System preference logic
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-      }
 
       toast.success("Settings saved to your account!");
       setSaved(true);
@@ -150,16 +127,7 @@ export default function SettingsPage() {
           </div>
         </SectionCard>
 
-        {/* Language */}
-        <SectionCard icon={<Globe className="h-4 w-4" />} title="Language & Region" description="Set your preferred language">
-          <div className="grid grid-cols-3 gap-2">
-            {([{ value: "en", label: "English" }, { value: "ar", label: "العربية" }, { value: "fr", label: "Français" }].map((l) => (
-              <button key={l.value} onClick={() => setLanguage(l.value as Language)} className={`rounded-xl border-2 py-2.5 text-sm font-medium transition-all ${language === l.value ? "border-primary bg-primary/5 text-primary" : "border-border bg-muted/30 text-muted-foreground hover:bg-muted"}`}>
-                {l.label}
-              </button>
-            )))}
-          </div>
-        </SectionCard>
+        
 
         {/* Change Password */}
         <SectionCard icon={<Lock className="h-4 w-4" />} title="Change Password" description="Update your account password">

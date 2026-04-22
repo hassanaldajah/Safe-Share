@@ -109,7 +109,7 @@ export function BackupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 p-6 md:p-12">
+    <div className="min-h-screen bg-background p-6 md:p-12">
       <div className="max-w-3xl mx-auto space-y-8">
         
         <div>
@@ -117,7 +117,7 @@ export function BackupPage() {
             <Cloud className="h-8 w-8 text-indigo-600" />
             Cloud Key Escrow
           </h1>
-          <p className="text-gray-600 mt-2 text-lg">Securely back up your cryptographic keys so you never lose access to your files.</p>
+          <p className="text-muted-foreground mt-2 text-lg">Securely back up your cryptographic keys so you never lose access to your files.</p>
         </div>
 
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex gap-4">
@@ -143,19 +143,19 @@ export function BackupPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Master Recovery Password</label>
+              <label className="block text-sm font-medium text-muted-foreground mb-2">Master Recovery Password</label>
               <div className="relative">
-                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter a strong password" className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter a strong password" className="w-full pl-11 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-indigo-500" />
               </div>
             </div>
 
             {mode === "backup" && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+                <label className="block text-sm font-medium text-muted-foreground mb-2">Confirm Password</label>
                 <div className="relative">
-                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm your password" className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm your password" className="w-full pl-11 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-indigo-500" />
                 </div>
               </div>
             )}
@@ -163,7 +163,7 @@ export function BackupPage() {
             <button 
               onClick={mode === "backup" ? handleBackup : handleRestore} 
               disabled={isLoading || !password || (mode === "backup" && !confirmPassword)}
-              className={cn("w-full py-3.5 rounded-xl font-medium text-white shadow-sm flex items-center justify-center gap-2 transition-colors", isLoading || !password ? "bg-gray-300 cursor-not-allowed" : mode === "backup" ? "bg-indigo-600 hover:bg-indigo-700" : "bg-emerald-600 hover:bg-emerald-700")}
+              className={cn("w-full py-3.5 rounded-xl font-medium text-white shadow-sm flex items-center justify-center gap-2 transition-colors", isLoading || !password ? "bg-secondary cursor-not-allowed" : mode === "backup" ? "bg-indigo-600 hover:bg-indigo-700" : "bg-emerald-600 hover:bg-emerald-700")}
             >
               {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : mode === "backup" ? <CloudUpload className="h-5 w-5" /> : <CloudDownload className="h-5 w-5" />}
               {isLoading ? "Processing..." : mode === "backup" ? "Encrypt & Backup to Cloud" : "Download & Unlock Key"}

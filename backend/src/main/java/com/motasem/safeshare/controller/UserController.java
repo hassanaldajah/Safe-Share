@@ -64,6 +64,33 @@ public class UserController {
             return ResponseEntity.badRequest().body("Error updating preferences.");
         }
     }
+
+    // ==========================================
+    // UPDATE PROFILE (FULL NAME)
+    // ==========================================
+    @Data
+    public static class ProfileUpdateRequest {
+        private String fullName;
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(
+            @RequestBody ProfileUpdateRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            User userToUpdate = userRepository.findById(currentUser.getId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            if (request.getFullName() != null && !request.getFullName().isBlank()) {
+                userToUpdate.setFullName(request.getFullName());
+                userRepository.save(userToUpdate);
+            }
+
+            return ResponseEntity.ok(java.util.Map.of("message", "Profile updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "Error updating profile"));
+        }
+    }
     // ─── 2. NEW PROFILE IMAGE UPLOAD ────────────────────────────────────────────────
     @Data
     public static class ImageUpdateRequest {

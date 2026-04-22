@@ -104,6 +104,54 @@ public class AuthenticationService {
         }
     }
 
+    @Transactional
+    public void generatePasswordResetOtp(String email) {
+        var user = repository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("If that email exists, a recovery code has been sent."));
+        // Security best practice: Don't reveal if an email exists to prevent user enumeration!
+
+        String otpCode = generateOtp();
+        user.setOtpCode(otpCode);
+        user.setOtpExpiry(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(10));
+
+        repository.save(user);
+
+        // You can reuse your existing email service here, or create a specific "sendPasswordResetEmail" method
+        emailService.sendOtpEmail(user.getEmail(), otpCode);
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        System.out.println("\n=== PASSWORD RESET DEBUG ===");
+        System.out.println("1. Email received: " + request.getEmail());
+        System.out.println("2. New Password received: " + request.getNewPassword());
+        System.out.println("==============================\n");
+        var user = repository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 1. Clean the incoming OTP
+        String cleanIncomingCode = request.getOtpCode() != null ?
+                request.getOtpCode().replaceAll("[\\s\\-,]", "") : "";
+
+        // 2. Verify OTP exists and matches
+        if (user.getOtpCode() == null || !user.getOtpCode().equals(cleanIncomingCode)) {
+            throw new RuntimeException("Invalid verification code");
+        }
+
+        // 3. Verify OTP is not expired
+        if (user.getOtpExpiry() != null && user.getOtpExpiry().isBefore(LocalDateTime.now(ZoneOffset.UTC))) {
+            throw new RuntimeException("Verification code has expired");
+        }
+
+        // 4. Update the password using BCrypt
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+        // 5. Clear the OTP so it can't be used again
+        user.setOtpCode(null);
+        user.setOtpExpiry(null);
+
+        repository.saveAndFlush(user);
+    }
     public void resendOtp(String email) {
         var user = repository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));

@@ -14,7 +14,7 @@ interface OTPModalProps {
   onClose: () => void;
   onVerify: (otp: string) => void;
   email: string;
-  purpose?: "signin" | "unlock";
+  purpose?: "signin" | "unlock" | "signup";
 }
 
 const OTPModal = ({ isOpen, onClose, onVerify, email, purpose = "signin" }: OTPModalProps) => {
@@ -63,9 +63,19 @@ const OTPModal = ({ isOpen, onClose, onVerify, email, purpose = "signin" }: OTPM
     }
   };
 
-  const purposeText = purpose === "signin" 
-    ? "verify your sign in" 
-    : "unlock the shared file";
+  const isSignup = purpose === "signup";
+
+  const modalTitle = isSignup ? "Verify Your Account" : "Verify Your Identity";
+  const modalSubtitle = isSignup ? "Enter the verification code we sent you" : "Enter the 6-digit code";
+  const emailDescription = isSignup
+    ? "We sent a verification code to"
+    : "We sent a one-time password to";
+  const resendLabel = isSignup ? "Resend verification code" : "Resend OTP";
+  const securityHint = isSignup
+    ? "This code will verify your new account. Your encryption keys will be generated securely on your device."
+    : purpose === "signin"
+    ? "This code will verify your sign in. Your encryption keys remain stored securely on your device."
+    : "This code will unlock the shared file. Your encryption keys remain stored securely on your device.";
 
 return (
     <AnimatePresence>
@@ -99,10 +109,10 @@ return (
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-foreground">
-                      Verify Your Identity
+                      {modalTitle}
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      Enter the 6-digit code
+                      {modalSubtitle}
                     </p>
                   </div>
                 </div>
@@ -118,9 +128,9 @@ return (
               <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 border border-border mb-6">
                 <Mail className="w-5 h-5 text-muted-foreground" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-muted-foreground">
-                    We sent a one-time password to
-                  </p>
+                   <p className="text-sm text-muted-foreground">
+                     {emailDescription}
+                   </p>
                   <p className="text-sm font-medium text-foreground truncate">
                     {email}
                   </p>
@@ -155,14 +165,14 @@ return (
                     Resend code in {resendCooldown}s
                   </p>
                 ) : (
-                  <button
-                    onClick={handleResend}
-                    disabled={isResending}
-                    className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${isResending ? "animate-spin" : ""}`} />
-                    Resend OTP
-                  </button>
+                    <button
+                      onClick={handleResend}
+                      disabled={isResending}
+                      className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isResending ? "animate-spin" : ""}`} />
+                      {resendLabel}
+                    </button>
                 )}
               </div>
 
@@ -177,7 +187,7 @@ return (
 
               {/* Security hint */}
               <p className="mt-4 text-xs text-center text-muted-foreground">
-                This code will {purposeText}. Your encryption keys remain stored securely on your device.
+                {securityHint}
               </p>
             </div>
           </motion.div>

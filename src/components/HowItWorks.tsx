@@ -5,20 +5,20 @@ const steps = [
   {
     icon: Upload,
     step: "01",
-    title: "Upload Your File",
-    description: "Drag and drop any file into VaultShare. Your file is instantly encrypted right in your browser before upload.",
+    title: "Client-Side Encryption",
+    description: "Drop your file into SafeShare. It is mathematically locked in your browser before it ever leaves your device.",
   },
   {
     icon: Lock,
     step: "02",
-    title: "Generate Secure Link",
-    description: "Get a unique encrypted link. Set expiration, Views, or download limits for extra security.",
+    title: "Public Key Exchange",
+    description: "Select a recipient by their @username. We use their unique Public Key to cryptographically lock the file specifically for them.",
   },
   {
     icon: Share2,
     step: "03",
-    title: "Share With Anyone",
-    description: "Send the link to your recipient. Only they can decrypt and download the file — we can't access it.",
+    title: "Vault-to-Vault Delivery",
+    description: "The file arrives securely in their dashboard. Only their Private Key can decrypt it, leaving our servers completely blind to your data.",
   },
 ];
 

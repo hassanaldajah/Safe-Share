@@ -7,7 +7,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  
+
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -25,7 +25,7 @@ const Navbar = () => {
 
       if (currentScrollY < 10) {
         setIsVisible(true);
-      } 
+      }
       else if (currentScrollY > lastScrollY && currentScrollY > 100) {
         setIsVisible(false);
       } else if (currentScrollY < lastScrollY) {
@@ -40,10 +40,9 @@ const Navbar = () => {
   }, [lastScrollY, isLandingPage]);
 
   return (
-    <nav 
-      className={`fixed top-0 left-0 right-0 z-50 glass transition-transform duration-300 ease-in-out ${
-        isVisible ? "translate-y-0" : "-translate-y-full"
-      }`}
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 glass transition-transform duration-300 ease-in-out ${isVisible ? "translate-y-0" : "-translate-y-full"
+        }`}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -69,24 +68,19 @@ const Navbar = () => {
             <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Pricing
             </a>
-            <Link 
-              to="/dashboard" 
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Go To Dashboard
-            </Link>
+
           </div>
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => navigate("/signin")}
             >
               Login
             </Button>
-            <Button 
+            <Button
               size="sm"
               onClick={() => navigate("/signup")}
             >
@@ -119,23 +113,18 @@ const Navbar = () => {
               <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Pricing
               </a>
-              <Link 
-                to="/dashboard" 
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Go To Dashboard
-              </Link>
+
               <div className="flex gap-3 pt-4 border-t border-border">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="flex-1"
                   onClick={() => navigate("/signin")}
                 >
                   Login
                 </Button>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   className="flex-1"
                   onClick={() => navigate("/signup")}
                 >

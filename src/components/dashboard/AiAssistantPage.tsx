@@ -186,24 +186,19 @@ export function AiAssistantPage() {
   };
 
   return (
-    <div className="h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <div className="bg-background border-b border-border flex-shrink-0">
-        <div className="max-w-5xl mx-auto px-6 py-4">
+        <div className="px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl">
-                <Bot className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-                  AI Assistant
-                  <Sparkles className="h-4 w-4 text-purple-500" />
-                </h1>
-                <p className="text-sm text-gray-600">
-                  Smart file management powered by AI
-                </p>
-              </div>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
+                <Bot className="h-6 w-6" />
+                AI Assistant
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Smart file management powered by AI
+              </p>
             </div>
           </div>
         </div>
@@ -211,7 +206,7 @@ export function AiAssistantPage() {
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-6 py-6 space-y-6">
+        <div className="px-6 lg:px-8 py-6 space-y-6">
           {/* Suggested Actions - Show only at start */}
           {messages.length === 1 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
@@ -228,7 +223,7 @@ export function AiAssistantPage() {
                     <h3 className="font-semibold text-foreground mb-1">
                       {action.title}
                     </h3>
-                    <p className="text-sm text-gray-600">{action.description}</p>
+                    <p className="text-sm text-muted-foreground">{action.description}</p>
                   </div>
                 </button>
               ))}
@@ -304,7 +299,7 @@ export function AiAssistantPage() {
                 {message.type === "assistant" && (
                   <button
                     onClick={() => handleCopy(message.content, message.id)}
-                    className="mt-3 text-xs text-muted-foreground hover:text-gray-700 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="mt-3 text-xs text-muted-foreground hover:text-muted-foreground flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     {copiedId === message.id ? (
                       <>
@@ -336,7 +331,7 @@ export function AiAssistantPage() {
                 <Bot className="h-5 w-5 text-white" />
               </div>
               <div className="bg-background border border-border rounded-2xl px-5 py-4">
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span className="text-sm">Thinking...</span>
                 </div>
@@ -350,7 +345,7 @@ export function AiAssistantPage() {
 
       {/* Input Area */}
       <div className="bg-background border-t border-border flex-shrink-0">
-        <div className="max-w-5xl mx-auto px-6 py-4">
+        <div className="px-6 lg:px-8 py-4">
           <div className="flex gap-3">
             <input
               type="text"
@@ -358,7 +353,7 @@ export function AiAssistantPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSend()}
               placeholder="Ask me anything about your files..."
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="flex-1 px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
             />
             <button
               onClick={() => handleSend()}
@@ -367,7 +362,7 @@ export function AiAssistantPage() {
                 "px-6 py-3 rounded-xl font-medium transition-all duration-200 flex items-center gap-2",
                 input.trim() && !isLoading
                   ? "bg-purple-600 text-white hover:bg-purple-700 shadow-sm hover:shadow-md"
-                  : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
               )}
             >
               <Send className="h-4 w-4" />

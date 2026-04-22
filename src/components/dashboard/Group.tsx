@@ -11,7 +11,7 @@ type Role = "Admin" | "Editor" | "Viewer";
 const roleStyles: Record<string, string> = {
   ADMIN: "bg-violet-100 text-violet-700 border border-violet-200",
   EDITOR: "bg-sky-100 text-sky-700 border border-sky-200",
-  VIEWER: "bg-slate-100 text-slate-600 border border-slate-200",
+  VIEWER: "bg-muted text-muted-foreground border border-border",
 };
 
 const fileIcon: Record<string, string> = {
@@ -30,20 +30,20 @@ function FilesTab({ files, myRole, onDownload, onDelete }: { files: any[], myRol
   if (!files || files.length === 0) {
     return (
       <div className="p-12 text-center text-muted-foreground bg-background">
-        <Folder size={40} className="mx-auto mb-3 text-gray-300" />
+        <Folder size={40} className="mx-auto mb-3 text-muted-foreground" />
         <p className="font-medium text-foreground">No files yet</p>
       </div>
     );
   }
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200">
+    <div className="overflow-hidden rounded-xl border border-border">
       <table className="w-full text-sm">
         <tbody className="divide-y divide-slate-100 bg-background">
           {files.map((f) => (
-            <tr key={f.id} className="hover:bg-slate-50/60 transition-colors">
-              <td className="px-4 py-3"><div className="flex items-center gap-2"><span className="text-lg">📄</span><span className="font-medium text-slate-800">{f.name}</span></div></td>
-              <td className="px-4 py-3 text-slate-500 hidden sm:table-cell">{f.uploadedBy}</td>
-              <td className="px-4 py-3 text-slate-400">{f.size}</td>
+            <tr key={f.id} className="hover:bg-background transition-colors">
+              <td className="px-4 py-3"><div className="flex items-center gap-2"><span className="text-lg">📄</span><span className="font-medium text-foreground">{f.name}</span></div></td>
+              <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{f.uploadedBy}</td>
+              <td className="px-4 py-3 text-muted-foreground">{f.size}</td>
               <td className="px-4 py-3 text-right flex justify-end gap-2">
                 <button onClick={() => onDownload(f.id, f.name)} className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-lg transition-colors"><Download size={13} /> Download</button>
                 {/* Hide Delete Button for Viewers */}
@@ -77,7 +77,7 @@ function MembersTab({ members, myRole, groupId, onRefresh, onRemove }: { members
       {members.map((m) => (
         <div key={m.userId} className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">{m.name.substring(0, 2).toUpperCase()}</div>
+            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-bold text-muted-foreground">{m.name.substring(0, 2).toUpperCase()}</div>
             <div><p className="text-sm font-semibold">{m.name}</p><p className="text-xs text-muted-foreground">{m.role}</p></div>
           </div>
           
@@ -99,7 +99,7 @@ function AuditLogTab({ entries }: { entries: any[] }) {
   if (!entries || entries.length === 0) {
     return (
       <div className="p-12 text-center text-muted-foreground bg-background">
-        <Activity size={40} className="mx-auto mb-3 text-gray-300" />
+        <Activity size={40} className="mx-auto mb-3 text-muted-foreground" />
         <p className="font-medium text-foreground">No activity yet</p>
       </div>
     );
@@ -107,7 +107,7 @@ function AuditLogTab({ entries }: { entries: any[] }) {
   return (
     <div className="space-y-2 p-4">
       {entries.map((e) => (
-        <div key={e.id} className="flex items-start gap-4 bg-background border border-gray-100 shadow-sm rounded-xl px-5 py-4">
+        <div key={e.id} className="flex items-start gap-4 bg-background border border-border shadow-sm rounded-xl px-5 py-4">
           <div className="mt-0.5">
             {e.severity === "critical" ? <Lock size={18} className="text-red-500" /> : 
              e.severity === "warn" ? <AlertCircle size={18} className="text-amber-500" /> : 
@@ -117,9 +117,9 @@ function AuditLogTab({ entries }: { entries: any[] }) {
             <p className="text-sm text-foreground">
               <span className="font-bold text-indigo-700">{e.user}</span>{" "}
               <span className="text-muted-foreground">{e.action}</span>{" "}
-              <span className="font-semibold text-gray-800">"{e.target}"</span>
+              <span className="font-semibold text-foreground">"{e.target}"</span>
             </p>
-            <p className="text-xs text-gray-400 mt-1.5">{new Date(e.timestamp).toLocaleString()}</p>
+            <p className="text-xs text-muted-foreground mt-1.5">{new Date(e.timestamp).toLocaleString()}</p>
           </div>
         </div>
       ))}
@@ -282,9 +282,9 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 relative">
+    <div className="min-h-screen bg-background relative">
       <div className="bg-background border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="px-6 lg:px-8 py-4">
           <button onClick={onBack} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-indigo-600 mb-4 transition-colors">
             <ArrowLeft size={16} /> Back to Groups
           </button>
@@ -295,7 +295,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
                 <h1 className="text-2xl font-bold text-foreground">{group.name}</h1>
                 <RoleBadge role={group.myRole} />
               </div>
-              <p className="text-sm text-gray-600">{group.description}</p>
+              <p className="text-sm text-muted-foreground">{group.description}</p>
             </div>
 
             {/* --- REPOSITIONED INVITE CODE & LEAVE BUTTON --- */}
@@ -318,7 +318,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="px-6 lg:px-8 py-6 lg:py-8">
 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-background p-4 rounded-xl border border-border shadow-sm flex items-center gap-4">
             <div className="p-3 rounded-lg bg-indigo-50 text-indigo-700"><Users size={20} /></div>
@@ -343,15 +343,15 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
           </div>
         </div>
         <div className="flex items-center justify-between mb-6">
-          <div className="flex gap-1 bg-gray-100/50 border border-border p-1 rounded-xl w-fit">
-            <button onClick={() => setActiveTab("files")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "files" ? "bg-background text-indigo-600 shadow-sm" : "text-muted-foreground hover:text-gray-700 hover:bg-background"}`}><FileText size={15} /> Files</button>
-            <button onClick={() => setActiveTab("members")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "members" ? "bg-background text-indigo-600 shadow-sm" : "text-muted-foreground hover:text-gray-700 hover:bg-background"}`}><Users size={15} /> Members</button>
-            <button onClick={() => setActiveTab("audit")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "audit" ? "bg-background text-indigo-600 shadow-sm" : "text-muted-foreground hover:text-gray-700 hover:bg-background"}`}><Activity size={15} /> Audit Log</button>
+          <div className="flex gap-1 bg-muted/50 border border-border p-1 rounded-xl w-fit">
+            <button onClick={() => setActiveTab("files")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "files" ? "bg-background text-indigo-600 shadow-sm" : "text-muted-foreground hover:text-muted-foreground hover:bg-background"}`}><FileText size={15} /> Files</button>
+            <button onClick={() => setActiveTab("members")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "members" ? "bg-background text-indigo-600 shadow-sm" : "text-muted-foreground hover:text-muted-foreground hover:bg-background"}`}><Users size={15} /> Members</button>
+            <button onClick={() => setActiveTab("audit")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "audit" ? "bg-background text-indigo-600 shadow-sm" : "text-muted-foreground hover:text-muted-foreground hover:bg-background"}`}><Activity size={15} /> Audit Log</button>
           </div>
 
           {activeTab === "files" && group.myRole !== "VIEWER" && (
             <div>
-              <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+              <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden bg-background text-foreground placeholder:text-muted-foreground" />
               <button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed">
                 {isUploading ? <><Loader2 size={16} className="animate-spin" /> Encrypting...</> : <><Plus size={16} /> Upload to Group</>}
               </button>
@@ -360,8 +360,8 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
         </div>
 
         <div className="bg-background rounded-2xl border border-border shadow-sm overflow-hidden min-h-[300px]">
-          {activeTab === "files" && (loadingFiles ? <div className="p-12 text-center text-gray-400 animate-pulse">Decrypting group files...</div> : <FilesTab files={groupFiles} myRole={group.myRole} onDownload={handleDownloadFile} onDelete={handleDeleteGroupFile} />)}
-          {activeTab === "members" && (loadingMembers ? <div className="p-12 text-center text-gray-400 animate-pulse">Loading members...</div> : <MembersTab members={members} myRole={group.myRole} groupId={group.id} onRefresh={() => { fetchMembers(); fetchLogs(); }} onRemove={handleRemoveMember} />)}
+          {activeTab === "files" && (loadingFiles ? <div className="p-12 text-center text-muted-foreground animate-pulse">Decrypting group files...</div> : <FilesTab files={groupFiles} myRole={group.myRole} onDownload={handleDownloadFile} onDelete={handleDeleteGroupFile} />)}
+          {activeTab === "members" && (loadingMembers ? <div className="p-12 text-center text-muted-foreground animate-pulse">Loading members...</div> : <MembersTab members={members} myRole={group.myRole} groupId={group.id} onRefresh={() => { fetchMembers(); fetchLogs(); }} onRemove={handleRemoveMember} />)}
           
           {/* --- RESTORED AUDIT LOG TAB --- */}
           {activeTab === "audit" && (loadingLogs ? <div className="p-12 text-center text-indigo-600 animate-pulse font-medium">Decrypting audit logs...</div> : <AuditLogTab entries={auditLogs} />)}
@@ -374,9 +374,9 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
           <div className="bg-background rounded-2xl shadow-xl max-w-sm w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-6">
               <h3 className="text-lg font-bold text-foreground mb-2">{confirmDialog.title}</h3>
-              <p className="text-sm text-gray-600 mb-6 leading-relaxed">{confirmDialog.message}</p>
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{confirmDialog.message}</p>
               <div className="flex gap-3 justify-end">
-                <button onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
+                <button onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })} className="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted hover:bg-muted rounded-lg transition-colors">Cancel</button>
                 <button onClick={confirmDialog.action} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm">Confirm</button>
               </div>
             </div>
@@ -390,17 +390,17 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
 
 function GroupCard({ group, onOpen }: { group: any; onOpen: () => void }) {
   return (
-    <div className="bg-background border border-slate-200 rounded-2xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
+    <div className="bg-background border border-border rounded-2xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
       <div className={`h-2 bg-gradient-to-r ${group.color || 'from-indigo-500 to-purple-600'}`} />
       <div className="p-5 flex-1 flex flex-col">
         <div className="flex items-start justify-between mb-3">
           <div>
-            <h3 className="font-semibold text-slate-900 text-base leading-tight">{group.name}</h3>
-            <p className="text-xs text-slate-400 mt-0.5">{group.description}</p>
+            <h3 className="font-semibold text-foreground text-base leading-tight">{group.name}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">{group.description}</p>
           </div>
           <RoleBadge role={group.myRole} />
         </div>
-        <div className="flex items-center gap-1.5 text-sm text-slate-500 mt-auto pt-3 border-t border-slate-100">
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-auto pt-3 border-t border-border">
           <Users size={14} /> <span>{group.memberCount} members</span>
         </div>
         <button onClick={onOpen} className="mt-3 w-full flex items-center justify-center gap-1.5 bg-slate-900 hover:bg-slate-700 text-white text-sm font-medium py-2.5 rounded-xl transition-colors">
@@ -416,8 +416,8 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-background rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-semibold text-slate-900 text-lg">{title}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 transition-colors"><X size={18} /></button>
+          <h2 className="font-semibold text-foreground text-lg">{title}</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors"><X size={18} /></button>
         </div>
         {children}
       </div>
@@ -469,27 +469,30 @@ function GroupHub({ groups, onOpenGroup, onRefresh, isLoading }: { groups: any[]
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50">
+    <div className="min-h-screen bg-background">
       <div className="bg-background border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-1">Groups</h1>
-              <p className="text-sm text-gray-600">Manage your secure collaborative workspaces</p>
+              <h1 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
+                <Users className="h-6 w-6" />
+                Groups
+              </h1>
+              <p className="text-sm text-muted-foreground">Manage your secure collaborative workspaces</p>
             </div>
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 shadow-sm">
-              <span className="text-xs font-medium text-slate-600">{groups.length} / 5 Free Groups</span>
+            <div className="flex items-center gap-2 bg-background border border-border rounded-full px-4 py-2 shadow-sm">
+              <span className="text-xs font-medium text-muted-foreground">{groups.length} / 5 Free Groups</span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="px-6 lg:px-8 py-6 lg:py-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-semibold text-foreground text-lg">Your Groups</h2>
           <div className="flex gap-3">
-            <button onClick={() => setShowJoin(true)} className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 bg-background border border-gray-300 hover:bg-background px-4 py-2.5 rounded-lg transition-all shadow-sm"><LogIn size={16} /> Join Group</button>
-            <button disabled={atLimit} onClick={() => !atLimit && setShowCreate(true)} className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg transition-all shadow-sm ${atLimit ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 text-white"}`}><Plus size={16} /> Create Group</button>
+            <button onClick={() => setShowJoin(true)} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground bg-background border border-border hover:bg-background px-4 py-2.5 rounded-lg transition-all shadow-sm"><LogIn size={16} /> Join Group</button>
+            <button disabled={atLimit} onClick={() => !atLimit && setShowCreate(true)} className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg transition-all shadow-sm ${atLimit ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 text-white"}`}><Plus size={16} /> Create Group</button>
           </div>
         </div>
 
@@ -506,12 +509,12 @@ function GroupHub({ groups, onOpenGroup, onRefresh, isLoading }: { groups: any[]
         <Modal title="Create a New Group" onClose={() => setShowCreate(false)}>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Group Name</label>
-              <input type="text" value={createName} onChange={(e) => setCreateName(e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm" />
+              <label className="block text-sm font-medium text-foreground mb-1.5">Group Name</label>
+              <input type="text" value={createName} onChange={(e) => setCreateName(e.target.value)} className="w-full border border-border rounded-xl px-4 py-2.5 text-sm" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Description</label>
-              <textarea value={createDesc} onChange={(e) => setCreateDesc(e.target.value)} rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm resize-none" />
+              <label className="block text-sm font-medium text-foreground mb-1.5">Description</label>
+              <textarea value={createDesc} onChange={(e) => setCreateDesc(e.target.value)} rows={3} className="w-full border border-border rounded-xl px-4 py-2.5 text-sm resize-none" />
             </div>
             <button onClick={handleCreate} disabled={isSubmitting || !createName} className="w-full bg-slate-900 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50">Create Group</button>
           </div>
@@ -522,8 +525,8 @@ function GroupHub({ groups, onOpenGroup, onRefresh, isLoading }: { groups: any[]
         <Modal title="Join a Group" onClose={() => setShowJoin(false)}>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">Invite Code</label>
-              <input type="text" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-mono tracking-wider uppercase" />
+              <label className="block text-sm font-medium text-foreground mb-1.5">Invite Code</label>
+              <input type="text" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} className="w-full border border-border rounded-xl px-4 py-2.5 text-sm font-mono tracking-wider uppercase" />
             </div>
             <button onClick={handleJoin} disabled={isSubmitting || !joinCode} className="w-full bg-sky-600 hover:bg-sky-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50">Join Group</button>
           </div>

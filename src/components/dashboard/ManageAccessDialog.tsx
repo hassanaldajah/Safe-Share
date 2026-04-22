@@ -92,7 +92,7 @@ export function ManageAccessDialog({ isOpen, onClose, fileId, fileName }: Manage
             <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-rose-600" /></div>
           ) : accessList.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground flex flex-col items-center">
-              <Users className="h-10 w-10 mb-2 text-gray-300" />
+              <Users className="h-10 w-10 mb-2 text-muted-foreground" />
               <p>This file is not currently shared with anyone.</p>
             </div>
           ) : (

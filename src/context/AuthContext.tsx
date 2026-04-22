@@ -17,6 +17,7 @@ interface AuthState {
 interface AuthContextType extends AuthState {
   login: (token: string, privateKey: any, user: UserProfile) => void;
   logout: () => void;
+  updateUser: (updatedFields: Partial<UserProfile>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,6 +61,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const updateUser = (updatedFields: Partial<UserProfile>) => {
+    setAuthState((prevState) => {
+      if (!prevState.user) return prevState;
+      const newUser = { ...prevState.user, ...updatedFields };
+      localStorage.setItem("user", JSON.stringify(newUser));
+      return { ...prevState, user: newUser };
+    });
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("privateKey");
@@ -74,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ ...authState, login, logout }}>
+    <AuthContext.Provider value={{ ...authState, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

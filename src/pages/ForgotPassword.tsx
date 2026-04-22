@@ -1,120 +1,224 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Loader2, Mail, CheckCircle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Mail, KeyRound, Lock, Loader2, ArrowLeft, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/components/auth/AuthLayout";
 
-const ForgotPassword = () => {
+export default function ForgotPassword() {
+  const navigate = useNavigate();
+  
+  // Wizard State
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Form Data
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [passwords, setPasswords] = useState({ newPass: "", confirm: "" });
+  const [showPass, setShowPass] = useState({ newPass: false, confirm: false });
+
+  // --- STEP 1: Request OTP ---
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsLoading(false);
-    setIsSubmitted(true);
+    setError(null);
+
+    try {
+      // NOTE: We use standard fetch here, NOT authFetch, because the user is not logged in!
+      const response = await fetch("http://localhost:8080/api/v1/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) throw new Error("Failed to request password reset.");
+      
+      setStep(2); // Move to OTP entry
+    } catch (err: any) {
+      setError(err.message || "Something went wrong.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  if (isSubmitted) {
-    return (
-      <AuthLayout
-        title="Check your email"
-        subtitle="We've sent you password reset instructions"
-      >
-        <div className="text-center space-y-6">
-          <div className="mx-auto w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
-            <CheckCircle className="w-8 h-8 text-primary" />
-          </div>
+  // --- STEP 2: Verify OTP Length ---
+  const handleOtpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otp.length < 6) {
+      setError("Please enter the full 6-digit code.");
+      return;
+    }
+    setError(null);
+    setStep(3); // Move to New Password entry
+  };
 
-          <div className="space-y-2">
-            <p className="text-muted-foreground">
-              We sent a password reset link to
+  // --- STEP 3: Submit Final Reset Request ---
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    if (passwords.newPass !== passwords.confirm) {
+      setError("Passwords do not match.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:8080/api/v1/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email,
+          otpCode: otp,
+          newPassword: passwords.newPass,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Invalid or expired OTP code.");
+      }
+
+      setStep(4); // Move to Success Screen
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <AuthLayout 
+      title={step === 4 ? "Password Reset!" : "Forgot Password"} 
+      subtitle={
+        step === 1 ? "Enter your email to receive a recovery code" :
+        step === 2 ? `Enter the 6-digit code sent to ${email}` :
+        step === 3 ? "Create a new secure password" :
+        "You can now sign in with your new password"
+      }
+    >
+      <div className="space-y-6">
+        
+        {/* Error Message */}
+        {error && (
+          <div className="rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        {/* ================= STEP 1: EMAIL ================= */}
+        {step === 1 && (
+          <form onSubmit={handleRequestOtp} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <div className="relative">
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-12 bg-muted/50 border-border focus:border-primary pl-10"
+                />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              </div>
+            </div>
+
+            <Button type="submit" disabled={isLoading || !email} className="w-full h-12 bg-primary hover:bg-primary/90">
+              {isLoading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Sending...</> : "Send Recovery Code"}
+            </Button>
+          </form>
+        )}
+
+        {/* ================= STEP 2: OTP ================= */}
+        {step === 2 && (
+          <form onSubmit={handleOtpSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="otp">Recovery Code</Label>
+              <div className="relative">
+                <Input
+                  id="otp"
+                  type="text"
+                  maxLength={6}
+                  placeholder="123456"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} // Only allow numbers
+                  required
+                  className="h-12 bg-muted/50 border-border focus:border-primary text-center tracking-widest text-lg font-semibold"
+                />
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              </div>
+            </div>
+
+            <Button type="submit" disabled={otp.length !== 6} className="w-full h-12 bg-primary hover:bg-primary/90">
+              Verify Code
+            </Button>
+          </form>
+        )}
+
+        {/* ================= STEP 3: NEW PASSWORD ================= */}
+        {step === 3 && (
+          <form onSubmit={handlePasswordReset} className="space-y-5">
+            {(["newPass", "confirm"] as const).map((key) => (
+              <div key={key} className="space-y-2">
+                <Label>{key === "newPass" ? "New Password" : "Confirm New Password"}</Label>
+                <div className="relative">
+                  <Input
+                    type={showPass[key] ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={passwords[key]}
+                    onChange={(e) => setPasswords(p => ({ ...p, [key]: e.target.value }))}
+                    required
+                    className="h-12 bg-muted/50 border-border focus:border-primary pl-10 pr-12"
+                  />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(p => ({ ...p, [key]: !p[key] }))}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPass[key] ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            <Button type="submit" disabled={isLoading} className="w-full h-12 bg-primary hover:bg-primary/90">
+              {isLoading ? <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Resetting...</> : "Reset Password"}
+            </Button>
+          </form>
+        )}
+
+        {/* ================= STEP 4: SUCCESS ================= */}
+        {step === 4 && (
+          <div className="flex flex-col items-center justify-center space-y-6 py-4">
+            <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center">
+              <CheckCircle2 className="w-10 h-10 text-green-500" />
+            </div>
+            <p className="text-center text-sm text-muted-foreground">
+              Your password has been securely reset. Due to Zero-Knowledge security protocols, previous encrypted files will remain locked, but your account is fully recovered.
             </p>
-            <p className="font-medium text-foreground">{email}</p>
+            <Button onClick={() => navigate("/signin")} className="w-full h-12 bg-primary hover:bg-primary/90">
+              Return to Sign In
+            </Button>
           </div>
+        )}
 
-          <div className="p-4 rounded-xl bg-muted/50 border border-border">
-            <p className="text-sm text-muted-foreground">
-              Didn't receive the email? Check your spam folder or{" "}
-              <button
-                onClick={() => setIsSubmitted(false)}
-                className="text-primary hover:text-primary/80 font-medium"
-              >
-                try another email address
-              </button>
-            </p>
-          </div>
-
-          <Button
-            asChild
-            variant="outline"
-            className="w-full h-12 border-border"
-          >
-            <Link to="/signin">
+        {/* Back to Login Link (Only show on steps 1-3) */}
+        {step < 4 && (
+          <div className="mt-6 text-center">
+            <Link to="/signin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to sign in
             </Link>
-          </Button>
-        </div>
-      </AuthLayout>
-    );
-  }
-
-  return (
-    <AuthLayout
-      title="Reset your password"
-      subtitle="Enter your email and we'll send you reset instructions"
-    >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-foreground">
-            Email Address
-          </Label>
-          <div className="relative">
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary pl-12"
-            />
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           </div>
-        </div>
-
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Sending instructions...
-            </>
-          ) : (
-            "Send Reset Instructions"
-          )}
-        </Button>
-
-        <Link
-          to="/signin"
-          className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to sign in
-        </Link>
-      </form>
+        )}
+      </div>
     </AuthLayout>
   );
-};
-
-export default ForgotPassword;
+}

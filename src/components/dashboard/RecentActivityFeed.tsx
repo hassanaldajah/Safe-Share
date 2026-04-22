@@ -42,13 +42,13 @@ export function RecentActivityFeed() {
   };
 
   if (isLoading) {
-    return <div className="p-6 text-center text-gray-400 animate-pulse">Loading live activity...</div>;
+    return <div className="p-6 text-center text-muted-foreground animate-pulse">Loading live activity...</div>;
   }
 
   if (activities.length === 0) {
     return (
-      <div className="p-8 text-center text-gray-400 flex flex-col items-center">
-        <Activity size={32} className="mb-2 text-gray-300" />
+      <div className="p-8 text-center text-muted-foreground flex flex-col items-center">
+        <Activity size={32} className="mb-2 text-muted-foreground" />
         <p className="text-sm">No recent activity found.</p>
         <p className="text-xs mt-1">Create groups and files to see activity here!</p>
       </div>
@@ -61,7 +61,7 @@ export function RecentActivityFeed() {
         <div key={activity.id} className="flex items-start justify-between group">
           <div className="flex items-start gap-3">
             {/* Generate a quick avatar based on the user's initials */}
-            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground flex-shrink-0">
               {activity.user.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
             </div>
             
@@ -76,7 +76,7 @@ export function RecentActivityFeed() {
               </div>
             </div>
           </div>
-          <span className="text-xs text-gray-400 whitespace-nowrap">{activity.timeAgo}</span>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">{activity.timeAgo}</span>
         </div>
       ))}
     </div>

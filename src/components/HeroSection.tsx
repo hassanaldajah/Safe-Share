@@ -1,13 +1,29 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Lock, Shield, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const handlePrimaryClick = () => {
+    navigate(isAuthenticated ? "/dashboard" : "/signup");
+  };
+
+  const handleWatchDemo = () => {
+    const section = document.getElementById("how-it-works");
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
       {/* Background gradient */}
       <div className="absolute inset-0 gradient-radial" />
-      
+
       {/* Animated background elements */}
       <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse-glow" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: "1.5s" }} />
@@ -47,7 +63,7 @@ const HeroSection = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Share sensitive files with complete privacy. Your data is encrypted on your device 
+            Share sensitive files with complete privacy. Your data is encrypted on your device
             before it ever leaves — we literally can't see what you're sharing.
           </motion.p>
 
@@ -58,13 +74,17 @@ const HeroSection = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Button variant="hero" size="xl">
-              Get Started Free
+            {/* Primary — context-aware */}
+            <Button variant="hero" size="xl" onClick={handlePrimaryClick}>
+              {isAuthenticated ? "Go to Dashboard" : "Get Started Free"}
               <ArrowRight className="h-5 w-5" />
             </Button>
-            <Button variant="hero-outline" size="xl">
+
+            {/* Secondary — smooth scroll to How It Works */}
+            <Button variant="hero-outline" size="xl" onClick={handleWatchDemo}>
               <Play className="h-5 w-5" />
-              Watch Demo
+              How It Works
+
             </Button>
           </motion.div>
 

@@ -14,8 +14,8 @@ const features = [
   },
   {
     icon: Timer,
-    title: "Time-Limited & OTP Links",
-    description: "Create self-destructing links with expiration dates. Add one-time passwords for an extra layer of security.",
+    title: "Direct Vault Transfer",
+    description: "Safely grant file access to specific users or groups. We use advanced public-key cryptography so only your chosen recipients can decrypt the data.",
   },
 ];
 

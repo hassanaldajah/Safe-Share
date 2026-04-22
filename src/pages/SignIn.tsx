@@ -9,14 +9,14 @@ import AuthLayout from "@/components/auth/AuthLayout";
 import OTPModal from "@/components/auth/OTPModal";
 import { decryptPrivateKeyFromServer } from "@/services/cryptoService";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 
 /**
  * Shape of the JWT response from POST /api/auth/login.
  */
 interface AuthResponse {
   token: string;
-  publicKey: string; 
+  publicKey: string;
   encryptedPrivateKey: string;
   keySalt: string;
   keyIv: string;
@@ -28,16 +28,16 @@ interface AuthResponse {
 
 const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading,    setIsLoading]    = useState(false);
-  const [showOTP,      setShowOTP]      = useState(false);
-  const [error,        setError]        = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showOTP, setShowOTP] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    email:      "",
-    password:   "",
+    email: "",
+    password: "",
     rememberMe: false,
   });
-  
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -66,10 +66,10 @@ const SignIn = () => {
         throw new Error("Invalid email or password");
       }
 
-      const message = await response.text(); 
-      console.log(message); 
+      const message = await response.text();
+      console.log(message);
 
-      setShowOTP(true); 
+      setShowOTP(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -99,31 +99,41 @@ const SignIn = () => {
       // We cast the response to our updated interface
       const data: AuthResponse = await response.json();
 
-      // 1. Decrypt the private key using the password they just typed
-      const decryptedKey = await decryptPrivateKeyFromServer(
-        formData.password, 
-        data.encryptedPrivateKey,
-        data.keySalt,
-        data.keyIv
-      );
-      
-      const exportedKeyBuffer = await window.crypto.subtle.exportKey("pkcs8", decryptedKey as any);
-      const exportedKeyArray = Array.from(new Uint8Array(exportedKeyBuffer));
-      const privateKeyBase64 = btoa(String.fromCharCode.apply(null, exportedKeyArray));
-      
-      // 3. Save the keys for the Zero-Knowledge File Uploader/Downloader!
+      let finalDecryptedKey = null;
+
+      // 1. ALWAYS save the public key since it's unencrypted and needed for uploads/sharing
       localStorage.setItem("publicKey", data.publicKey);
-      localStorage.setItem("privateKey", privateKeyBase64); 
-      localStorage.setItem("token", data.token);      
+
+      try {
+        // 2. Decrypt the private key using the password they just typed
+        const decryptedKey = await decryptPrivateKeyFromServer(
+          formData.password,
+          data.encryptedPrivateKey,
+          data.keySalt,
+          data.keyIv
+        );
+
+        const exportedKeyBuffer = await window.crypto.subtle.exportKey("pkcs8", decryptedKey as any);
+        const exportedKeyArray = Array.from(new Uint8Array(exportedKeyBuffer));
+        const privateKeyBase64 = btoa(String.fromCharCode.apply(null, exportedKeyArray));
+
+        // 3. Save the private key for the Zero-Knowledge File Downloader
+        localStorage.setItem("privateKey", privateKeyBase64);
+
+        finalDecryptedKey = decryptedKey;
+      } catch (cryptoError) {
+        console.warn("Crypto Bypass: Failed to decrypt private key (likely due to a password reset). User logged in without key access.", cryptoError);
+      }
+
+      localStorage.setItem("token", data.token);
       const userProfile = {
         name: data.fullName,
         email: data.email,
         searchTag: data.searchTag
       };
       localStorage.setItem("user", JSON.stringify(userProfile));
-      login(data.token, decryptedKey as any, userProfile);
-      
-        
+      login(data.token, finalDecryptedKey as any, userProfile);
+
       navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");

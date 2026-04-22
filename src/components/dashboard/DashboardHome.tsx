@@ -59,14 +59,14 @@ export default function DashboardHome() {
     : 0;
 
   return (
-    <div className="p-6 lg:p-8 min-h-screen bg-slate-50/50">
+    <div className="p-4 lg:p-8 min-h-screen bg-background">
       
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900 lg:text-3xl tracking-tight">
+        <h1 className="text-2xl font-bold text-foreground lg:text-3xl tracking-tight">
           Welcome back
         </h1>
-        <p className="mt-1 text-slate-500">
+        <p className="mt-1 text-muted-foreground">
           Here is an overview of your secure vault and sharing activity.
         </p>
       </div>
@@ -82,18 +82,18 @@ export default function DashboardHome() {
       {isLoading ? (
         // Loading Skeleton
         <div className="mb-8 space-y-6">
-          <div className="h-40 bg-slate-200 rounded-2xl animate-pulse"></div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="h-28 bg-slate-200 rounded-xl animate-pulse"></div>
-            <div className="h-28 bg-slate-200 rounded-xl animate-pulse"></div>
-            <div className="h-28 bg-slate-200 rounded-xl animate-pulse"></div>
+          <div className="h-40 bg-muted rounded-2xl animate-pulse"></div>
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+            <div className="h-28 bg-muted rounded-xl animate-pulse"></div>
+            <div className="h-28 bg-muted rounded-xl animate-pulse"></div>
+            <div className="h-28 bg-muted rounded-xl animate-pulse"></div>
           </div>
         </div>
       ) : stats ? (
         <div className="mb-8 space-y-6">
           
           {/* Storage Hero Card */}
-          <div className="bg-background rounded-2xl border border-slate-200 p-6 shadow-sm relative overflow-hidden">
+          <div className="bg-background rounded-2xl border border-border p-6 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-5">
               <HardDrive className="h-32 w-32" />
             </div>
@@ -103,15 +103,15 @@ export default function DashboardHome() {
                 <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg">
                   <Database className="h-5 w-5" />
                 </div>
-                <h2 className="text-lg font-semibold text-slate-900">Storage Overview</h2>
+                <h2 className="text-lg font-semibold text-foreground">Storage Overview</h2>
               </div>
 
               <div className="mb-3 flex items-end justify-between">
                 <div>
-                  <span className="text-3xl font-bold text-slate-900">
+                  <span className="text-3xl font-bold text-foreground">
                     {formatBytes(stats.storageUsedBytes)}
                   </span>
-                  <span className="text-slate-500 ml-2 font-medium">
+                  <span className="text-muted-foreground ml-2 font-medium">
                     used of {formatBytes(stats.storageLimitBytes)}
                   </span>
                 </div>
@@ -120,42 +120,42 @@ export default function DashboardHome() {
                 </span>
               </div>
               
-              <Progress value={storagePercentage} className="h-3 bg-slate-100" />
+              <Progress value={storagePercentage} className="h-3 bg-muted" />
             </div>
           </div>
 
           {/* 3 Quick Stat Cards */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
             {/* Total Files */}
-            <div className="bg-background rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+            <div className="bg-background rounded-xl border border-border p-5 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
                 <HardDrive className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-500">Total Files</p>
-                <p className="text-2xl font-bold text-slate-900">{stats.totalFiles}</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Files</p>
+                <p className="text-2xl font-bold text-foreground">{stats.totalFiles}</p>
               </div>
             </div>
 
             {/* Links Sent */}
-            <div className="bg-background rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+            <div className="bg-background rounded-xl border border-border p-5 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                 <Send className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-500">Files Shared By You</p>
-                <p className="text-2xl font-bold text-slate-900">{stats.totalSharedSent}</p>
+                <p className="text-sm font-medium text-muted-foreground">Files Shared By You</p>
+                <p className="text-2xl font-bold text-foreground">{stats.totalSharedSent}</p>
               </div>
             </div>
 
             {/* Links Received */}
-            <div className="bg-background rounded-xl border border-slate-200 p-5 shadow-sm flex items-center gap-4">
+            <div className="bg-background rounded-xl border border-border p-5 shadow-sm flex items-center gap-4">
               <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
                 <Inbox className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-500">Files Received</p>
-                <p className="text-2xl font-bold text-slate-900">{stats.totalSharedReceived}</p>
+                <p className="text-sm font-medium text-muted-foreground">Files Received</p>
+                <p className="text-2xl font-bold text-foreground">{stats.totalSharedReceived}</p>
               </div>
             </div>
           </div>
@@ -163,7 +163,7 @@ export default function DashboardHome() {
       ) : null}
 
       {/* --- BOTTOM GRID (Existing Components) --- */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Left Column - Recent Activity */}
         <div className="lg:col-span-2">
           <RecentActivityFeed />
