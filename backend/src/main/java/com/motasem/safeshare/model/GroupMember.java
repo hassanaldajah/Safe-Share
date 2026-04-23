@@ -31,4 +31,7 @@ public class GroupMember {
     private GroupRole role;
 
     private LocalDateTime joinedAt;
+
+    @Column(columnDefinition = "TEXT")
+    private String encryptedGroupKey;
 }

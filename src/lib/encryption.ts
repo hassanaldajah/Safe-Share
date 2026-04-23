@@ -158,3 +158,47 @@ export async function decryptFile(
 
   return new Blob([decryptedBuffer]);
 }
+
+/**
+ * Generates a master AES-256 key for a new Group.
+ * This key will be used to encrypt all files uploaded to the group.
+ */
+export async function generateGroupKey(): Promise<CryptoKey> {
+  return await window.crypto.subtle.generateKey(
+    { name: "AES-GCM", length: 256 },
+    true, // Must be extractable so we can encrypt it for each member
+    ["encrypt", "decrypt"]
+  );
+}
+
+/**
+ * Encrypts the Group AES Key using a member's Public RSA Key.
+ * You will run this once for the creator during group creation, 
+ * and again for every new member invited to the group.
+ */
+export async function encryptGroupKeyForMember(
+  groupKey: CryptoKey,
+  memberPublicKeyBase64: string
+): Promise<string> {
+  // Export the AES key to raw bytes
+  const exportedGroupKey = await window.crypto.subtle.exportKey("raw", groupKey);
+  
+  // Import the member's RSA Public Key
+  const publicKeyBuffer = base64ToArrayBuffer(memberPublicKeyBase64);
+  const rsaPublicKey = await window.crypto.subtle.importKey(
+    "spki",
+    publicKeyBuffer,
+    { name: "RSA-OAEP", hash: "SHA-256" },
+    false,
+    ["encrypt"]
+  );
+
+  // Encrypt the AES key with the RSA key
+  const encryptedGroupKeyBuffer = await window.crypto.subtle.encrypt(
+    { name: "RSA-OAEP" },
+    rsaPublicKey,
+    exportedGroupKey
+  );
+
+  return arrayBufferToBase64(encryptedGroupKeyBuffer);
+}

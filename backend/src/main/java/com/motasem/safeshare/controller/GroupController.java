@@ -140,6 +140,7 @@ public class GroupController {
     public static class CreateGroupRequest {
         private String name;
         private String description;
+        private String creatorEncryptedGroupKey;
     }
 
     @PostMapping("/create")
@@ -147,7 +148,7 @@ public class GroupController {
             @RequestBody CreateGroupRequest request,
             @AuthenticationPrincipal User currentUser) {
         try {
-            var newGroup = groupService.createGroup(request.getName(), request.getDescription(), currentUser);
+            var newGroup = groupService.createGroup(request.getName(), request.getDescription(), currentUser, request.getCreatorEncryptedGroupKey());
             return ResponseEntity.ok(newGroup);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

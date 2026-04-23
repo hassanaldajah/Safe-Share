@@ -28,7 +28,7 @@ public class GroupService {
      * Creates a new group, enforces the 5-group limit, and adds the creator as the Admin.
      */
     @Transactional
-    public GroupEntity createGroup(String name, String description, User owner) {
+    public GroupEntity createGroup(String name, String description, User owner, String creatorEncryptedGroupKey) {
 
         // 1. Enforce the Free Tier Limit (Max 5 Groups)
         long currentGroupCount = groupRepository.countByOwner(owner);
@@ -57,6 +57,7 @@ public class GroupService {
                 .user(owner)
                 .role(GroupRole.ADMIN)
                 .joinedAt(LocalDateTime.now())
+                .encryptedGroupKey(creatorEncryptedGroupKey)
                 .build();
 
         groupMemberRepository.save(adminMember);
