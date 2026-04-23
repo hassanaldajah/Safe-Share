@@ -16,6 +16,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final com.motasem.safeshare.services.S3Service s3Service;
 
     @GetMapping("/search")
     public ResponseEntity<UserSearchResponse> searchUserByTag(@RequestParam String tag) {
@@ -94,7 +95,7 @@ public class UserController {
     // ─── 2. NEW PROFILE IMAGE UPLOAD ────────────────────────────────────────────────
     @Data
     public static class ImageUpdateRequest {
-        private String profileImage;
+        private String profilePictureUrl;
     }
 
     @PutMapping("/profile/image")
@@ -107,12 +108,35 @@ public class UserController {
             User userToUpdate = userRepository.findById(currentUser.getId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            userToUpdate.setProfileImage(request.getProfileImage());
+            userToUpdate.setProfilePictureUrl(request.getProfilePictureUrl());
             userRepository.save(userToUpdate);
 
-            return ResponseEntity.ok("Profile image updated successfully");
+            return ResponseEntity.ok(java.util.Map.of("message", "Profile image updated successfully", "url", request.getProfilePictureUrl()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/profile-picture")
+    public ResponseEntity<?> uploadProfilePicture(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+            @AuthenticationPrincipal User currentUser) {
+        
+        try {
+            // 1. Upload to S3
+            String publicUrl = s3Service.uploadProfilePicture(file);
+
+            // 2. Save URL to database
+            User userToUpdate = userRepository.findById(currentUser.getId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            userToUpdate.setProfilePictureUrl(publicUrl);
+            userRepository.save(userToUpdate);
+
+            // 3. Return the new URL so the frontend can update its state instantly
+            return ResponseEntity.ok(java.util.Map.of("message", "Profile picture uploaded successfully", "url", publicUrl));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
         }
     }
     // ==========================================

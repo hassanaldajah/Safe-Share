@@ -71,6 +71,7 @@ public class AuthenticationService {
                 .fullName(user.getFullName())      // <-- ADDED HERE
                 .email(user.getEmail())            // <-- ADDED HERE
                 .searchTag(user.getSearchTag())    // <-- ADDED HERE
+                .profilePictureUrl(user.getProfilePictureUrl())
                 .build();
     }
 
@@ -210,6 +211,7 @@ public class AuthenticationService {
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .searchTag(user.getSearchTag())
+                .profilePictureUrl(user.getProfilePictureUrl())
                 .build();
     }
 }

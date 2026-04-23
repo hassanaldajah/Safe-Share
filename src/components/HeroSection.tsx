@@ -97,7 +97,7 @@ const HeroSection = () => {
           >
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-primary" />
-              <span>SOC 2 Compliant</span>
+              <span>Cryptographically Private</span>
             </div>
             <div className="flex items-center gap-2">
               <Lock className="h-4 w-4 text-primary" />

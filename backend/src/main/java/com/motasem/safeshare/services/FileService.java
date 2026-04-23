@@ -83,7 +83,8 @@ public class FileService {
     public FileEntity uploadSecureFile(
             MultipartFile encryptedBlob, String originalName, String fileType,
             Long sizeBytes, Boolean compressed, String encryptedFileKey,
-            String iv, User currentUser, Integer groupId) throws IOException {
+            String iv, User currentUser, Integer groupId,
+            Integer maxDownloads, Integer maxViews) throws IOException {
 
         // 1. Save Physical File
         File directory = new File(UPLOAD_DIR);
@@ -108,6 +109,10 @@ public class FileService {
                 .owner(currentUser)
                 .uploadedAt(LocalDateTime.now())
                 .isDeleted(false) // Assuming this is your soft-delete flag
+                .maxDownloads(maxDownloads)
+                .maxViews(maxViews)
+                .currentDownloads(0)
+                .currentViews(0)
                 .build();
 
         // 3. NEW: Link the group and check roles
@@ -187,6 +192,24 @@ public class FileService {
             // 1. Verify the user is in this group
             groupMemberRepository.findByGroupAndUser(fileEntity.getGroup(), currentUser)
                     .orElseThrow(() -> new RuntimeException("Unauthorized: You are not in this group!"));
+
+            // Handle downloads and views for group file
+            if ("view".equalsIgnoreCase(action)) {
+                if (fileEntity.getMaxViews() != null && fileEntity.getMaxViews() > 0) {
+                    if (fileEntity.getCurrentViews() != null && fileEntity.getCurrentViews() >= fileEntity.getMaxViews()) {
+                        throw new RuntimeException("Access Denied: View limit reached for this group file.");
+                    }
+                    fileEntity.setCurrentViews((fileEntity.getCurrentViews() == null ? 0 : fileEntity.getCurrentViews()) + 1);
+                }
+            } else {
+                if (fileEntity.getMaxDownloads() != null && fileEntity.getMaxDownloads() > 0) {
+                    if (fileEntity.getCurrentDownloads() != null && fileEntity.getCurrentDownloads() >= fileEntity.getMaxDownloads()) {
+                        throw new RuntimeException("Access Denied: Download limit reached for this group file.");
+                    }
+                    fileEntity.setCurrentDownloads((fileEntity.getCurrentDownloads() == null ? 0 : fileEntity.getCurrentDownloads()) + 1);
+                }
+            }
+            fileRepository.save(fileEntity); // Save updated counts
 
             // 2. Log the download to the group's Audit Log
             auditService.logEvent(fileEntity.getGroup(), currentUser.getFullName(), "Downloaded File", fileEntity.getOriginalName(), "info");

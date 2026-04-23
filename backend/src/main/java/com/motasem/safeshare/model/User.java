@@ -43,7 +43,7 @@ public class User implements UserDetails {
     @Column(name = "otp_expiry")
     private LocalDateTime otpExpiry;
     @Column(columnDefinition = "TEXT")
-    private String profileImage;
+    private String profilePictureUrl;
     @Column(name = "theme", length = 20)
     private String theme = "system";
     @Column(name = "language", length = 10)

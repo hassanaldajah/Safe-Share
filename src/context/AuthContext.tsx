@@ -5,6 +5,7 @@ export interface UserProfile {
   name: string;
   email: string;
   searchTag: string;
+  profilePictureUrl?: string;
 }
 
 interface AuthState {

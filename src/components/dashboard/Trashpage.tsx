@@ -34,9 +34,7 @@ export function TrashPage() {
 
   // --- NEW: Fetch files on mount if the state is empty (survives hard refresh) ---
   useEffect(() => {
-    if (files.length === 0 && trashedFiles.length === 0) {
-      fetchFiles();
-    }
+    fetchFiles();
   }, []);
   // -----------------------------------------------------------------------------
 

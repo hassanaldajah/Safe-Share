@@ -45,13 +45,16 @@ public class FileController {
             @RequestParam("compressed") Boolean compressed,
             @RequestParam("encryptedFileKey") String encryptedFileKey,
             @RequestParam("iv") String iv,
+            @RequestParam(value = "maxDownloads", required = false) Integer maxDownloads,
+            @RequestParam(value = "maxViews", required = false) Integer maxViews,
             @AuthenticationPrincipal User currentUser
     ) {
         try {
             // PASS THE groupId HERE!
             fileService.uploadSecureFile(
                     encryptedBlob, originalName, fileType, sizeBytes,
-                    compressed, encryptedFileKey, iv, currentUser, groupId
+                    compressed, encryptedFileKey, iv, currentUser, groupId,
+                    maxDownloads, maxViews
             );
             return ResponseEntity.ok("File uploaded and secured successfully!");
         } catch (Exception e) {

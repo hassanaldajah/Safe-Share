@@ -1,9 +1,11 @@
 import {
   Search, Bell, ChevronDown, Home, X, FileText, Users,
   MessageSquare, Clock, LogOut, User, Settings, HelpCircle,
-  Copy, Check, ShieldCheck, Menu
+  Copy, Check, ShieldCheck, Menu, Camera, Loader2
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { authFetch } from "@/lib/api";
+import { toast } from "sonner";
 import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -32,13 +34,14 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
   // --- PULL REAL DATA FROM CONTEXT ---
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
 
   // Fallback just in case the context hasn't loaded yet
   const currentUser = user || {
@@ -88,6 +91,41 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
     navigate("/");
   };
 
+  const handleProfilePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await authFetch("http://localhost:8080/api/v1/users/profile-picture", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || await res.text());
+      }
+      
+      const data = await res.json();
+      const newUrl = data.url;
+      
+      setProfileImg(newUrl);
+      localStorage.setItem("profileImage", newUrl);
+      
+      // Best effort context update if the context supports mutating
+      updateUser({ profilePictureUrl: newUrl });
+      toast.success("Profile picture updated!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload profile picture");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <header
       className={`fixed right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6 transition-all duration-300 left-0 ${sidebarCollapsed ? 'lg:left-16' : 'lg:left-64'}`}
@@ -130,10 +168,18 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
             <div className="absolute right-0 top-14 w-72 rounded-xl border border-border bg-card shadow-xl overflow-hidden">
               <div className="border-b border-border p-4 bg-muted/30">
                 <div className="flex items-center gap-3 mb-4">
-                  <Avatar className="h-12 w-12 ring-2 ring-primary/20">
-                    <AvatarImage src={profileImg || undefined} className="object-cover" />
-                    <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">{initials}</AvatarFallback>
-                  </Avatar>
+                  <div className="relative group cursor-pointer h-12 w-12">
+                    <label htmlFor="profile-upload" className="cursor-pointer block w-full h-full relative">
+                      <Avatar className="h-12 w-12 ring-2 ring-primary/20 absolute inset-0">
+                        <AvatarImage src={profileImg || undefined} className="object-cover" />
+                        <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">{initials}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute inset-0 bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                      </div>
+                    </label>
+                    <input id="profile-upload" type="file" accept="image/*" className="hidden" onChange={handleProfilePictureUpload} disabled={isUploading} />
+                  </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-foreground truncate">{currentUser.name}</p>
                     <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>

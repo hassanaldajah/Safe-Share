@@ -61,6 +61,18 @@ public class FileEntity {
     @Column(nullable = false, updatable = false)
     private LocalDateTime uploadedAt;
 
+    @Column(name = "max_downloads")
+    private Integer maxDownloads;
+
+    @Column(name = "current_downloads")
+    private Integer currentDownloads = 0;
+
+    @Column(name = "max_views")
+    private Integer maxViews;
+
+    @Column(name = "current_views")
+    private Integer currentViews = 0;
+
     @PrePersist
     protected void onCreate() {
         uploadedAt = LocalDateTime.now();

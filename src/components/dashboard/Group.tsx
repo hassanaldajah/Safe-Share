@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { authFetch } from "@/lib/api";
 import { toast } from "sonner";
+import { useFolders } from "@/components/dashboard/FoldersContext";
 type Role = "Admin" | "Editor" | "Viewer";
 
 const roleStyles: Record<string, string> = {
@@ -83,8 +84,8 @@ function MembersTab({ members, myRole, groupId, onRefresh, onRemove }: { members
           
           {myRole === "ADMIN" && m.role !== "ADMIN" && (
             <div className="flex items-center gap-2">
-              <select className="text-xs border border-border rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" value={m.role} onChange={(e) => handleRoleChange(m.userId, e.target.value)}>
-                <option value="VIEWER">Viewer</option><option value="EDITOR">Editor</option><option value="ADMIN">Admin</option>
+              <select className="text-xs bg-slate-800 text-gray-100 border border-slate-700 rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" value={m.role} onChange={(e) => handleRoleChange(m.userId, e.target.value)}>
+                <option value="VIEWER" className="bg-slate-800 text-gray-100">Viewer</option><option value="EDITOR" className="bg-slate-800 text-gray-100">Editor</option><option value="ADMIN" className="bg-slate-800 text-gray-100">Admin</option>
               </select>
               <button onClick={() => onRemove(m.userId, m.name)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Remove Member"><UserMinus size={16} /></button>
             </div>
@@ -145,6 +146,13 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
   // --- NEW: Beautiful Custom Confirmation Modal State ---
   const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, title: string, message: string, action: () => void}>({isOpen: false, title: "", message: "", action: () => {}});
 
+  const { fetchFiles } = useFolders();
+
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadMaxDownloads, setUploadMaxDownloads] = useState<string>("");
+  const [uploadMaxViews, setUploadMaxViews] = useState<string>("");
+  const [selectedUploadFile, setSelectedUploadFile] = useState<File | null>(null);
+
   const fetchLogs = async () => {
     setLoadingLogs(true);
     try {
@@ -183,8 +191,8 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleConfirmUpload = async () => {
+    const file = selectedUploadFile;
     if (!file) return;
 
     setIsUploading(true);
@@ -198,6 +206,12 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
       formData.append("compressed", "false");
       formData.append("encryptedFileKey", "group_shared_aes_key_" + Date.now()); 
       formData.append("iv", "random_iv_" + Date.now());
+      if (uploadMaxDownloads && parseInt(uploadMaxDownloads) > 0) {
+        formData.append("maxDownloads", uploadMaxDownloads);
+      }
+      if (uploadMaxViews && parseInt(uploadMaxViews) > 0) {
+        formData.append("maxViews", uploadMaxViews);
+      }
 
       const res = await authFetch("http://localhost:8080/api/v1/files/upload", {
         method: "POST", body: formData,
@@ -208,11 +222,14 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
       toast.success("File securely encrypted and uploaded to the group!");
       fetchLogs(); 
       fetchGroupFiles();
+      setShowUploadModal(false);
+      setSelectedUploadFile(null);
+      setUploadMaxDownloads("");
+      setUploadMaxViews("");
     } catch (err: any) {
       toast.error("Upload failed: " + err.message);
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -242,6 +259,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
           if (!res.ok) throw new Error(await res.text());
           toast.success("File deleted successfully.");
           fetchGroupFiles(); fetchLogs();
+          fetchFiles(); // Update the global trash state
         } catch (err: any) { toast.error(err.message); }
         setConfirmDialog({ ...confirmDialog, isOpen: false });
       }
@@ -351,8 +369,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
 
           {activeTab === "files" && group.myRole !== "VIEWER" && (
             <div>
-              <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden bg-background text-foreground placeholder:text-muted-foreground" />
-              <button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed">
+              <button onClick={() => setShowUploadModal(true)} disabled={isUploading} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed">
                 {isUploading ? <><Loader2 size={16} className="animate-spin" /> Encrypting...</> : <><Plus size={16} /> Upload to Group</>}
               </button>
             </div>
@@ -382,6 +399,28 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
             </div>
           </div>
         </div>
+      )}
+
+      {showUploadModal && (
+        <Modal title="Upload File to Group" onClose={() => setShowUploadModal(false)}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Select File</label>
+              <input type="file" onChange={(e) => setSelectedUploadFile(e.target.files?.[0] || null)} className="w-full bg-slate-800 text-gray-100 border border-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none rounded-xl px-4 py-2.5 text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Max Downloads (Optional)</label>
+              <input type="number" min="0" placeholder="e.g. 5" value={uploadMaxDownloads} onChange={(e) => setUploadMaxDownloads(e.target.value)} className="w-full bg-slate-800 text-gray-100 border border-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none rounded-xl px-4 py-2.5 text-sm" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">Max Views (Optional)</label>
+              <input type="number" min="0" placeholder="e.g. 10" value={uploadMaxViews} onChange={(e) => setUploadMaxViews(e.target.value)} className="w-full bg-slate-800 text-gray-100 border border-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none rounded-xl px-4 py-2.5 text-sm" />
+            </div>
+            <button onClick={handleConfirmUpload} disabled={isUploading || !selectedUploadFile} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50">
+               {isUploading ? "Uploading..." : "Confirm Upload"}
+            </button>
+          </div>
+        </Modal>
       )}
 
     </div>
@@ -510,11 +549,11 @@ function GroupHub({ groups, onOpenGroup, onRefresh, isLoading }: { groups: any[]
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Group Name</label>
-              <input type="text" value={createName} onChange={(e) => setCreateName(e.target.value)} className="w-full border border-border rounded-xl px-4 py-2.5 text-sm" />
+              <input type="text" value={createName} onChange={(e) => setCreateName(e.target.value)} className="w-full bg-slate-800 text-gray-100 border border-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none rounded-xl px-4 py-2.5 text-sm" />
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Description</label>
-              <textarea value={createDesc} onChange={(e) => setCreateDesc(e.target.value)} rows={3} className="w-full border border-border rounded-xl px-4 py-2.5 text-sm resize-none" />
+              <textarea value={createDesc} onChange={(e) => setCreateDesc(e.target.value)} rows={3} className="w-full bg-slate-800 text-gray-100 border border-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none rounded-xl px-4 py-2.5 text-sm resize-none" />
             </div>
             <button onClick={handleCreate} disabled={isSubmitting || !createName} className="w-full bg-slate-900 hover:bg-slate-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50">Create Group</button>
           </div>
@@ -526,7 +565,7 @@ function GroupHub({ groups, onOpenGroup, onRefresh, isLoading }: { groups: any[]
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1.5">Invite Code</label>
-              <input type="text" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} className="w-full border border-border rounded-xl px-4 py-2.5 text-sm font-mono tracking-wider uppercase" />
+              <input type="text" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} className="w-full bg-slate-800 text-gray-100 border border-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none rounded-xl px-4 py-2.5 text-sm font-mono tracking-wider uppercase" />
             </div>
             <button onClick={handleJoin} disabled={isSubmitting || !joinCode} className="w-full bg-sky-600 hover:bg-sky-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50">Join Group</button>
           </div>
