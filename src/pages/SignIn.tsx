@@ -4,7 +4,6 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import AuthLayout from "@/components/auth/AuthLayout";
 import OTPModal from "@/components/auth/OTPModal";
 import { decryptPrivateKeyFromServer } from "@/services/cryptoService";
@@ -35,7 +34,6 @@ const SignIn = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    rememberMe: false,
   });
 
   const { login } = useAuth();
@@ -194,17 +192,6 @@ const SignIn = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="rememberMe"
-              checked={formData.rememberMe}
-              onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, rememberMe: checked as boolean }))}
-              className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-            />
-            <Label htmlFor="rememberMe" className="text-sm text-muted-foreground cursor-pointer">
-              Remember me for 30 days
-            </Label>
-          </div>
 
           <Button type="submit" disabled={isLoading} className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium">
             {isLoading ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />Signing in…</>) : ("Sign In")}
