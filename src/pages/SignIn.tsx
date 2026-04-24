@@ -156,11 +156,12 @@ const SignIn = () => {
               id="email"
               name="email"
               type="email"
+              autoComplete="off"
               placeholder="you@example.com"
               value={formData.email}
               onChange={handleChange}
               required
-              className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary"
+              className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary [&:-webkit-autofill]:bg-transparent [&:-webkit-autofill]:shadow-[0_0_0_1000px_hsl(var(--muted)/0.5)_inset] [&:-webkit-autofill]:[filter:none] [&:-webkit-autofill]:[-webkit-text-fill-color:hsl(var(--foreground))]"
             />
           </div>
 
@@ -176,11 +177,12 @@ const SignIn = () => {
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary pr-12"
+                className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary pr-12 [&:-webkit-autofill]:bg-transparent [&:-webkit-autofill]:shadow-[0_0_0_1000px_hsl(var(--muted)/0.5)_inset] [&:-webkit-autofill]:[filter:none] [&:-webkit-autofill]:[-webkit-text-fill-color:hsl(var(--foreground))]"
               />
               <button
                 type="button"

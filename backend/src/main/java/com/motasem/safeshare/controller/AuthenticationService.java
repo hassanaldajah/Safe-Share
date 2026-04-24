@@ -6,6 +6,8 @@ import com.motasem.safeshare.security.JwtService;
 import com.motasem.safeshare.services.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,9 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final EmailService emailService;
+
+    private static final int    MAX_FAILED_ATTEMPTS    = 5;
+    private static final long   LOCK_DURATION_MINUTES  = 15;
 
     // Helper method to generate a 6-digit random number
     private String generateOtp() {
@@ -75,33 +80,71 @@ public class AuthenticationService {
                 .build();
     }
 
+    @Transactional
     public void authenticate(AuthenticationRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(), request.getPassword()
-                )
-        );
-
         var user = repository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Invalid email or password"));
+
+        // ── LOCKOUT CHECK ─────────────────────────────────────────────────────
+        if (!user.isAccountNonLocked()) {
+            LocalDateTime unlockAt = user.getLockTime().plusMinutes(LOCK_DURATION_MINUTES);
+            if (LocalDateTime.now(ZoneOffset.UTC).isBefore(unlockAt)) {
+                // Still within the lockout window — reject immediately
+                long minutesLeft = java.time.Duration
+                        .between(LocalDateTime.now(ZoneOffset.UTC), unlockAt)
+                        .toMinutes() + 1;
+                throw new LockedException(
+                        "Account is temporarily locked due to too many failed attempts. "
+                        + "Please try again in " + minutesLeft + " minute(s)."
+                );
+            }
+            // Lockout period has expired — auto-unlock and continue
+            user.setAccountNonLocked(true);
+            user.setFailedAttemptCount(0);
+            user.setLockTime(null);
+        }
+
+        // ── PASSWORD VERIFICATION ────────────────────────────────────────────
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            int attempts = user.getFailedAttemptCount() + 1;
+            user.setFailedAttemptCount(attempts);
+
+            if (attempts >= MAX_FAILED_ATTEMPTS) {
+                user.setAccountNonLocked(false);
+                user.setLockTime(LocalDateTime.now(ZoneOffset.UTC));
+                repository.saveAndFlush(user);
+                throw new LockedException(
+                        "Account locked after " + MAX_FAILED_ATTEMPTS + " failed attempts. "
+                        + "Try again in " + LOCK_DURATION_MINUTES + " minutes."
+                );
+            }
+
+            repository.saveAndFlush(user);
+            int remaining = MAX_FAILED_ATTEMPTS - attempts;
+            throw new BadCredentialsException(
+                    "Invalid email or password. "
+                    + remaining + " attempt(s) remaining before lockout."
+            );
+        }
+
+        // ── SUCCESS: reset counter ──────────────────────────────────────────────
+        if (user.getFailedAttemptCount() > 0) {
+            user.setFailedAttemptCount(0);
+        }
 
         String otpCode = generateOtp();
-
         user.setOtpCode(otpCode);
         user.setOtpExpiry(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(10));
 
-        // Persist OTP immediately (commit happens at repository method boundary)
         repository.saveAndFlush(user);
         System.out.println("\n\n\n=================================================");
         System.out.println("🚨 DEV HACK OTP CODE FOR " + user.getEmail() + " IS: " + otpCode);
         System.out.println("=================================================\n\n\n");
 
-        // Email sending must not affect OTP persistence
         try {
             emailService.sendOtpEmail(user.getEmail(), otpCode);
         } catch (RuntimeException ex) {
             System.err.println("Failed to send OTP email: " + ex.getMessage());
-            // Don't rollback OTP update; client can use /resend-otp
         }
     }
 

@@ -48,6 +48,20 @@ public class User implements UserDetails {
     private String theme = "system";
     @Column(name = "language", length = 10)
     private String language = "en";
+
+    // ── Brute-force / Account Lockout ─────────────────────────────────────────
+    @Column(name = "failed_attempt_count", nullable = false)
+    @Builder.Default
+    private int failedAttemptCount = 0;
+
+    /** true = account is accessible; false = temporarily locked */
+    @Column(name = "account_non_locked", nullable = false)
+    @Builder.Default
+    private boolean accountNonLocked = true;
+
+    /** The moment the account was locked; null when unlocked */
+    @Column(name = "lock_time")
+    private LocalDateTime lockTime;
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();
@@ -59,8 +73,8 @@ public class User implements UserDetails {
     }
 
     @Override
-    public boolean isAccountNonExpired() {
-        return true;
+    public boolean isAccountNonLocked() {
+        return accountNonLocked;
     }
     @Override
     public boolean isCredentialsNonExpired(){

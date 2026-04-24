@@ -3,6 +3,8 @@ package com.motasem.safeshare.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -41,10 +43,21 @@ public class AuthenticationController {
         service.resendOtp(email);
         return ResponseEntity.ok("New OTP sent successfully");
     }
-    // 🔥 ADD THIS SAFETY NET 🔥
+    /** Locked account (HTTP 423) */
+    @ExceptionHandler(LockedException.class)
+    public ResponseEntity<String> handleLocked(LockedException ex) {
+        return ResponseEntity.status(HttpStatus.LOCKED).body(ex.getMessage());
+    }
+
+    /** Wrong password with remaining-attempts info (HTTP 401) */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<String> handleBadCredentials(BadCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    }
+
+    /** Generic fallback (HTTP 400) */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleExceptions(RuntimeException ex) {
-        // This grabs your custom message and sends it back to React cleanly!
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
     @PostMapping("/forgot-password")
