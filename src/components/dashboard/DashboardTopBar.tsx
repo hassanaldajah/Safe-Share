@@ -1,5 +1,5 @@
 import {
-  Search, Bell, ChevronDown, Home, X, FileText, Users,
+  Bell, ChevronDown, X, FileText, Users,
   MessageSquare, Clock, LogOut, User, Settings, HelpCircle,
   Copy, Check, ShieldCheck, Menu, Camera, Loader2
 } from "lucide-react";
@@ -7,7 +7,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { authFetch } from "@/lib/api";
 import { toast } from "sonner";
 import { useState, useRef, useEffect } from "react";
-import { Input } from "@/components/ui/input";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
@@ -128,26 +128,16 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
 
   return (
     <header
-      className={`fixed right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6 transition-all duration-300 left-0 ${sidebarCollapsed ? 'lg:left-16' : 'lg:left-64'}`}
+      className={`fixed right-0 top-0 z-30 flex h-16 items-center justify-end border-b border-border bg-card px-4 lg:px-6 transition-all duration-300 left-0 ${sidebarCollapsed ? 'lg:left-16' : 'lg:left-64'}`}
     >
       {/* Hamburger — mobile only */}
       <button
         onClick={onHamburgerClick}
-        className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
+        className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden mr-auto"
         aria-label="Open menu"
       >
         <Menu className="h-5 w-5" />
       </button>
-
-      {/* Home icon — desktop only */}
-      <Link to="/" className="hidden lg:flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-        <Home className="h-5 w-5" />
-      </Link>
-
-      <div className="relative hidden sm:block w-full max-w-xs lg:max-w-md mx-4">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input type="search" placeholder="Search files and folders..." className="h-10 w-full border-muted bg-background pl-10 pr-4 text-sm placeholder:text-muted-foreground focus-visible:ring-primary" />
-      </div>
 
       <div className="flex items-center gap-4">
         {/* User Profile */}
