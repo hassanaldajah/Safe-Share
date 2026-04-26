@@ -140,12 +140,75 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
       </button>
 
       <div className="flex items-center gap-4">
+        {/* Notifications */}
+        <div className="relative" ref={notificationRef}>
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="relative flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label="View notifications"
+          >
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute right-2.5 top-2.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground ring-2 ring-card">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
+          {showNotifications && (
+            <div className="absolute right-0 top-14 w-80 rounded-xl border border-border bg-card shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
+              <div className="flex items-center justify-between border-b border-border p-4 bg-muted/30">
+                <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
+                <Badge variant="secondary" className="text-[10px] h-4.5 px-1.5">{unreadCount} New</Badge>
+              </div>
+              <div className="max-h-[350px] overflow-y-auto">
+                {notifications.length > 0 ? (
+                  notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className={`flex gap-3 p-4 transition-colors hover:bg-muted/50 cursor-pointer border-b border-border/50 last:border-0 ${!notification.read ? "bg-primary/5" : ""}`}
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+                        <Bell className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{notification.title}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{notification.description}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1.5">{notification.time}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                      <Bell className="h-6 w-6 text-muted-foreground/50" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">No new notifications</p>
+                    <p className="text-xs text-muted-foreground mt-1">We'll notify you when something important happens.</p>
+                  </div>
+                )}
+              </div>
+              {notifications.length > 0 && (
+                <div className="border-t border-border p-2 bg-muted/10">
+                  <button className="w-full py-2 text-xs font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors">
+                    Mark all as read
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* User Profile */}
         <div className="relative" ref={profileRef}>
           <button onClick={() => setShowProfileMenu(!showProfileMenu)} className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-muted">
-            <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-              <AvatarImage src={profileImg || undefined} className="object-cover" />
-              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">{initials}</AvatarFallback>
+            <Avatar className="h-8 w-8 ring-2 ring-primary/20 border border-background shadow-sm">
+              {(currentUser.profilePictureUrl && currentUser.profilePictureUrl !== "null") ? (
+                <AvatarImage src={currentUser.profilePictureUrl} className="object-cover" />
+              ) : null}
+              <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold border border-primary/20">
+                {initials}
+              </AvatarFallback>
             </Avatar>
             <div className="hidden flex-col items-start lg:flex">
               <span className="text-sm font-medium text-foreground">{currentUser.name}</span>
@@ -160,9 +223,13 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
                 <div className="flex items-center gap-3 mb-4">
                   <div className="relative group cursor-pointer h-12 w-12">
                     <label htmlFor="profile-upload" className="cursor-pointer block w-full h-full relative">
-                      <Avatar className="h-12 w-12 ring-2 ring-primary/20 absolute inset-0">
-                        <AvatarImage src={profileImg || undefined} className="object-cover" />
-                        <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">{initials}</AvatarFallback>
+                      <Avatar className="h-12 w-12 ring-2 ring-primary/20 absolute inset-0 border border-background shadow-sm">
+                        {(currentUser.profilePictureUrl && currentUser.profilePictureUrl !== "null") ? (
+                          <AvatarImage src={currentUser.profilePictureUrl} className="object-cover" />
+                        ) : null}
+                        <AvatarFallback className="bg-primary/10 text-primary text-lg font-bold border border-primary/20">
+                          {initials}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="absolute inset-0 bg-black/50 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}

@@ -123,9 +123,11 @@ export function ActivityLogWidget() {
             className="animate-slide-in flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-muted/50"
             style={{ animationDelay: `${index * 30}ms` }}
           >
-            <Avatar className="h-7 w-7">
-              <AvatarImage src={entry.user.avatar} alt={entry.user.name} />
-              <AvatarFallback className="bg-muted text-[10px] font-medium text-muted-foreground">
+            <Avatar className="h-7 w-7 border border-background shadow-sm">
+              {(entry.user.avatar && entry.user.avatar !== "null") ? (
+                <AvatarImage src={entry.user.avatar} alt={entry.user.name} />
+              ) : null}
+              <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-bold border border-primary/20">
                 {entry.user.initials}
               </AvatarFallback>
             </Avatar>

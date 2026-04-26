@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/components/auth/AuthLayout";
 import OTPModal from "@/components/auth/OTPModal"; 
-import { buildRegistrationPayload, decryptPrivateKeyFromServer } from "@/services/cryptoService";
-import { useAuth } from "@/context/AuthContext";
+import { buildRegistrationPayload } from "@/services/cryptoService";
 
 /**
  * Shape of the JWT response from POST /api/auth/verify-otp.
@@ -42,7 +41,7 @@ const SignUp = () => {
   const [error,        setError]          = useState<string | null>(null);
   
   const navigate = useNavigate();
-  const { login } = useAuth();
+  
   
   const [formData, setFormData] = useState({
     fullName:        "",
@@ -121,38 +120,12 @@ const SignUp = () => {
       }
 
       // Cast the response to our AuthResponse interface
-      const data: AuthResponse = await response.json();
+      // const data: AuthResponse = await response.json(); // No longer needed if we don't use the data
 
-      // 1. Decrypt the private key
-      const decryptedKey = await decryptPrivateKeyFromServer(
-        formData.password, 
-        data.encryptedPrivateKey,
-        data.keySalt,
-        data.keyIv
-      );
-
-      // 2. Export to Base64
-      const exportedKeyBuffer = await window.crypto.subtle.exportKey("pkcs8", decryptedKey as any);
-      const exportedKeyArray = Array.from(new Uint8Array(exportedKeyBuffer));
-      const privateKeyBase64 = btoa(String.fromCharCode.apply(null, exportedKeyArray));
-
-      // 3. Save the keys
-      localStorage.setItem("publicKey", data.publicKey);
-      localStorage.setItem("privateKey", privateKeyBase64); 
-      localStorage.setItem("token", data.token);      
-      
-      // ---> THE ULTIMATE BYPASS FIX <---
-      const userProfile = {
-        name: data.fullName,
-        email: data.email,
-        searchTag: data.searchTag
-      };
-      localStorage.setItem("user", JSON.stringify(userProfile));
-      // ---------------------------------
-
-      // 4. Save to global state and redirect
-      login(data.token, decryptedKey as any, userProfile);
-      navigate("/dashboard");
+      setShowOTP(false);
+      navigate("/signin", { 
+        state: { message: "Email verified successfully! Please log in to initialize your cryptographic vault." } 
+      });
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
@@ -197,6 +170,7 @@ const SignUp = () => {
               id="email"
               name="email"
               type="email"
+              autoComplete="email" 
               placeholder="you@example.com"
               value={formData.email}
               onChange={handleChange}
@@ -212,6 +186,7 @@ const SignUp = () => {
               <Input
                 id="password"
                 name="password"
+                autoComplete="new-password"  
                 type={showPassword ? "text" : "password"}
                 placeholder="Create a strong password"
                 value={formData.password}

@@ -4,6 +4,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import AuthLayout from "@/components/auth/AuthLayout";
 import OTPModal from "@/components/auth/OTPModal";
 import { decryptPrivateKeyFromServer } from "@/services/cryptoService";
@@ -34,6 +35,7 @@ const SignIn = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    rememberMe: false,
   });
 
   const { login } = useAuth();
@@ -156,12 +158,12 @@ const SignIn = () => {
               id="email"
               name="email"
               type="email"
-              autoComplete="off"
+              autoComplete="email" 
               placeholder="you@example.com"
               value={formData.email}
               onChange={handleChange}
               required
-              className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary [&:-webkit-autofill]:bg-transparent [&:-webkit-autofill]:shadow-[0_0_0_1000px_hsl(var(--muted)/0.5)_inset] [&:-webkit-autofill]:[filter:none] [&:-webkit-autofill]:[-webkit-text-fill-color:hsl(var(--foreground))]"
+              className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary"
             />
           </div>
 
@@ -176,13 +178,13 @@ const SignIn = () => {
               <Input
                 id="password"
                 name="password"
-                type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary pr-12 [&:-webkit-autofill]:bg-transparent [&:-webkit-autofill]:shadow-[0_0_0_1000px_hsl(var(--muted)/0.5)_inset] [&:-webkit-autofill]:[filter:none] [&:-webkit-autofill]:[-webkit-text-fill-color:hsl(var(--foreground))]"
+                className="h-12 bg-muted/50 border-border focus:border-primary focus:ring-primary pr-12"
               />
               <button
                 type="button"
@@ -194,7 +196,7 @@ const SignIn = () => {
             </div>
           </div>
 
-
+ 
           <Button type="submit" disabled={isLoading} className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium">
             {isLoading ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />Signing in…</>) : ("Sign In")}
           </Button>

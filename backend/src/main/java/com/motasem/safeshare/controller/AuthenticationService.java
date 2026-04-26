@@ -38,7 +38,7 @@ public class AuthenticationService {
     }
 
     // --- REGISTRATION FLOW ---
-    public AuthenticationResponse register(RegisterRequest request) {
+    public String register(RegisterRequest request) {
         if (repository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("A user with this email is already registered.");
         }
@@ -65,19 +65,7 @@ public class AuthenticationService {
 
         emailService.sendOtpEmail(user.getEmail(), otpCode);
 
-        var jwtToken = jwtService.generateToken(user);
-
-        return AuthenticationResponse.builder()
-                .token(jwtToken)
-                .publicKey(user.getPublicKey())
-                .encryptedPrivateKey(user.getEncryptedPrivateKey())
-                .keySalt(user.getKeySalt())
-                .keyIv(user.getKeyIv())
-                .fullName(user.getFullName())      // <-- ADDED HERE
-                .email(user.getEmail())            // <-- ADDED HERE
-                .searchTag(user.getSearchTag())    // <-- ADDED HERE
-                .profilePictureUrl(user.getProfilePictureUrl())
-                .build();
+        return "Account created successfully. Please verify your email.";
     }
 
     @Transactional

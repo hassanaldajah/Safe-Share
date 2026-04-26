@@ -61,7 +61,7 @@ export function RecentActivityFeed() {
         <div key={activity.id} className="flex items-start justify-between group">
           <div className="flex items-start gap-3">
             {/* Generate a quick avatar based on the user's initials */}
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0 shadow-sm">
               {activity.user.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase()}
             </div>
             

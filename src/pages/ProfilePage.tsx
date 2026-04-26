@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from "react";
 import { Camera, Mail, Shield, Key, Edit3, Check, X, Lock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import Motasem from "@/assets/Motasem.jpg"; // Default fallback
 import { authFetch } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext"; // --- GRABBING REAL USER DATA ---
@@ -32,7 +31,6 @@ export default function ProfilePage() {
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   
   // Image Upload State
-  const [profileImg, setProfileImg] = useState<string>(localStorage.getItem("profileImage") || Motasem);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -59,15 +57,15 @@ export default function ProfilePage() {
         const base64String = reader.result as string;
         
         // 1. Instant UI Update
-        setProfileImg(base64String);
         localStorage.setItem("profileImage", base64String); 
+        updateUser({ profilePictureUrl: base64String });
         window.dispatchEvent(new Event("profileImageUpdated")); 
 
         // 2. Save it permanently to Spring Boot
         try {
           await authFetch("http://localhost:8080/api/v1/users/profile/image", {
             method: "PUT",
-            body: JSON.stringify({ profileImage: base64String })
+            body: JSON.stringify({ profilePictureUrl: base64String })
           });
           console.log("Image saved to database successfully!");
         } catch (error) {
@@ -136,10 +134,12 @@ export default function ProfilePage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div className="flex items-end gap-4 -mt-10">
                 <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                  <Avatar className="h-20 w-20 ring-4 ring-card transition-transform group-hover:scale-105">
-                    <AvatarImage src={profileImg} alt="Profile" className="object-cover" />
-                    <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
-                      {fields.fullName.substring(0, 2).toUpperCase()}
+                  <Avatar className="h-20 w-20 ring-4 ring-card transition-transform group-hover:scale-105 border border-background shadow-sm">
+                    {(user?.profilePictureUrl && user?.profilePictureUrl !== "null") ? (
+                      <AvatarImage src={user.profilePictureUrl} alt="Profile" className="object-cover" />
+                    ) : null}
+                    <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold border border-primary/20">
+                      {user?.name?.substring(0, 2).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                   <button className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-110">
