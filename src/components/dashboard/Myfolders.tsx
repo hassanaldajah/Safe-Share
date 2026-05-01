@@ -4,7 +4,7 @@ import {
   FileText, Image as ImageIcon, File, Video, Music, Archive, Download,
   Trash2, Shield, ShieldCheck, AlertCircle, Package, X, Mail, Copy, Check,
   FolderPlus, ArrowLeft, AlertTriangle, Users, Clock, Eye, Link as LinkIcon, 
-  CheckCircle, Loader2, AtSign, Settings2, CheckSquare, Square
+  CheckCircle, Loader2, AtSign, Settings2, CheckSquare, Square, ChevronUp, ChevronDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFolders, FileItem } from "@/components/dashboard/FoldersContext";
@@ -26,6 +26,9 @@ export function MyFolders() {
   const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; itemId: string; itemName: string; }>({ isOpen: false, itemId: "", itemName: "" });
   
   const [shareDialog, setShareDialog] = useState<{ isOpen: boolean; file: FileItem | null; }>({ isOpen: false, file: null });
+
+  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' }>({ key: null, direction: 'asc' });
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
 
   // --- GROUP SHARE STATES MOVED INSIDE COMPONENT ---
   const [showGroupModal, setShowGroupModal] = useState(false);
@@ -161,6 +164,59 @@ toast.success("File successfully shared to the group!");
     file.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedFiles = [...filteredFiles].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    
+    let aVal: any = a[sortConfig.key as keyof FileItem];
+    let bVal: any = b[sortConfig.key as keyof FileItem];
+
+    if (sortConfig.key === 'size') {
+      aVal = a.sizeBytes ?? parseFloat(a.size?.replace(/[^\d.]/g, '') || '0') * (a.size?.includes('MB') ? 1024 * 1024 : a.size?.includes('GB') ? 1024 * 1024 * 1024 : a.size?.includes('KB') ? 1024 : 1);
+      bVal = b.sizeBytes ?? parseFloat(b.size?.replace(/[^\d.]/g, '') || '0') * (b.size?.includes('MB') ? 1024 * 1024 : b.size?.includes('GB') ? 1024 * 1024 * 1024 : b.size?.includes('KB') ? 1024 : 1);
+    } else if (sortConfig.key === 'uploadedAt') {
+      aVal = a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0;
+      bVal = b.uploadedAt ? new Date(b.uploadedAt).getTime() : 0;
+    }
+
+    if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const handleSelectAll = () => {
+    if (sortedFiles.length > 0 && selectedFiles.size === sortedFiles.length) {
+      setSelectedFiles(new Set());
+    } else {
+      setSelectedFiles(new Set(sortedFiles.map(f => f.id)));
+    }
+  };
+
+  const handleSelectFile = (id: string) => {
+    const newSelected = new Set(selectedFiles);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedFiles(newSelected);
+  };
+
+  const handleBulkDelete = () => {
+    selectedFiles.forEach((id) => {
+      moveToTrash(id);
+    });
+    toast.success(`${selectedFiles.size} items moved to trash.`);
+    setSelectedFiles(new Set());
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-background border-b border-border">
@@ -184,6 +240,14 @@ toast.success("File successfully shared to the group!");
             </div>
 
             <div className="flex items-center gap-3">
+              {selectedFiles.size > 0 && (
+                <button 
+                  onClick={handleBulkDelete} 
+                  className="px-4 py-2.5 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-all flex items-center gap-2 shadow-sm"
+                >
+                  <Trash2 className="h-4 w-4" /> Delete Selected ({selectedFiles.size})
+                </button>
+              )}
               {!currentFolder && (
                 <button onClick={() => setIsCreateFolderOpen(true)} className="px-4 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-all flex items-center gap-2 shadow-sm">
                   <FolderPlus className="h-4 w-4" /> New Folder
@@ -223,17 +287,58 @@ toast.success("File successfully shared to the group!");
             <table className="w-full">
               <thead className="bg-background border-b border-border">
                 <tr>
+                  <th className="px-6 py-3 w-12 text-left">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 rounded border-border text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      checked={sortedFiles.length > 0 && selectedFiles.size === sortedFiles.length}
+                      onChange={handleSelectAll}
+                    />
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Size</th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/50 transition-colors group select-none"
+                    onClick={() => handleSort('size')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Size
+                      {sortConfig.key === 'size' ? (
+                        sortConfig.direction === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronUp className="h-3.5 w-3.5 opacity-0 group-hover:opacity-50" />
+                      )}
+                    </div>
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Compressed</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Uploaded</th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted/50 transition-colors group select-none"
+                    onClick={() => handleSort('uploadedAt')}
+                  >
+                    <div className="flex items-center gap-1">
+                      Uploaded
+                      {sortConfig.key === 'uploadedAt' ? (
+                        sortConfig.direction === 'asc' ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronUp className="h-3.5 w-3.5 opacity-0 group-hover:opacity-50" />
+                      )}
+                    </div>
+                  </th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredFiles.map((file) => (
+                {sortedFiles.map((file) => (
                   <tr key={file.id} className="hover:bg-background transition-colors group" onDoubleClick={() => file.type === "folder" && handleFolderClick(file)}>
+                    <td className="px-6 py-4 w-12">
+                      <input 
+                        type="checkbox"
+                        className="w-4 h-4 rounded border-border text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        checked={selectedFiles.has(file.id)}
+                        onChange={() => handleSelectFile(file.id)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3 cursor-pointer" onClick={() => file.type === "folder" && handleFolderClick(file)}>
                         {getFileIcon(file)}
@@ -278,11 +383,20 @@ toast.success("File successfully shared to the group!");
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredFiles.map((file) => (
+            {sortedFiles.map((file) => (
               <div key={file.id} className="bg-background rounded-xl border border-border p-4 hover:shadow-lg transition-all duration-200 group cursor-pointer" onDoubleClick={() => file.type === "folder" && handleFolderClick(file)}>
                 <div className="flex items-start justify-between mb-3">
-                  <div className="p-3 bg-muted rounded-lg" onClick={() => file.type === "folder" && handleFolderClick(file)}>
-                    {getFileIcon(file)}
+                  <div className="flex items-center gap-2">
+                    <input 
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-border text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      checked={selectedFiles.has(file.id)}
+                      onChange={() => handleSelectFile(file.id)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <div className="p-3 bg-muted rounded-lg" onClick={() => file.type === "folder" && handleFolderClick(file)}>
+                      {getFileIcon(file)}
+                    </div>
                   </div>
                 </div>
                 <h3 className="font-medium text-foreground mb-1 truncate">{file.name}</h3>
