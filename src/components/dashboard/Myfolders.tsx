@@ -117,11 +117,20 @@ toast.success("File successfully shared to the group!");
           method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: formData,
         });
 
-        if (!response.ok) throw new Error(await response.text());
+        if (!response.ok) {
+          let errorMessage = await response.text();
+          try {
+            const jsonError = JSON.parse(errorMessage);
+            if (jsonError.message) errorMessage = jsonError.message;
+          } catch (e) {
+            // Keep original text if not JSON
+          }
+          throw new Error(errorMessage || "Server upload error");
+        }
         fetchFiles();
-      } catch (error) {
+      } catch (error: any) {
         console.error("Upload failed:", error);
-        alert(`Failed to upload ${file.name}. Check the console.`);
+        alert(`Failed to upload ${file.name}: ${error.message}`);
       }
     }
   };

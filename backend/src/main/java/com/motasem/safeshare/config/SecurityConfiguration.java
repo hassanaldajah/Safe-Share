@@ -27,6 +27,8 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()// Your public endpoints
+                        .requestMatchers("/api/diagnostics/**").permitAll()
+                        .requestMatchers("/api/payments/webhook").permitAll()
                         .anyRequest().authenticated()                // Everything else requires a token
                 )
                 .sessionManagement(session -> session

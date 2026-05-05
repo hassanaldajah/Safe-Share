@@ -12,7 +12,10 @@ import com.motasem.safeshare.repository.GroupRepository;
 import com.motasem.safeshare.repository.GroupMemberRepository;
 import com.motasem.safeshare.transaction.FileTransaction;
 import com.motasem.safeshare.repository.FileTransactionRepository;
+import com.motasem.safeshare.repository.FileVersionRepository;
+import com.motasem.safeshare.model.FileVersion;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -43,6 +46,8 @@ public class FileService {
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
     private final AuditService auditService;
+    private final S3StorageService s3StorageService;
+    private final FileVersionRepository fileVersionRepository;
 
     private final String UPLOAD_DIR = "uploads/";
 
@@ -86,15 +91,9 @@ public class FileService {
             String iv, User currentUser, Integer groupId,
             Integer maxDownloads, Integer maxViews) throws IOException {
 
-        // 1. Save Physical File
-        File directory = new File(UPLOAD_DIR);
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-
+        // 1. Upload to AWS S3
         String uniqueFileName = UUID.randomUUID().toString() + ".enc";
-        Path filePath = Paths.get(UPLOAD_DIR + uniqueFileName);
-        Files.write(filePath, encryptedBlob.getBytes());
+        String awsVersionId = s3StorageService.uploadFile(uniqueFileName, encryptedBlob);
 
         // 2. Build Database Entity
         FileEntity fileEntity = FileEntity.builder()
@@ -105,7 +104,7 @@ public class FileService {
                 .virusScanStatus("clean")
                 .encryptedFileKey(encryptedFileKey)
                 .iv(iv)
-                .filePath(filePath.toString())
+                .filePath(uniqueFileName)
                 .owner(currentUser)
                 .uploadedAt(LocalDateTime.now())
                 .isDeleted(false) // Assuming this is your soft-delete flag
@@ -131,11 +130,21 @@ public class FileService {
 
             fileEntity.setGroup(group);
 
-            // This is already logging the upload to your Group Audit Log!
             auditService.logEvent(group, currentUser.getFullName(), "Uploaded File", fileEntity.getOriginalName(), "info");
         }
 
-        return fileRepository.save(fileEntity);
+        FileEntity savedFile = fileRepository.save(fileEntity);
+
+        // 4. NEW: Create FileVersion record for Zero-Knowledge History
+        FileVersion fileVersion = FileVersion.builder()
+                .file(savedFile)
+                .awsVersionId(awsVersionId)
+                .encryptedSize(sizeBytes)
+                .uploadedAt(LocalDateTime.now())
+                .build();
+        fileVersionRepository.save(fileVersion);
+
+        return savedFile;
     }
     // --- CROSS-VAULT SHARING (SHARE TO GROUP) ---
     @Transactional
@@ -234,18 +243,12 @@ public class FileService {
             fileShareRepository.save(share);
         }
 
-        // Return the physical file
+        // Return the file from S3
         try {
-            Path filePath = Paths.get(fileEntity.getFilePath());
-            Resource resource = new UrlResource(filePath.toUri());
-
-            if (resource.exists() || resource.isReadable()) {
-                return resource;
-            } else {
-                throw new RuntimeException("Could not read the file from disk!");
-            }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("Error reading file path: " + e.getMessage());
+            java.io.InputStream s3Stream = s3StorageService.downloadFile(fileEntity.getFilePath(), null);
+            return new InputStreamResource(s3Stream);
+        } catch (Exception e) {
+            throw new RuntimeException("Error reading file from S3: " + e.getMessage());
         }
     }
 
@@ -258,10 +261,9 @@ public class FileService {
         }
 
         try {
-            Path filePath = Paths.get(fileEntity.getFilePath());
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not delete physical file from disk: " + e.getMessage());
+            s3StorageService.deleteFile(fileEntity.getFilePath());
+        } catch (Exception e) {
+            throw new RuntimeException("Could not delete file from S3: " + e.getMessage());
         }
 
         fileRepository.delete(fileEntity);
@@ -345,10 +347,9 @@ public class FileService {
         }
 
         try {
-            Path filePath = Paths.get(file.getFilePath());
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            System.err.println("Failed to delete physical file: " + e.getMessage());
+            s3StorageService.deleteFile(file.getFilePath());
+        } catch (Exception e) {
+            System.err.println("Failed to delete physical file from S3: " + e.getMessage());
         }
         fileRepository.delete(file);
     }
@@ -357,10 +358,9 @@ public class FileService {
         List<FileEntity> trashFiles = fileRepository.findAllByOwnerAndIsDeletedTrue(owner);
         for (FileEntity file : trashFiles) {
             try {
-                Path filePath = Paths.get(file.getFilePath());
-                Files.deleteIfExists(filePath);
-            } catch (IOException e) {
-                System.err.println("Failed to delete physical file: " + e.getMessage());
+                s3StorageService.deleteFile(file.getFilePath());
+            } catch (Exception e) {
+                System.err.println("Failed to delete physical file from S3: " + e.getMessage());
             }
         }
         fileRepository.deleteAll(trashFiles);
@@ -504,5 +504,33 @@ public class FileService {
         stats.put("totalSharedReceived", receivedShares);
 
         return stats;
+    }
+
+    // --- ZERO-KNOWLEDGE VERSIONING ---
+    public List<FileVersion> getFileVersions(Integer fileId, User currentUser) {
+        FileEntity file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+        
+        if (!file.getOwner().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("Only the owner can view file version history.");
+        }
+        
+        return fileVersionRepository.findByFile_IdOrderByUploadedAtDesc(fileId);
+    }
+
+    public Resource downloadFileVersion(Integer fileId, String versionId, User currentUser) {
+        FileEntity fileEntity = fileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found!"));
+
+        if (!fileEntity.getOwner().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("Unauthorized attempt to download file version.");
+        }
+
+        try {
+            java.io.InputStream s3Stream = s3StorageService.downloadFile(fileEntity.getFilePath(), versionId);
+            return new InputStreamResource(s3Stream);
+        } catch (Exception e) {
+            throw new RuntimeException("Error reading file version from S3: " + e.getMessage());
+        }
     }
 }

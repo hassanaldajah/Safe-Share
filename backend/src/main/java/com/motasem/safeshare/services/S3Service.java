@@ -18,14 +18,11 @@ public class S3Service {
     private final String bucketName;
 
     public S3Service(
-            @Value("${aws.s3.bucket:safeshare-profiles}") String bucketName,
-            @Value("${aws.region:us-east-1}") String regionString) {
+            S3Client s3Client,
+            @Value("${aws.s3.bucket:safeshare-profiles}") String bucketName) {
         
+        this.s3Client = s3Client;
         this.bucketName = bucketName;
-        this.s3Client = S3Client.builder()
-                .region(Region.of(regionString))
-                .credentialsProvider(DefaultCredentialsProvider.create())
-                .build();
     }
 
     public String uploadProfilePicture(MultipartFile file) throws IOException {

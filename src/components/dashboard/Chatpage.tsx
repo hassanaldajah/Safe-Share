@@ -10,6 +10,7 @@ import { ManageAccessDialog } from "./ManageAccessDialog";
 
 // --- IMPORT YOUR ENCRYPTION MATH ---
 import { decryptKeyWithRSA, decryptFile } from "@/lib/encryption";
+import { toast } from "sonner";
 
 interface FileTransaction {
   id: string;
@@ -153,7 +154,15 @@ export function Chatpage() {
 
     } catch (error: any) {
       console.error("View failed:", error);
-      alert(error.message);
+      if (error.message?.toLowerCase().includes("limit")) {
+        toast.error("View limit reached. You can no longer access this file.", {
+          icon: <AlertCircle className="h-5 w-5 text-red-500" />
+        });
+      } else {
+        toast.error(error.message, {
+          icon: <AlertCircle className="h-5 w-5 text-red-500" />
+        });
+      }
     } finally {
       setIsViewing(null);
     }
@@ -201,7 +210,15 @@ export function Chatpage() {
 
     } catch (error: any) {
       console.error("Download failed:", error);
-      alert(error.message);
+      if (error.message?.toLowerCase().includes("limit")) {
+        toast.error("Download limit reached. You can no longer access this file.", {
+          icon: <AlertCircle className="h-5 w-5 text-red-500" />
+        });
+      } else {
+        toast.error(error.message, {
+          icon: <AlertCircle className="h-5 w-5 text-red-500" />
+        });
+      }
     } finally {
       setIsDownloading(null);
     }

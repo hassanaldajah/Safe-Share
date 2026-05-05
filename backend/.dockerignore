@@ -1,0 +1,27 @@
+# Build directories
+target/
+build/
+out/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.iws
+
+# Git
+.git/
+.gitignore
+
+# Maven wrapper
+.mvn/
+mvnw
+mvnw.cmd
+
+# Other ignores
+*.log
+*.class
+uploads/
+Dockerfile
+docker-compose.yml
+HELP.md

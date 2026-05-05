@@ -49,6 +49,10 @@ public class User implements UserDetails {
     @Column(name = "language", length = 10)
     private String language = "en";
 
+    @Column(name = "role", length = 50)
+    @Builder.Default
+    private String role = "USER";
+
     // ── Brute-force / Account Lockout ─────────────────────────────────────────
     @Column(name = "failed_attempt_count", nullable = false)
     @Builder.Default

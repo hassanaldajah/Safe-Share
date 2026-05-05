@@ -195,4 +195,38 @@ public class FileController {
     public ResponseEntity<Map<String, Object>> getDashboardStats(@AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(fileService.getDashboardStats(currentUser));
     }
+
+    // --- ZERO-KNOWLEDGE VERSIONING ---
+    @GetMapping("/{fileId}/versions")
+    public ResponseEntity<?> getFileVersions(@PathVariable Integer fileId, @AuthenticationPrincipal User currentUser) {
+        try {
+            var versions = fileService.getFileVersions(fileId, currentUser);
+            var response = versions.stream().map(v -> java.util.Map.of(
+                    "id", v.getId(),
+                    "awsVersionId", v.getAwsVersionId(),
+                    "encryptedSize", v.getEncryptedSize(),
+                    "uploadedAt", v.getUploadedAt()
+            )).toList();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{fileId}/versions/{versionId}/download")
+    public ResponseEntity<?> downloadFileVersion(
+            @PathVariable Integer fileId,
+            @PathVariable String versionId,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        try {
+            Resource resource = fileService.downloadFileVersion(fileId, versionId, currentUser);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"encrypted_file_v" + versionId + ".enc\"")
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
+    }
 }

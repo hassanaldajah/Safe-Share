@@ -21,11 +21,9 @@ interface TopBarProps {
 
 interface Notification {
   id: string;
-  type: "file" | "share" | "message" | "system";
-  title: string;
-  description: string;
-  time: string;
-  read: boolean;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarProps) {
@@ -57,7 +55,26 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
   };
   const initials = getInitials(currentUser.name);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await authFetch("http://localhost:8080/api/v1/notifications");
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const handleImageUpdate = () => {
       setProfileImg(localStorage.getItem("profileImage"));
@@ -77,6 +94,20 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
     if (showNotifications || showProfileMenu) document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showNotifications, showProfileMenu]);
+
+  const handleToggleNotifications = async () => {
+    const willShow = !showNotifications;
+    setShowNotifications(willShow);
+
+    if (willShow && unreadCount > 0) {
+      try {
+        await authFetch("http://localhost:8080/api/v1/notifications/read-all", { method: "PUT" });
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      } catch (err) {
+        console.error("Failed to mark all as read", err);
+      }
+    }
+  };
 
   const handleCopyTag = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -143,7 +174,7 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
         {/* Notifications */}
         <div className="relative" ref={notificationRef}>
           <button
-            onClick={() => setShowNotifications(!showNotifications)}
+            onClick={handleToggleNotifications}
             className="relative flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label="View notifications"
           >
@@ -166,15 +197,19 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
                   notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`flex gap-3 p-4 transition-colors hover:bg-muted/50 cursor-pointer border-b border-border/50 last:border-0 ${!notification.read ? "bg-primary/5" : ""}`}
+                      className={`flex gap-3 p-4 transition-colors hover:bg-muted/50 cursor-pointer border-b border-border/50 last:border-0 ${!notification.isRead ? "bg-primary/5" : ""}`}
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
                         <Bell className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{notification.title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{notification.description}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1.5">{notification.time}</p>
+                        <p className="text-sm font-medium text-foreground truncate">New Activity</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{notification.message}</p>
+                        <p className="text-[10px] text-muted-foreground mt-1.5">
+                          {new Date(notification.createdAt).toLocaleString(undefined, { 
+                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                          })}
+                        </p>
                       </div>
                     </div>
                   ))
@@ -190,7 +225,7 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
               </div>
               {notifications.length > 0 && (
                 <div className="border-t border-border p-2 bg-muted/10">
-                  <button className="w-full py-2 text-xs font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors">
+                  <button onClick={handleToggleNotifications} className="w-full py-2 text-xs font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors">
                     Mark all as read
                   </button>
                 </div>

@@ -5,6 +5,7 @@ import FeatureCards from "@/components/FeatureCards";
 import ZeroKnowledgeDiagram from "@/components/ZeroKnowledgeDiagram";
 import HowItWorks from "@/components/HowItWorks";
 import Testimonials from "@/components/Testimonials";
+import PricingSection from "@/components/PricingSection";
 import CTASection from "@/components/CTASection";
 import Footer from "@/components/Footer";
 import "@/styles/landing.css";
@@ -31,6 +32,7 @@ const Index = () => {
         <ZeroKnowledgeDiagram />
         <HowItWorks />
         <Testimonials />
+        <PricingSection />
         <CTASection />
       </main>
       <Footer />
