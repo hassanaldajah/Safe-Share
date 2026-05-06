@@ -54,7 +54,7 @@ export function BackupPage() {
   const [keyMode, setKeyMode] = useState<"backup" | "restore">("backup");
 
   // Mock backup history
-  const [backupHistory] = useState<BackupJob[]>([
+  const [backupHistory, setBackupHistory] = useState<BackupJob[]>([
     {
       id: "1", name: "Full Backup - January 27, 2026", type: "full", status: "completed",
       startTime: "2026-01-27T02:00:00", endTime: "2026-01-27T02:15:00", size: "171.3 MB", filesCount: 5, includesTrash: true,
@@ -69,9 +69,39 @@ export function BackupPage() {
     { id: "1", frequency: "daily", time: "02:00", enabled: true, nextRun: "2026-01-28T02:00:00", type: "incremental" },
   ]);
 
-  const handleBackupNow = () => {
+  const handleBackupNow = async () => {
     setIsBackingUp(true);
-    setTimeout(() => setIsBackingUp(false), 3000);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:8080/api/v1/backup/trigger", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+      if (!res.ok) throw new Error("Backup failed");
+      const data = await res.json();
+      
+      const newBackup: BackupJob = {
+        id: Date.now().toString(),
+        name: `System Backup - ${new Date(data.timestamp).toLocaleDateString()}`,
+        type: "full",
+        status: "completed",
+        startTime: data.timestamp,
+        endTime: data.timestamp,
+        size: data.size,
+        filesCount: data.filesCount,
+        includesTrash: true
+      };
+      
+      setBackupHistory([newBackup, ...backupHistory]);
+    } catch (error) {
+      console.error(error);
+      alert("Failed to trigger backup.");
+    } finally {
+      setIsBackingUp(false);
+    }
   };
 
   // --- UTILITY FOR BASE64 ---

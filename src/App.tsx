@@ -22,6 +22,7 @@ import SettingsPage from "./pages/SettingsPage";
 import HelpPage from "./pages/HelpPage";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeProvider";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
                 </Route> 
                 
                 <Route path="*" element={<NotFound />} />
+                <Route path="/payment-success" element={<PaymentSuccess />} />
               </Routes>
             </BrowserRouter>
           </FoldersProvider>

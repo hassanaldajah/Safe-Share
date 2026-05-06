@@ -2,6 +2,7 @@ package com.motasem.safeshare.controller;
 
 import com.motasem.safeshare.model.User;
 import com.motasem.safeshare.repository.UserRepository;
+import com.motasem.safeshare.services.BackupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +16,7 @@ import java.util.Map;
 public class BackupController {
 
     private final UserRepository userRepository;
+    private final BackupService backupService;
 
     @PostMapping("/save")
     public ResponseEntity<?> saveBackup(
@@ -56,6 +58,16 @@ public class BackupController {
             ));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Failed to retrieve backup: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/trigger")
+    public ResponseEntity<?> triggerBackup() {
+        try {
+            Map<String, Object> backupResult = backupService.generateSystemBackup();
+            return ResponseEntity.ok(backupResult);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 }
