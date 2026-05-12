@@ -32,7 +32,6 @@ const Index = () => {
         <ZeroKnowledgeDiagram />
         <HowItWorks />
         <Testimonials />
-        <PricingSection />
         <CTASection />
       </main>
       <Footer />
