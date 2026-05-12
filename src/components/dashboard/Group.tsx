@@ -353,6 +353,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
                   <UserMinus size={14} /> Leave Group
                 </button>
               </div>
+            </div>
 
           </div>
         </div>
