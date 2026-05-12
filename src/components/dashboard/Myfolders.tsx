@@ -463,7 +463,7 @@ toast.success("File successfully shared to the group!");
             
             <label className="block text-sm font-medium text-foreground mb-1.5">Select a Group</label>
             <select 
-              className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6"
+              className="w-full bg-background text-foreground border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6"
               value={selectedGroupId}
               onChange={(e) => setSelectedGroupId(e.target.value)}
             >
