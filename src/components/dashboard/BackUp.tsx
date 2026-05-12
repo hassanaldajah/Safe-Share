@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Cloud, CloudDownload, CloudUpload, Database, HardDrive, Clock, CheckCircle,
   AlertCircle, Settings, Download, Upload, Calendar, History, Shield, Zap, Info,
@@ -53,17 +53,31 @@ export function BackupPage() {
   const [keyMessage, setKeyMessage] = useState({ type: "", text: "" });
   const [keyMode, setKeyMode] = useState<"backup" | "restore">("backup");
 
-  // Mock backup history
-  const [backupHistory, setBackupHistory] = useState<BackupJob[]>([
-    {
-      id: "1", name: "Full Backup - January 27, 2026", type: "full", status: "completed",
-      startTime: "2026-01-27T02:00:00", endTime: "2026-01-27T02:15:00", size: "171.3 MB", filesCount: 5, includesTrash: true,
-    },
-    {
-      id: "2", name: "Incremental Backup - January 26, 2026", type: "incremental", status: "completed",
-      startTime: "2026-01-26T02:00:00", endTime: "2026-01-26T02:05:00", size: "23.4 MB", filesCount: 2, includesTrash: true,
-    },
-  ]);
+  // Dynamic backup history
+  const [backupHistory, setBackupHistory] = useState<BackupJob[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+
+  const fetchBackupHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:8080/api/v1/backup/status", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setBackupHistory(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch backup history", err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBackupHistory();
+  }, []);
 
   const [backupSchedule] = useState<BackupSchedule[]>([
     { id: "1", frequency: "daily", time: "02:00", enabled: true, nextRun: "2026-01-28T02:00:00", type: "incremental" },
@@ -81,21 +95,8 @@ export function BackupPage() {
         }
       });
       if (!res.ok) throw new Error("Backup failed");
-      const data = await res.json();
-      
-      const newBackup: BackupJob = {
-        id: Date.now().toString(),
-        name: `System Backup - ${new Date(data.timestamp).toLocaleDateString()}`,
-        type: "full",
-        status: "completed",
-        startTime: data.timestamp,
-        endTime: data.timestamp,
-        size: data.size,
-        filesCount: data.filesCount,
-        includesTrash: true
-      };
-      
-      setBackupHistory([newBackup, ...backupHistory]);
+      // Refresh the backup history list instead of just pushing locally
+      await fetchBackupHistory();
     } catch (error) {
       console.error(error);
       alert("Failed to trigger backup.");
@@ -221,7 +222,10 @@ export function BackupPage() {
     }
   };
 
-  const formatDate = (dateString: string) => new Date(dateString).toLocaleString();
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleString();
+  };
   const coverage = { active: files.filter((f) => f.type === "file").length, trashed: trashedFiles.length, total: files.filter((f) => f.type === "file").length + trashedFiles.length };
 
   return (
@@ -271,8 +275,17 @@ export function BackupPage() {
               <div className="bg-background rounded-xl border border-border p-6">
                 <div className="flex items-center justify-between mb-4"><div className="p-2 bg-green-50 rounded-lg"><CheckCircle className="h-5 w-5 text-green-600" /></div><span className="text-xs text-muted-foreground">Last 24 hours</span></div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-1">Last Backup</h3>
-                <p className="text-2xl font-bold text-foreground">{formatDate(backupHistory[0].endTime!).split(",")[0]}</p>
-                <p className="text-sm text-muted-foreground mt-1">{backupHistory[0].filesCount} files • {backupHistory[0].size}</p>
+                {backupHistory.length > 0 ? (
+                  <>
+                    <p className="text-2xl font-bold text-foreground">{formatDate(backupHistory[0].endTime || backupHistory[0].startTime).split(",")[0]}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{backupHistory[0].filesCount} files • {backupHistory[0].size || '0 B'}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-2xl font-bold text-foreground">No Backups Yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">Trigger a backup to get started</p>
+                  </>
+                )}
               </div>
               <div className="bg-background rounded-xl border border-border p-6">
                 <div className="flex items-center justify-between mb-4"><div className="p-2 bg-blue-50 rounded-lg"><Clock className="h-5 w-5 text-blue-600" /></div><span className="text-xs text-muted-foreground">Scheduled</span></div>
@@ -294,17 +307,23 @@ export function BackupPage() {
            <div className="bg-background rounded-xl border border-border overflow-hidden">
              <div className="p-4 bg-background border-b border-border"><h3 className="font-semibold text-foreground">Recent Backups</h3></div>
              <div className="divide-y divide-gray-200">
-               {backupHistory.map((backup) => (
-                 <div key={backup.id} className="p-6 hover:bg-background transition-colors group">
-                   <div className="flex items-start gap-4">
-                     {getStatusIcon(backup.status)}
-                     <div>
-                       <h4 className="font-medium text-foreground">{backup.name}</h4>
-                       <p className="text-sm text-muted-foreground">{formatDate(backup.startTime)} • {backup.size}</p>
+               {isLoadingHistory ? (
+                 <div className="p-8 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+               ) : backupHistory.length === 0 ? (
+                 <div className="p-8 text-center text-muted-foreground">No backup history available.</div>
+               ) : (
+                 backupHistory.map((backup) => (
+                   <div key={backup.id} className="p-6 hover:bg-background transition-colors group">
+                     <div className="flex items-start gap-4">
+                       {getStatusIcon(backup.status)}
+                       <div>
+                         <h4 className="font-medium text-foreground">{backup.name}</h4>
+                         <p className="text-sm text-muted-foreground">{formatDate(backup.startTime)} • {backup.size || 'Pending size'}</p>
+                       </div>
                      </div>
                    </div>
-                 </div>
-               ))}
+                 ))
+               )}
              </div>
            </div>
         )}

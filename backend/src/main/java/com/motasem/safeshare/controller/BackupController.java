@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -66,6 +67,15 @@ public class BackupController {
         try {
             Map<String, Object> backupResult = backupService.generateSystemBackup();
             return ResponseEntity.ok(backupResult);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<?> getBackupStatus() {
+        try {
+            return ResponseEntity.ok(backupService.getBackupHistory());
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
