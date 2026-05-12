@@ -12,7 +12,10 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -70,15 +73,18 @@ public class BackupService {
                     
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes));
             
+            Long totalSizeBytes = fileRepository.sumAllFileSizes();
+            if (totalSizeBytes == null) totalSizeBytes = 0L;
+            
             job.setEndTime(LocalDateTime.now());
             job.setStatus("completed");
-            job.setSize(formatSize(bytes.length));
+            job.setSize(formatSize(totalSizeBytes));
             job.setFilesCount((int) totalFiles);
             backupJobRepository.save(job);
 
             Map<String, Object> result = new HashMap<>();
             result.put("timestamp", timestamp);
-            result.put("size", formatSize(bytes.length));
+            result.put("size", formatSize(totalSizeBytes));
             result.put("filesCount", totalFiles);
             return result;
         } catch (Exception e) {
@@ -97,5 +103,23 @@ public class BackupService {
 
     public java.util.List<BackupJob> getBackupHistory() {
         return backupJobRepository.findAllByOrderByStartTimeDesc();
+    }
+
+    public Map<String, Object> getBackupInfo() {
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
+        ZonedDateTime nextRun = now.withHour(2).withMinute(0).withSecond(0).withNano(0);
+        
+        if (now.compareTo(nextRun) >= 0) {
+            nextRun = nextRun.plusDays(1);
+        }
+
+        Map<String, Object> info = new HashMap<>();
+        info.put("nextScheduledBackup", nextRun.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        
+        Long totalSizeBytes = fileRepository.sumAllFileSizes();
+        if (totalSizeBytes == null) totalSizeBytes = 0L;
+        info.put("totalStorageSize", formatSize(totalSizeBytes));
+        
+        return info;
     }
 }

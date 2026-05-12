@@ -15,4 +15,7 @@ public interface FileRepository extends JpaRepository<FileEntity, Integer> {
     // 2. Finds group files
     java.util.List<FileEntity> findAllByGroupAndIsDeletedFalse(com.motasem.safeshare.model.GroupEntity group);
     List<FileEntity> findAllByOwnerAndIsDeletedTrue(User owner);
+
+    @org.springframework.data.jpa.repository.Query("SELECT SUM(f.sizeBytes) FROM FileEntity f")
+    Long sumAllFileSizes();
 }

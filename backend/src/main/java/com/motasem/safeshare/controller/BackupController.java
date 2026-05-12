@@ -80,4 +80,13 @@ public class BackupController {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @GetMapping("/info")
+    public ResponseEntity<?> getBackupInfo() {
+        try {
+            return ResponseEntity.ok(backupService.getBackupInfo());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

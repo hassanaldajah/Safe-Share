@@ -53,20 +53,32 @@ export function BackupPage() {
   const [keyMessage, setKeyMessage] = useState({ type: "", text: "" });
   const [keyMode, setKeyMode] = useState<"backup" | "restore">("backup");
 
-  // Dynamic backup history
+  // Dynamic backup history and info
   const [backupHistory, setBackupHistory] = useState<BackupJob[]>([]);
+  const [backupInfo, setBackupInfo] = useState<{nextScheduledBackup: string, totalStorageSize: string} | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   const fetchBackupHistory = async () => {
     setIsLoadingHistory(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/backup/status", {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
+      const [historyRes, infoRes] = await Promise.all([
+        fetch("http://localhost:8080/api/v1/backup/status", {
+          headers: { "Authorization": `Bearer ${token}` }
+        }),
+        fetch("http://localhost:8080/api/v1/backup/info", {
+          headers: { "Authorization": `Bearer ${token}` }
+        })
+      ]);
+      
+      if (historyRes.ok) {
+        const data = await historyRes.json();
         setBackupHistory(data);
+      }
+      
+      if (infoRes.ok) {
+        const infoData = await infoRes.json();
+        setBackupInfo(infoData);
       }
     } catch (err) {
       console.error("Failed to fetch backup history", err);
@@ -80,7 +92,7 @@ export function BackupPage() {
   }, []);
 
   const [backupSchedule] = useState<BackupSchedule[]>([
-    { id: "1", frequency: "daily", time: "02:00", enabled: true, nextRun: "2026-01-28T02:00:00", type: "incremental" },
+    { id: "1", frequency: "daily", time: "02:00", enabled: true, nextRun: "", type: "incremental" },
   ]);
 
   const handleBackupNow = async () => {
@@ -290,13 +302,17 @@ export function BackupPage() {
               <div className="bg-background rounded-xl border border-border p-6">
                 <div className="flex items-center justify-between mb-4"><div className="p-2 bg-blue-50 rounded-lg"><Clock className="h-5 w-5 text-blue-600" /></div><span className="text-xs text-muted-foreground">Scheduled</span></div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-1">Next Backup</h3>
-                <p className="text-2xl font-bold text-foreground">{formatDate(backupSchedule[0].nextRun).split(",")[0]}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {backupInfo ? formatDate(backupInfo.nextScheduledBackup).split(",")[0] : 'Loading...'}
+                </p>
                 <p className="text-sm text-muted-foreground mt-1">{backupSchedule[0].frequency} at {backupSchedule[0].time}</p>
               </div>
               <div className="bg-background rounded-xl border border-border p-6">
                 <div className="flex items-center justify-between mb-4"><div className="p-2 bg-purple-50 rounded-lg"><HardDrive className="h-5 w-5 text-purple-600" /></div><span className="text-xs text-muted-foreground">Current</span></div>
                 <h3 className="text-sm font-medium text-muted-foreground mb-1">Backup Size</h3>
-                <p className="text-2xl font-bold text-foreground">{storage.usedFormatted}</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {backupInfo?.totalStorageSize || storage.usedFormatted}
+                </p>
               </div>
             </div>
           </div>
