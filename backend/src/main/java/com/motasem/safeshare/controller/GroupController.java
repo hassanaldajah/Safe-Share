@@ -294,4 +294,19 @@ public class GroupController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    // ==========================================
+    // 4. DELETE A GROUP (Admins Only)
+    // ==========================================
+    @DeleteMapping("/{groupId}")
+    public ResponseEntity<?> deleteGroup(
+            @PathVariable Integer groupId,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            groupService.deleteGroup(groupId, currentUser);
+            return ResponseEntity.ok("Group deleted successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

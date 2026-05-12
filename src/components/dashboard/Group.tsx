@@ -299,6 +299,22 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
     });
   };
 
+  const handleDeleteGroupClick = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Delete Group",
+      message: "Are you sure you want to completely delete this group? All files, members, and activity logs will be permanently deleted. This action cannot be undone.",
+      action: async () => {
+        try {
+          const res = await authFetch(`/api/v1/groups/${group.id}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error(await res.text());
+          toast.success("Group deleted successfully.");
+          window.location.reload(); 
+        } catch (err: any) { toast.error(err.message); }
+      }
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background relative">
       <div className="bg-background border-b border-border">
@@ -327,10 +343,16 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
                   </button>
                 </div>
               )}
-              <button onClick={handleLeaveGroupClick} className="inline-flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 font-medium transition-colors">
-                <UserMinus size={14} /> Leave Group
-              </button>
-            </div>
+              <div className="flex items-center gap-3">
+                {group.myRole === "ADMIN" && (
+                  <button onClick={handleDeleteGroupClick} className="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-white bg-red-50 hover:bg-red-600 px-3 py-1.5 rounded-lg font-medium transition-colors border border-red-100 hover:border-red-600">
+                    <Trash2 size={14} /> Delete Group
+                  </button>
+                )}
+                <button onClick={handleLeaveGroupClick} className="inline-flex items-center gap-1.5 text-xs text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-3 py-1.5 rounded-lg font-medium transition-colors border border-amber-100 hover:border-amber-600">
+                  <UserMinus size={14} /> Leave Group
+                </button>
+              </div>
 
           </div>
         </div>

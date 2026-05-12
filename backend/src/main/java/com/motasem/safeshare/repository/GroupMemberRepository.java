@@ -18,4 +18,6 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Intege
 
     // Add this exact line to fix your error:
     List<GroupMember> findAllByGroup(GroupEntity group);
+
+    void deleteByGroup_Id(Integer groupId);
 }

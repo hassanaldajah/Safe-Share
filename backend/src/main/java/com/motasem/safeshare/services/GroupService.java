@@ -20,6 +20,10 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
     private final com.motasem.safeshare.repository.UserRepository userRepository;
+    private final com.motasem.safeshare.repository.FileRepository fileRepository;
+    private final com.motasem.safeshare.repository.FileVersionRepository fileVersionRepository;
+    private final com.motasem.safeshare.repository.FileShareRepository fileShareRepository;
+    private final com.motasem.safeshare.repository.AuditLogRepository auditLogRepository;
     // --- BUSINESS LOGIC LIMITS ---
     private static final int MAX_FREE_GROUPS = 5;
     private static final int MAX_MEMBERS_PER_GROUP = 10;
@@ -125,5 +129,35 @@ public class GroupService {
         groupMemberRepository.save(newMember);
         auditService.logEvent(group, user.getFullName(), "Joined", "Group via Invite Link", "info");
         return group;
+    }
+
+    @Transactional
+    public void deleteGroup(Integer groupId, User actor) {
+        GroupEntity group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+
+        GroupMember requester = groupMemberRepository.findByGroupAndUser(group, actor)
+                .orElseThrow(() -> new RuntimeException("Unauthorized"));
+
+        if (requester.getRole() != GroupRole.ADMIN) {
+            throw new RuntimeException("Only Admins can delete the group.");
+        }
+
+        // 1. Delete all file dependencies and files
+        java.util.List<com.motasem.safeshare.model.FileEntity> groupFiles = fileRepository.findAllByGroup(group);
+        for (com.motasem.safeshare.model.FileEntity file : groupFiles) {
+            fileVersionRepository.deleteByFile_Id(file.getId());
+            fileShareRepository.deleteByFile_Id(file.getId());
+        }
+        fileRepository.deleteAll(groupFiles);
+
+        // 2. Delete members
+        groupMemberRepository.deleteByGroup_Id(groupId);
+
+        // 3. Delete audit logs
+        auditLogRepository.deleteAllByGroupId(groupId);
+
+        // 4. Delete the group
+        groupRepository.delete(group);
     }
 }

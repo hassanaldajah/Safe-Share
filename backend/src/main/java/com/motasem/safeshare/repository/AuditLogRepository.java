@@ -9,4 +9,6 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Integer> {
     List<AuditLog> findAllByGroupIdOrderByTimestampDesc(Integer groupId);
     // Fetch the 5 most recent global actions across specific groups
     java.util.List<AuditLog> findTop5ByGroupIdInOrderByTimestampDesc(java.util.Collection<Integer> groupIds);
+
+    void deleteAllByGroupId(Integer groupId);
 }
