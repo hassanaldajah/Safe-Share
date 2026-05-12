@@ -27,6 +27,7 @@ export function TrashPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [searchQuery, setSearchQuery] = useState("");
   const [showEmptyConfirm, setShowEmptyConfirm] = useState(false);
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<{id: string, name: string} | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null); // Track deletion state
   const [isEmptying, setIsEmptying] = useState(false); // Track empty trash state
   
@@ -74,12 +75,16 @@ export function TrashPage() {
   };
 
   // --- UPDATED: ASYNC SINGLE DELETE ---
-  const handlePermanentDelete = async (id: string, name: string) => {
-    if (confirm(`Permanently delete "${name}"? This action cannot be undone.`)) {
-      setIsDeleting(id);
-      await permanentlyDelete(id);
-      setIsDeleting(null);
-    }
+  const handlePermanentDelete = (id: string, name: string) => {
+    setDeleteConfirmItem({ id, name });
+  };
+
+  const confirmPermanentDelete = async () => {
+    if (!deleteConfirmItem) return;
+    setIsDeleting(deleteConfirmItem.id);
+    await permanentlyDelete(deleteConfirmItem.id);
+    setIsDeleting(null);
+    setDeleteConfirmItem(null);
   };
 
   // --- UPDATED: ASYNC EMPTY TRASH ---
@@ -324,6 +329,53 @@ export function TrashPage() {
                   >
                     {isEmptying && <Loader2 className="h-4 w-4 animate-spin" />}
                     {isEmptying ? "Emptying..." : "Empty Trash"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirmItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="bg-background rounded-2xl shadow-2xl overflow-hidden">
+              <div className="bg-gradient-to-br from-red-500 to-pink-500 px-6 py-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-background/20 backdrop-blur-sm rounded-lg">
+                    <AlertTriangle className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-white">Permanently Delete</h2>
+                    <p className="text-sm text-white/80">This action cannot be undone</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <p className="text-muted-foreground mb-4">
+                  Are you sure you want to permanently delete <strong>{deleteConfirmItem.name}</strong>?
+                </p>
+                <p className="text-sm text-muted-foreground mb-6">
+                  This file will be erased forever. You won't be able to recover it.
+                </p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setDeleteConfirmItem(null)}
+                    disabled={isDeleting === deleteConfirmItem.id}
+                    className="flex-1 px-4 py-2.5 bg-muted text-muted-foreground font-medium rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmPermanentDelete}
+                    disabled={isDeleting === deleteConfirmItem.id}
+                    className="flex-1 px-4 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isDeleting === deleteConfirmItem.id && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {isDeleting === deleteConfirmItem.id ? "Deleting..." : "Delete Forever"}
                   </button>
                 </div>
               </div>
