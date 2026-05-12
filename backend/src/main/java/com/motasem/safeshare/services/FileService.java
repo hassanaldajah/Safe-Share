@@ -351,6 +351,11 @@ public class FileService {
         } catch (Exception e) {
             System.err.println("Failed to delete physical file from S3: " + e.getMessage());
         }
+
+        // Delete dependencies first to avoid foreign key constraint violations
+        fileVersionRepository.deleteAll(fileVersionRepository.findByFile_IdOrderByUploadedAtDesc(file.getId()));
+        fileShareRepository.deleteAll(fileShareRepository.findAllByFile_Id(file.getId()));
+
         fileRepository.delete(file);
     }
 
@@ -362,6 +367,10 @@ public class FileService {
             } catch (Exception e) {
                 System.err.println("Failed to delete physical file from S3: " + e.getMessage());
             }
+
+            // Delete dependencies first to avoid foreign key constraint violations
+            fileVersionRepository.deleteAll(fileVersionRepository.findByFile_IdOrderByUploadedAtDesc(file.getId()));
+            fileShareRepository.deleteAll(fileShareRepository.findAllByFile_Id(file.getId()));
         }
         fileRepository.deleteAll(trashFiles);
     }
