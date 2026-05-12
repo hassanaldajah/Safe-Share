@@ -131,7 +131,7 @@ export function AiAssistantPage() {
       }));
 
       // 3. Call your Spring Boot AI endpoint
-      const res = await authFetch("http://localhost:8080/api/v1/ai/chat", {
+      const res = await authFetch("/api/v1/ai/chat", {
         method: "POST",
         body: JSON.stringify({
           prompt: textToSend,

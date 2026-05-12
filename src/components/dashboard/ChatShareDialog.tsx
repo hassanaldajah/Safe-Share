@@ -41,14 +41,14 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
       if (!token || !privateKey) throw new Error("Security Error: Missing cryptographic keys.");
 
       // 1. Fetch Receiver's Public Key
-      const searchRes = await fetch(`http://localhost:8080/api/v1/files/search-user?searchTag=${encodeURIComponent(formattedTag)}`, {
+      const searchRes = await fetch(`/api/v1/files/search-user?searchTag=${encodeURIComponent(formattedTag)}`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!searchRes.ok) throw new Error("User not found! Check the @SearchTag.");
       const receiver = await searchRes.json();
 
 // 2. Fetch the File's Metadata to get the Encrypted Key!
-      const metaRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/metadata`, {
+      const metaRes = await fetch(`/api/v1/files/${transaction.fileId}/metadata`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       
@@ -63,7 +63,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
       const receiverEncryptedKey = await encryptKeyWithRSA(aesKey, receiver.publicKey);
 
       // 4. Send to backend
-      const shareRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/share`, {
+      const shareRes = await fetch(`/api/v1/files/${transaction.fileId}/share`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,

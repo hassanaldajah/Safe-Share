@@ -53,7 +53,7 @@ export function BackupPage() {
 
       // 4. Send to Server
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/backup/save", {
+      const res = await fetch("/api/v1/backup/save", {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ encryptedPrivateKey: finalBlob })
@@ -77,7 +77,7 @@ export function BackupPage() {
     try {
       // 1. Fetch from Server
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/backup/restore", {
+      const res = await fetch("/api/v1/backup/restore", {
         headers: { "Authorization": `Bearer ${token}` }
       });
 

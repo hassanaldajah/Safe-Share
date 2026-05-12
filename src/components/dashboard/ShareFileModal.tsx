@@ -83,7 +83,7 @@ export function ShareFileModal({ isOpen, onClose, file }: ShareFileModalProps) {
       // ── STEP 1: Resolve recipient ─────────────
       setStep("resolving");
       const searchRes = await fetch(
-        `http://localhost:8080/api/v1/files/search-user?searchTag=${encodeURIComponent(formattedTag)}`,
+        `/api/v1/files/search-user?searchTag=${encodeURIComponent(formattedTag)}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (!searchRes.ok) throw new Error("User not found. Check the @username and try again.");
@@ -105,7 +105,7 @@ export function ShareFileModal({ isOpen, onClose, file }: ShareFileModalProps) {
       // ── STEP 3: Persist share record ─────────
       setStep("sending");
       const shareRes = await fetch(
-        `http://localhost:8080/api/v1/files/${file.id}/share`,
+        `/api/v1/files/${file.id}/share`,
         {
           method: "POST",
           headers: {

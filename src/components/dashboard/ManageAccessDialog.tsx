@@ -28,7 +28,7 @@ export function ManageAccessDialog({ isOpen, onClose, fileId, fileName }: Manage
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:8080/api/v1/files/${fileId}/shares`, {
+      const res = await fetch(`/api/v1/files/${fileId}/shares`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!res.ok) throw new Error("Failed to load access list");
@@ -49,7 +49,7 @@ export function ManageAccessDialog({ isOpen, onClose, fileId, fileName }: Manage
       const token = localStorage.getItem("token");
       
       // FIX 1: Use encodeURIComponent to safely send the '@' symbol to Spring Boot!
-      const res = await fetch(`http://localhost:8080/api/v1/files/${fileId}/shares/${encodeURIComponent(receiverTag)}`, {
+      const res = await fetch(`/api/v1/files/${fileId}/shares/${encodeURIComponent(receiverTag)}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       });

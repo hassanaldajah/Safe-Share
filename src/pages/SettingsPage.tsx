@@ -41,7 +41,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await authFetch("http://localhost:8080/api/v1/users/preferences");
+        const res = await authFetch("/api/v1/users/preferences");
         if (res.ok) {
           const data = await res.json();
           // We do not call setTheme(data.theme) here because it would overwrite
@@ -69,7 +69,7 @@ export default function SettingsPage() {
           return;
         }
 
-        const passRes = await authFetch("http://localhost:8080/api/v1/users/change-password", {  
+        const passRes = await authFetch("/api/v1/users/change-password", {  
           method: "PUT",
           body: JSON.stringify({
             currentPassword: passwords.current,
@@ -83,7 +83,7 @@ export default function SettingsPage() {
       }
 
       // B. SAVE UI PREFERENCES TO THE DATABASE
-      const prefRes = await authFetch("http://localhost:8080/api/v1/users/preferences", {
+      const prefRes = await authFetch("/api/v1/users/preferences", {
         method: "PUT",
         body: JSON.stringify({ theme, language })
       });

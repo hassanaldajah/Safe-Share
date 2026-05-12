@@ -57,8 +57,8 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     try {
       // Fetch both active files and trashed files simultaneously
       const [filesResponse, trashResponse] = await Promise.all([
-        authFetch("http://localhost:8080/api/v1/files"),
-        authFetch("http://localhost:8080/api/v1/files/trash")
+        authFetch("/api/v1/files"),
+        authFetch("/api/v1/files/trash")
       ]);
       
       const mapFileData = (f: any): FileItem => ({
@@ -183,7 +183,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     });
 
     // 2. Background sync with the server
-    authFetch(`http://localhost:8080/api/v1/files/${id}/trash`, { method: "PUT" })
+    authFetch(`/api/v1/files/${id}/trash`, { method: "PUT" })
       .catch((e) => console.error("Failed to move file to trash on server:", e));
   };
 
@@ -212,7 +212,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     setTrashedFiles((prev) => prev.filter((item) => item.id !== id));
 
     // 2. Background sync with the server
-    authFetch(`http://localhost:8080/api/v1/files/${id}/restore`, { method: "PUT" })
+    authFetch(`/api/v1/files/${id}/restore`, { method: "PUT" })
       .catch((e) => console.error("Failed to restore file on server:", e));
   };
 
@@ -220,7 +220,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
   const permanentlyDelete = async (id: string) => {
     try {
       // Tell Spring Boot to physically destroy the file using authFetch
-      const response = await authFetch(`http://localhost:8080/api/v1/files/${id}/permanent`, {
+      const response = await authFetch(`/api/v1/files/${id}/permanent`, {
         method: "DELETE"
       });
 
@@ -240,7 +240,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
   // --- NEW: THE MAGIC EMPTY TRASH FUNCTION ---
   const emptyTrash = async () => {
     try {
-      const response = await authFetch(`http://localhost:8080/api/v1/files/trash/empty`, {
+      const response = await authFetch(`/api/v1/files/trash/empty`, {
         method: "DELETE"
       });
 

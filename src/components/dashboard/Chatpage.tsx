@@ -80,7 +80,7 @@ export function Chatpage() {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Authentication token missing. Please log in.");
 
-        const response = await fetch("http://localhost:8080/api/v1/transactions", {
+        const response = await fetch("/api/v1/transactions", {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -121,13 +121,13 @@ export function Chatpage() {
 
       if (!token || !privateKeyBase64) throw new Error("Missing cryptographic data.");
 
-      const metaRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/metadata`, {
+      const metaRes = await fetch(`/api/v1/files/${transaction.fileId}/metadata`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!metaRes.ok) throw new Error("Could not fetch file keys.");
       const metadata = await metaRes.json();
       
-      const fileRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/download?action=view`, {
+      const fileRes = await fetch(`/api/v1/files/${transaction.fileId}/download?action=view`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       
@@ -176,14 +176,14 @@ export function Chatpage() {
 
       if (!token || !privateKeyBase64) throw new Error("Missing cryptographic data.");
 
-      const metaRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/metadata`, {
+      const metaRes = await fetch(`/api/v1/files/${transaction.fileId}/metadata`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!metaRes.ok) throw new Error("Could not fetch file keys.");
       const metadata = await metaRes.json();
       const { encryptedKey, iv } = metadata; 
 
-      const fileRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/download?action=download`, {
+      const fileRes = await fetch(`/api/v1/files/${transaction.fileId}/download?action=download`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       

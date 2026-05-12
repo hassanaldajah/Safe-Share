@@ -59,7 +59,7 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
 
   const fetchNotifications = async () => {
     try {
-      const res = await authFetch("http://localhost:8080/api/v1/notifications");
+      const res = await authFetch("/api/v1/notifications");
       if (res.ok) {
         const data = await res.json();
         setNotifications(data);
@@ -101,7 +101,7 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
 
     if (willShow && unreadCount > 0) {
       try {
-        await authFetch("http://localhost:8080/api/v1/notifications/read-all", { method: "PUT" });
+        await authFetch("/api/v1/notifications/read-all", { method: "PUT" });
         setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       } catch (err) {
         console.error("Failed to mark all as read", err);
@@ -131,7 +131,7 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await authFetch("http://localhost:8080/api/v1/users/profile-picture", {
+      const res = await authFetch("/api/v1/users/profile-picture", {
         method: "POST",
         body: formData,
       });

@@ -11,7 +11,7 @@ const PaymentSuccess = () => {
   useEffect(() => {
     const upgradeUser = async () => {
       try {
-        const response = await authFetch("http://localhost:8080/api/payments/mock-success", {
+        const response = await authFetch("/api/payments/mock-success", {
           method: "POST",
         });
 

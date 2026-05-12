@@ -63,7 +63,7 @@ export default function ProfilePage() {
 
         // 2. Save it permanently to Spring Boot
         try {
-          await authFetch("http://localhost:8080/api/v1/users/profile/image", {
+          await authFetch("/api/v1/users/profile/image", {
             method: "PUT",
             body: JSON.stringify({ profilePictureUrl: base64String })
           });
@@ -89,7 +89,7 @@ export default function ProfilePage() {
       
       try {
         if (fieldToUpdate === "fullname" || fieldToUpdate === "fullName") {
-          const res = await authFetch("http://localhost:8080/api/v1/users/profile", {
+          const res = await authFetch("/api/v1/users/profile", {
             method: "PUT",
             body: JSON.stringify({ fullName: newValue })
           });

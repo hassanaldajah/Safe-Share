@@ -7,7 +7,7 @@ const PricingSection = () => {
 
   const handleUpgradeToPro = async () => {
     try {
-      const response = await authFetch("http://localhost:8080/api/payments/create-checkout-session", {
+      const response = await authFetch("/api/payments/create-checkout-session", {
         method: "POST",
       });
       const data = await response.json();

@@ -37,7 +37,7 @@ export default function DashboardHome() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await authFetch("http://localhost:8080/api/v1/files/stats");
+        const response = await authFetch("/api/v1/files/stats");
 
         if (!response.ok) throw new Error("Failed to load dashboard statistics");
 

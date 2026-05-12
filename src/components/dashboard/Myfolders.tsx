@@ -48,7 +48,7 @@ export function MyFolders() {
     setSelectedFileIdToShare(fileId);
     setShowGroupModal(true);
     try {
-      const res = await authFetch("http://localhost:8080/api/v1/groups");
+      const res = await authFetch("/api/v1/groups");
       if (res.ok) setUserGroups(await res.json());
     } catch (err) {
       console.error("Failed to load groups", err);
@@ -59,7 +59,7 @@ export function MyFolders() {
     if (!selectedFileIdToShare || !selectedGroupId) return;
     setIsSharingToGroup(true);
     try {
-      const res = await authFetch(`http://localhost:8080/api/v1/files/${selectedFileIdToShare}/share/group/${selectedGroupId}`, {
+      const res = await authFetch(`/api/v1/files/${selectedFileIdToShare}/share/group/${selectedGroupId}`, {
         method: "POST"
       });
       if (!res.ok) throw new Error(await res.text());
@@ -113,7 +113,7 @@ toast.success("File successfully shared to the group!");
         formData.append("encryptedFileKey", file.encryptedFileKey);
         formData.append("iv", file.iv);
 
-        const response = await fetch("http://localhost:8080/api/v1/files/upload", {
+        const response = await fetch("/api/v1/files/upload", {
           method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: formData,
         });
 
@@ -145,7 +145,7 @@ toast.success("File successfully shared to the group!");
         throw new Error("Missing cryptographic data.");
       }
 
-      const response = await fetch(`http://localhost:8080/api/v1/files/${file.id}/download`, { headers: { "Authorization": `Bearer ${token}` } });
+      const response = await fetch(`/api/v1/files/${file.id}/download`, { headers: { "Authorization": `Bearer ${token}` } });
       if (!response.ok) throw new Error("Failed to download file from server");
       
       const encryptedArrayBuffer = await response.arrayBuffer();

@@ -9,7 +9,7 @@ export function RecentActivityFeed() {
   useEffect(() => {
     const fetchActivity = async () => {
       try {
-        const res = await authFetch("http://localhost:8080/api/v1/activity/recent");
+        const res = await authFetch("/api/v1/activity/recent");
         if (res.ok) {
           setActivities(await res.json());
         }

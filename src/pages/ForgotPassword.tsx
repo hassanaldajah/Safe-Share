@@ -28,7 +28,7 @@ export default function ForgotPassword() {
 
     try {
       // NOTE: We use standard fetch here, NOT authFetch, because the user is not logged in!
-      const response = await fetch("http://localhost:8080/api/v1/auth/forgot-password", {
+      const response = await fetch("/api/v1/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -68,7 +68,7 @@ export default function ForgotPassword() {
     }
 
     try {
-      const response = await fetch("http://localhost:8080/api/v1/auth/reset-password", {
+      const response = await fetch("/api/v1/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

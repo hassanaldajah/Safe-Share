@@ -27,7 +27,7 @@ const OTPModal = ({ isOpen, onClose, onVerify, email, purpose = "signin" }: OTPM
     
     try {
       // 1. Actually talk to the Spring Boot backend!
-      const response = await fetch("http://localhost:8080/api/v1/auth/resend-otp", {
+      const response = await fetch("/api/v1/auth/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email }),

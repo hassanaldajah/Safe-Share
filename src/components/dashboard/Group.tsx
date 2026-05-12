@@ -64,7 +64,7 @@ function MembersTab({ members, myRole, groupId, onRefresh, onRemove }: { members
   // ... Keep your existing handleRoleChange function inside here ...
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
-      const res = await authFetch(`http://localhost:8080/api/v1/groups/${groupId}/members/role`, {
+      const res = await authFetch(`/api/v1/groups/${groupId}/members/role`, {
         method: "PUT", body: JSON.stringify({ userId, newRole })
       });
       if (!res.ok) throw new Error(await res.text());
@@ -156,7 +156,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
   const fetchLogs = async () => {
     setLoadingLogs(true);
     try {
-      const res = await authFetch(`http://localhost:8080/api/v1/groups/${group.id}/audit`);
+      const res = await authFetch(`/api/v1/groups/${group.id}/audit`);
       if (res.ok) setAuditLogs(await res.json());
     } finally { setLoadingLogs(false); }
   };
@@ -164,7 +164,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
   const fetchMembers = async () => {
     setLoadingMembers(true);
     try {
-      const res = await authFetch(`http://localhost:8080/api/v1/groups/${group.id}/members`);
+      const res = await authFetch(`/api/v1/groups/${group.id}/members`);
       if (res.ok) setMembers(await res.json());
     } finally { setLoadingMembers(false); }
   };
@@ -172,7 +172,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
   const fetchGroupFiles = async () => {
     setLoadingFiles(true);
     try {
-      const res = await authFetch(`http://localhost:8080/api/v1/groups/${group.id}/files`);
+      const res = await authFetch(`/api/v1/groups/${group.id}/files`);
       if (res.ok) setGroupFiles(await res.json());
     } finally { setLoadingFiles(false); }
   };
@@ -213,7 +213,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
         formData.append("maxViews", uploadMaxViews);
       }
 
-      const res = await authFetch("http://localhost:8080/api/v1/files/upload", {
+      const res = await authFetch("/api/v1/files/upload", {
         method: "POST", body: formData,
       });
 
@@ -235,7 +235,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
 
   const handleDownloadFile = async (fileId: string, fileName: string) => {
     try {
-      const res = await authFetch(`http://localhost:8080/api/v1/files/${fileId}/download?action=download`);
+      const res = await authFetch(`/api/v1/files/${fileId}/download?action=download`);
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -255,7 +255,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
       message: `Are you sure you want to delete "${fileName}"? This will remove it for all members.`,
       action: async () => {
         try {
-          const res = await authFetch(`http://localhost:8080/api/v1/groups/${group.id}/files/${fileId}`, { method: 'DELETE' });
+          const res = await authFetch(`/api/v1/groups/${group.id}/files/${fileId}`, { method: 'DELETE' });
           if (!res.ok) throw new Error(await res.text());
           toast.success("File deleted successfully.");
           fetchGroupFiles(); fetchLogs();
@@ -273,7 +273,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
       message: `Are you sure you want to remove ${userName} from the group? They will instantly lose access.`,
       action: async () => {
         try {
-          const res = await authFetch(`http://localhost:8080/api/v1/groups/${group.id}/members/${userId}`, { method: 'DELETE' });
+          const res = await authFetch(`/api/v1/groups/${group.id}/members/${userId}`, { method: 'DELETE' });
           if (!res.ok) throw new Error(await res.text());
           toast.success(`${userName} removed from group.`);
           fetchMembers(); fetchLogs();
@@ -290,7 +290,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
       message: "Are you sure you want to leave this group? You will lose access to all files immediately.",
       action: async () => {
         try {
-          const res = await authFetch(`http://localhost:8080/api/v1/groups/${group.id}/leave`, { method: 'DELETE' });
+          const res = await authFetch(`/api/v1/groups/${group.id}/leave`, { method: 'DELETE' });
           if (!res.ok) throw new Error(await res.text());
           toast.success("You have left the group.");
           window.location.reload(); 
@@ -478,7 +478,7 @@ function GroupHub({ groups, onOpenGroup, onRefresh, isLoading }: { groups: any[]
     if (!createName) return;
     setIsSubmitting(true);
     try {
-      const res = await authFetch("http://localhost:8080/api/v1/groups/create", {
+      const res = await authFetch("/api/v1/groups/create", {
         method: "POST", body: JSON.stringify({ name: createName, description: createDesc })
       });
       if (!res.ok) throw new Error(await res.text());
@@ -494,7 +494,7 @@ function GroupHub({ groups, onOpenGroup, onRefresh, isLoading }: { groups: any[]
     if (!joinCode) return;
     setIsSubmitting(true);
     try {
-      const res = await authFetch("http://localhost:8080/api/v1/groups/join", {
+      const res = await authFetch("/api/v1/groups/join", {
         method: "POST", body: JSON.stringify({ inviteCode: joinCode })
       });      
       if (!res.ok) throw new Error(await res.text());
@@ -583,7 +583,7 @@ export function GroupPage() {
   const fetchGroups = async () => {
     setIsLoading(true);
     try {
-      const res = await authFetch("http://localhost:8080/api/v1/groups");
+      const res = await authFetch("/api/v1/groups");
       if (res.ok) setGroups(await res.json());
     } finally { setIsLoading(false); }
   };

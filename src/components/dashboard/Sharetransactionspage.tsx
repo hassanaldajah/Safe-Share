@@ -58,7 +58,7 @@ export function ShareTransactionsPage() {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Authentication token missing. Please log in.");
 
-        const response = await fetch("http://localhost:8080/api/v1/transactions", {
+        const response = await fetch("/api/v1/transactions", {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -101,13 +101,13 @@ export function ShareTransactionsPage() {
 
       if (!token || !privateKeyBase64) throw new Error("Missing cryptographic data.");
 
-      const metaRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/metadata`, {
+      const metaRes = await fetch(`/api/v1/files/${transaction.fileId}/metadata`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!metaRes.ok) throw new Error("Could not fetch file keys.");
       const metadata = await metaRes.json();
       
-      const fileRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/download`, {
+      const fileRes = await fetch(`/api/v1/files/${transaction.fileId}/download`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       const encryptedArrayBuffer = await fileRes.arrayBuffer();
@@ -138,14 +138,14 @@ export function ShareTransactionsPage() {
 
       if (!token || !privateKeyBase64) throw new Error("Missing cryptographic data. Please log in again.");
 
-      const metaRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/metadata`, {
+      const metaRes = await fetch(`/api/v1/files/${transaction.fileId}/metadata`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!metaRes.ok) throw new Error("Could not fetch file keys.");
       const metadata = await metaRes.json();
       const { encryptedKey, iv, fileType } = metadata; 
 
-      const fileRes = await fetch(`http://localhost:8080/api/v1/files/${transaction.fileId}/download`, {
+      const fileRes = await fetch(`/api/v1/files/${transaction.fileId}/download`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (!fileRes.ok) throw new Error("Could not download encrypted file.");
