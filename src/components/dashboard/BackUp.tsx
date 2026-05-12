@@ -106,12 +106,15 @@ export function BackupPage() {
           "Content-Type": "application/json"
         }
       });
-      if (!res.ok) throw new Error("Backup failed");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Backup failed");
+      }
       // Refresh the backup history list instead of just pushing locally
       await fetchBackupHistory();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Failed to trigger backup.");
+      alert(error.message || "Failed to trigger backup.");
     } finally {
       setIsBackingUp(false);
     }

@@ -88,10 +88,11 @@ public class BackupService {
             result.put("filesCount", totalFiles);
             return result;
         } catch (Exception e) {
+            e.printStackTrace(); // Log the exact error to the Docker logs
             job.setStatus("failed");
             job.setEndTime(LocalDateTime.now());
             backupJobRepository.save(job);
-            throw new RuntimeException("Backup failed", e);
+            throw new RuntimeException("Backup failed: " + e.getMessage(), e);
         }
     }
     

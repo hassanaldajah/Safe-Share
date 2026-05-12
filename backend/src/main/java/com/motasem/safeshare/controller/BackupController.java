@@ -68,6 +68,7 @@ public class BackupController {
             Map<String, Object> backupResult = backupService.generateSystemBackup();
             return ResponseEntity.ok(backupResult);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
