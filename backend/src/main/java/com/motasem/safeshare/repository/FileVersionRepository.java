@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface FileVersionRepository extends JpaRepository<FileVersion, UUID> {
     List<FileVersion> findByFile_IdOrderByUploadedAtDesc(Integer fileId);
+    void deleteByFile_Id(Integer fileId);
 }

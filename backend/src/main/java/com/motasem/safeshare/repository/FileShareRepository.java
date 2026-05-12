@@ -13,6 +13,8 @@ public interface FileShareRepository extends JpaRepository<FileShare, Integer> {
     // ADD THIS NEW LINE: Checks if a specific file is shared with a specific user
     Optional<FileShare> findByFile_IdAndSharedWith_Id(Integer fileId, Integer sharedWithId);
 
+    void deleteByFile_Id(Integer fileId);
+
     // YOU NEED THESE TWO LINES FOR THE DASHBOARD:
     long countBySharedBy(String sharedByTag);
     long countBySharedWith_Id(Integer userId);

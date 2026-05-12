@@ -338,6 +338,7 @@ public class FileService {
         fileRepository.save(file);
     }
 
+    @Transactional
     public void permanentlyDelete(Integer fileId, User owner) {
         FileEntity file = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
@@ -353,12 +354,13 @@ public class FileService {
         }
 
         // Delete dependencies first to avoid foreign key constraint violations
-        fileVersionRepository.deleteAll(fileVersionRepository.findByFile_IdOrderByUploadedAtDesc(file.getId()));
-        fileShareRepository.deleteAll(fileShareRepository.findAllByFile_Id(file.getId()));
+        fileVersionRepository.deleteByFile_Id(file.getId());
+        fileShareRepository.deleteByFile_Id(file.getId());
 
         fileRepository.delete(file);
     }
 
+    @Transactional
     public void emptyTrash(User owner) {
         List<FileEntity> trashFiles = fileRepository.findAllByOwnerAndIsDeletedTrue(owner);
         for (FileEntity file : trashFiles) {
@@ -369,8 +371,8 @@ public class FileService {
             }
 
             // Delete dependencies first to avoid foreign key constraint violations
-            fileVersionRepository.deleteAll(fileVersionRepository.findByFile_IdOrderByUploadedAtDesc(file.getId()));
-            fileShareRepository.deleteAll(fileShareRepository.findAllByFile_Id(file.getId()));
+            fileVersionRepository.deleteByFile_Id(file.getId());
+            fileShareRepository.deleteByFile_Id(file.getId());
         }
         fileRepository.deleteAll(trashFiles);
     }
