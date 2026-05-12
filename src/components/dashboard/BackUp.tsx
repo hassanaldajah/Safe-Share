@@ -63,10 +63,10 @@ export function BackupPage() {
     try {
       const token = localStorage.getItem("token");
       const [historyRes, infoRes] = await Promise.all([
-        fetch("http://localhost:8080/api/v1/backup/status", {
+        fetch("/api/v1/backup/status", {
           headers: { "Authorization": `Bearer ${token}` }
         }),
-        fetch("http://localhost:8080/api/v1/backup/info", {
+        fetch("/api/v1/backup/info", {
           headers: { "Authorization": `Bearer ${token}` }
         })
       ]);
@@ -99,7 +99,7 @@ export function BackupPage() {
     setIsBackingUp(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/backup/trigger", {
+      const res = await fetch("/api/v1/backup/trigger", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -161,7 +161,7 @@ export function BackupPage() {
       );
 
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/backup/save", {
+      const res = await fetch("/api/v1/backup/save", {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -187,7 +187,7 @@ export function BackupPage() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/backup/restore", {
+      const res = await fetch("/api/v1/backup/restore", {
         headers: { "Authorization": `Bearer ${token}` }
       });
 
