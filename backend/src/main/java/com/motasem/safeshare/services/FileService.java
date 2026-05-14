@@ -252,6 +252,7 @@ public class FileService {
         }
     }
 
+    @Transactional
     public void deleteSecureFile(Integer fileId, User currentUser) {
         FileEntity fileEntity = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found!"));
@@ -260,16 +261,19 @@ public class FileService {
             throw new RuntimeException("Unauthorized attempt to delete file!");
         }
 
-        try {
-            s3StorageService.deleteFile(fileEntity.getFilePath());
-        } catch (Exception e) {
-            throw new RuntimeException("Could not delete file from S3: " + e.getMessage());
-        }
-
+        // Bulletproof Cleanup: Explicitly delete all related records with Foreign Keys
         fileVersionRepository.deleteByFile_Id(fileEntity.getId());
         fileShareRepository.deleteByFile_Id(fileEntity.getId());
 
         fileRepository.delete(fileEntity);
+
+        try {
+            s3StorageService.deleteFile(fileEntity.getFilePath());
+        } catch (Exception e) {
+            System.err.println("Failed to delete physical file from S3: " + e.getMessage());
+            e.printStackTrace(); // Print full stack trace for AWS blocking errors
+            throw new RuntimeException("Could not delete file from S3, rolling back database deletion: " + e.getMessage());
+        }
     }
 
     public UserSearchResponse searchUserByTag(String searchTag) {
@@ -350,34 +354,41 @@ public class FileService {
             throw new RuntimeException("Only the owner can delete this file.");
         }
 
-        try {
-            s3StorageService.deleteFile(file.getFilePath());
-        } catch (Exception e) {
-            System.err.println("Failed to delete physical file from S3: " + e.getMessage());
-        }
-
-        // Delete dependencies first to avoid foreign key constraint violations
+        // Bulletproof Cleanup: Delete dependencies first to avoid foreign key constraint violations
         fileVersionRepository.deleteByFile_Id(file.getId());
         fileShareRepository.deleteByFile_Id(file.getId());
 
         fileRepository.delete(file);
+
+        try {
+            s3StorageService.deleteFile(file.getFilePath());
+        } catch (Exception e) {
+            System.err.println("Failed to delete physical file from S3: " + e.getMessage());
+            e.printStackTrace(); // Print full stack trace for AWS blocking errors
+            throw new RuntimeException("Could not delete file from S3, rolling back database deletion: " + e.getMessage());
+        }
     }
 
     @Transactional
     public void emptyTrash(User owner) {
         List<FileEntity> trashFiles = fileRepository.findAllByOwnerAndIsDeletedTrue(owner);
         for (FileEntity file : trashFiles) {
+            // Bulletproof Cleanup: Delete dependencies first to avoid foreign key constraint violations
+            fileVersionRepository.deleteByFile_Id(file.getId());
+            fileShareRepository.deleteByFile_Id(file.getId());
+        }
+        
+        fileRepository.deleteAll(trashFiles);
+
+        for (FileEntity file : trashFiles) {
             try {
                 s3StorageService.deleteFile(file.getFilePath());
             } catch (Exception e) {
                 System.err.println("Failed to delete physical file from S3: " + e.getMessage());
+                e.printStackTrace(); // Print full stack trace for AWS blocking errors
+                throw new RuntimeException("Could not delete file from S3, rolling back database deletion: " + e.getMessage());
             }
-
-            // Delete dependencies first to avoid foreign key constraint violations
-            fileVersionRepository.deleteByFile_Id(file.getId());
-            fileShareRepository.deleteByFile_Id(file.getId());
         }
-        fileRepository.deleteAll(trashFiles);
     }
 
     // --- MANAGE ACCESS LOGIC ---
