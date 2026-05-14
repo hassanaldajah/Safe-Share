@@ -266,6 +266,9 @@ public class FileService {
             throw new RuntimeException("Could not delete file from S3: " + e.getMessage());
         }
 
+        fileVersionRepository.deleteByFile_Id(fileEntity.getId());
+        fileShareRepository.deleteByFile_Id(fileEntity.getId());
+
         fileRepository.delete(fileEntity);
     }
 

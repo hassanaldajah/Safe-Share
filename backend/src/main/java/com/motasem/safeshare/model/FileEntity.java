@@ -77,4 +77,10 @@ public class FileEntity {
     protected void onCreate() {
         uploadedAt = LocalDateTime.now();
     }
+
+    @OneToMany(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<FileVersion> versions;
+
+    @OneToMany(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<FileShare> shares;
 }
