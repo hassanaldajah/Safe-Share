@@ -63,9 +63,9 @@ public class BackupController {
     }
 
     @PostMapping("/trigger")
-    public ResponseEntity<?> triggerBackup() {
+    public ResponseEntity<?> triggerBackup(@AuthenticationPrincipal User currentUser) {
         try {
-            Map<String, Object> backupResult = backupService.generateSystemBackup();
+            Map<String, Object> backupResult = backupService.generateSystemBackup(currentUser);
             return ResponseEntity.ok(backupResult);
         } catch (Exception e) {
             e.printStackTrace();
@@ -74,18 +74,18 @@ public class BackupController {
     }
 
     @GetMapping("/status")
-    public ResponseEntity<?> getBackupStatus() {
+    public ResponseEntity<?> getBackupStatus(@AuthenticationPrincipal User currentUser) {
         try {
-            return ResponseEntity.ok(backupService.getBackupHistory());
+            return ResponseEntity.ok(backupService.getBackupHistory(currentUser));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 
     @GetMapping("/info")
-    public ResponseEntity<?> getBackupInfo() {
+    public ResponseEntity<?> getBackupInfo(@AuthenticationPrincipal User currentUser) {
         try {
-            return ResponseEntity.ok(backupService.getBackupInfo());
+            return ResponseEntity.ok(backupService.getBackupInfo(currentUser));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }

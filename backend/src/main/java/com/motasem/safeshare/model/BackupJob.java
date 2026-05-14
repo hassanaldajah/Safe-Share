@@ -34,4 +34,8 @@ public class BackupJob {
     private Integer filesCount;
     
     private Boolean includesTrash;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
 }

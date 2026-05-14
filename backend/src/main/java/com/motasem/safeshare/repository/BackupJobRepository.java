@@ -6,7 +6,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import com.motasem.safeshare.model.User;
+
 @Repository
 public interface BackupJobRepository extends JpaRepository<BackupJob, Long> {
     List<BackupJob> findAllByOrderByStartTimeDesc();
+    List<BackupJob> findAllByUserOrderByStartTimeDesc(User user);
 }

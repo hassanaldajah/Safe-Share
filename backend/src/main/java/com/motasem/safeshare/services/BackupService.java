@@ -40,26 +40,28 @@ public class BackupService {
         this.bucketName = bucketName;
     }
 
-    public Map<String, Object> generateSystemBackup() {
+    public Map<String, Object> generateSystemBackup(com.motasem.safeshare.model.User currentUser) {
         LocalDateTime startTime = LocalDateTime.now();
         String timestamp = startTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         
         BackupJob job = BackupJob.builder()
-                .name("System Backup - " + startTime.toLocalDate().toString())
+                .name("Vault Backup - " + startTime.toLocalDate().toString())
                 .type("full")
                 .status("in-progress")
                 .startTime(startTime)
                 .includesTrash(true)
+                .user(currentUser)
                 .build();
         job = backupJobRepository.save(job);
 
         try {
-            long totalUsers = userRepository.count();
-            long totalFiles = fileRepository.count();
+            var myFiles = fileRepository.findAllByOwnerId(currentUser.getId());
+            long totalFiles = myFiles.size();
+            long totalSizeBytes = myFiles.stream().mapToLong(f -> f.getSizeBytes() != null ? f.getSizeBytes() : 0L).sum();
             
             String jsonContent = String.format(
-                "{\n  \"timestamp\": \"%s\",\n  \"totalUsers\": %d,\n  \"totalFiles\": %d\n}",
-                timestamp, totalUsers, totalFiles
+                "{\n  \"timestamp\": \"%s\",\n  \"ownerEmail\": \"%s\",\n  \"totalFiles\": %d\n}",
+                timestamp, currentUser.getEmail(), totalFiles
             );
             
             byte[] bytes = jsonContent.getBytes(StandardCharsets.UTF_8);
@@ -72,9 +74,6 @@ public class BackupService {
                     .build();
                     
             s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes));
-            
-            Long totalSizeBytes = fileRepository.sumAllFileSizes();
-            if (totalSizeBytes == null) totalSizeBytes = 0L;
             
             job.setEndTime(LocalDateTime.now());
             job.setStatus("completed");
@@ -102,11 +101,11 @@ public class BackupService {
         return String.format("%.1f %sB", (double)sizeInBytes / (1L << (z * 10)), " KMGTPE".charAt(z));
     }
 
-    public java.util.List<BackupJob> getBackupHistory() {
-        return backupJobRepository.findAllByOrderByStartTimeDesc();
+    public java.util.List<BackupJob> getBackupHistory(com.motasem.safeshare.model.User currentUser) {
+        return backupJobRepository.findAllByUserOrderByStartTimeDesc(currentUser);
     }
 
-    public Map<String, Object> getBackupInfo() {
+    public Map<String, Object> getBackupInfo(com.motasem.safeshare.model.User currentUser) {
         ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
         ZonedDateTime nextRun = now.withHour(2).withMinute(0).withSecond(0).withNano(0);
         
@@ -117,8 +116,8 @@ public class BackupService {
         Map<String, Object> info = new HashMap<>();
         info.put("nextScheduledBackup", nextRun.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
         
-        Long totalSizeBytes = fileRepository.sumAllFileSizes();
-        if (totalSizeBytes == null) totalSizeBytes = 0L;
+        var myFiles = fileRepository.findAllByOwnerId(currentUser.getId());
+        long totalSizeBytes = myFiles.stream().mapToLong(f -> f.getSizeBytes() != null ? f.getSizeBytes() : 0L).sum();
         info.put("totalStorageSize", formatSize(totalSizeBytes));
         
         return info;
