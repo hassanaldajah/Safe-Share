@@ -28,6 +28,8 @@ interface FoldersContextType {
   // --- CHANGED TO PROMISES FOR ASYNC BACKEND CALLS ---
   permanentlyDelete: (id: string) => Promise<void>;
   emptyTrash: () => Promise<void>;
+  removeFromTrashState: (id: string) => void;
+  clearTrashState: () => void;
   // ---------------------------------------------------
   updateFileStatus: (id: string, updates: Partial<FileItem>) => void;
   getFilesInFolder: (folderId: string) => FileItem[];
@@ -255,6 +257,14 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const removeFromTrashState = (id: string) => {
+    setTrashedFiles((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const clearTrashState = () => {
+    setTrashedFiles([]);
+  };
+
   const updateFileStatus = (id: string, updates: Partial<FileItem>) => {
     setFiles((prev) => {
       const updated = prev.map((file) => {
@@ -277,7 +287,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     <FoldersContext.Provider
       value={{ 
         files, trashedFiles, addFolder, addFile, moveToTrash, restoreFromTrash,
-        permanentlyDelete, emptyTrash, updateFileStatus, getFilesInFolder, 
+        permanentlyDelete, emptyTrash, removeFromTrashState, clearTrashState, updateFileStatus, getFilesInFolder, 
         getFolderSize, getTotalStorage, fetchFiles, isLoading
       }}
     >

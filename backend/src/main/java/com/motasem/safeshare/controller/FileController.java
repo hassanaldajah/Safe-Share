@@ -164,6 +164,12 @@ public class FileController {
         fileService.emptyTrash(currentUser);
         return ResponseEntity.ok("Trash emptied.");
     }
+
+    @DeleteMapping("/trash")
+    public ResponseEntity<?> emptyTrashAlias(@AuthenticationPrincipal User currentUser) {
+        fileService.emptyTrash(currentUser);
+        return ResponseEntity.ok("Trash emptied.");
+    }
     @GetMapping("/{fileId}/metadata")
     public ResponseEntity<java.util.Map<String, String>> getFileMetadata(
             @PathVariable Integer fileId,

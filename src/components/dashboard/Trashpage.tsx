@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFolders, FileItem } from "@/components/dashboard/FoldersContext";
+import axios from "axios";
 
 export function TrashPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -31,7 +32,7 @@ export function TrashPage() {
   const [isDeleting, setIsDeleting] = useState<string | null>(null); // Track deletion state
   const [isEmptying, setIsEmptying] = useState(false); // Track empty trash state
   
-  const { files, trashedFiles, restoreFromTrash, permanentlyDelete, emptyTrash, getTotalStorage, fetchFiles } = useFolders();
+  const { trashedFiles, restoreFromTrash, getTotalStorage, fetchFiles, removeFromTrashState, clearTrashState } = useFolders();
 
   // --- NEW: Fetch files on mount if the state is empty (survives hard refresh) ---
   useEffect(() => {
@@ -79,21 +80,47 @@ export function TrashPage() {
     setDeleteConfirmItem({ id, name });
   };
 
-  const confirmPermanentDelete = async () => {
+  const handleDeleteForever = async (fileId: string) => {
+    try {
+      setIsDeleting(fileId);
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const response = await axios.delete(`/api/v1/files/${fileId}`, config);
+      if (response.status === 200) {
+        removeFromTrashState(fileId);
+      }
+    } catch (error) {
+      console.error("Failed to delete permanently", error);
+      alert("Failed to delete the file");
+    } finally {
+      setIsDeleting(null);
+      setDeleteConfirmItem(null);
+    }
+  };
+
+  const confirmPermanentDelete = () => {
     if (!deleteConfirmItem) return;
-    setIsDeleting(deleteConfirmItem.id);
-    await permanentlyDelete(deleteConfirmItem.id);
-    setIsDeleting(null);
-    setDeleteConfirmItem(null);
+    handleDeleteForever(deleteConfirmItem.id);
   };
 
   // --- UPDATED: ASYNC EMPTY TRASH ---
   const handleEmptyTrash = async () => {
     if (trashedFiles.length === 0) return;
-    setIsEmptying(true);
-    await emptyTrash();
-    setIsEmptying(false);
-    setShowEmptyConfirm(false);
+    try {
+      setIsEmptying(true);
+      const token = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const response = await axios.delete(`/api/v1/trash`, config);
+      if (response.status === 200) {
+        clearTrashState();
+        setShowEmptyConfirm(false);
+      }
+    } catch (error) {
+      console.error("Failed to empty trash", error);
+      alert("Failed to empty trash");
+    } finally {
+      setIsEmptying(false);
+    }
   };
 
   const filteredFiles = trashedFiles.filter((file) =>
