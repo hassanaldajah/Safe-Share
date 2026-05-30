@@ -3,7 +3,6 @@ import { Shield, Github, Linkedin, Code2, Lock } from "lucide-react";
 const team = [
   {
     name: "Almu'tasim Bellah Alatawnah",
-    role: "Lead Software Engineer & Co-Creator",
     description: "Architected and built the full-stack platform, end-to-end encrypted file sharing, and zero-knowledge group collaboration system.",
     linkedin: "https://www.linkedin.com/in/motasem-alatawna-02583b272/",
     github: "https://github.com/MutasimAlatawneh/SafeShare",
@@ -12,7 +11,6 @@ const team = [
   },
   {
     name: "Hassan Khaled Aldajah",
-    role: "Security Architecture Lead & Co-Creator",
     description: "Spearheaded the system security strategy, threat modeling, and cryptographic access controls.",
     linkedin: "https://www.linkedin.com/in/hassan-aldajah04/",
     github: null,
