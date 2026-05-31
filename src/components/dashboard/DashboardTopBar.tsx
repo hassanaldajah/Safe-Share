@@ -140,13 +140,13 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || await res.text());
       }
-      
+
       const data = await res.json();
       const newUrl = data.url;
-      
+
       setProfileImg(newUrl);
       localStorage.setItem("profileImage", newUrl);
-      
+
       // Best effort context update if the context supports mutating
       updateUser({ profilePictureUrl: newUrl });
       toast.success("Profile picture updated!");

@@ -61,9 +61,6 @@ const Footer = () => {
                         {member.name}
                       </h3>
                     </div>
-                    <p className="text-xs font-medium text-emerald-400 mb-2">
-                      {member.role}
-                    </p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       {member.description}
                     </p>
