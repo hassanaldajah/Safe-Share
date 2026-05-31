@@ -171,7 +171,7 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
       </button>
 
       <div className="flex items-center gap-4">
-        {/* Notifications */}
+        {/* Notifications Feature Hidden for Current Release
         <div className="relative" ref={notificationRef}>
           <button
             onClick={handleToggleNotifications}
@@ -233,6 +233,7 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
             </div>
           )}
         </div>
+        */}
 
         {/* User Profile */}
         <div className="relative" ref={profileRef}>

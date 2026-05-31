@@ -113,6 +113,11 @@ toast.success("File successfully shared to the group!");
         formData.append("encryptedFileKey", file.encryptedFileKey);
         formData.append("iv", file.iv);
 
+        // Add folderId if we are uploading inside a specific folder
+        if (currentFolder && currentFolder.id) {
+          formData.append("folderId", currentFolder.id);
+        }
+
         const response = await fetch("/api/v1/files/upload", {
           method: "POST", headers: { "Authorization": `Bearer ${token}` }, body: formData,
         });
