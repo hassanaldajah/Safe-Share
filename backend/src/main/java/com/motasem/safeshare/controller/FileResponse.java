@@ -18,4 +18,5 @@ public class FileResponse {
     // We send these back so React can decrypt the file later!
     private String encryptedFileKey;
     private String iv;
+    private Integer folderId;
 }

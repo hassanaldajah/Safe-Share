@@ -95,17 +95,29 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showNotifications, showProfileMenu]);
 
-  const handleToggleNotifications = async () => {
-    const willShow = !showNotifications;
-    setShowNotifications(willShow);
+  const handleToggleNotifications = () => {
+    setShowNotifications(!showNotifications);
+  };
 
-    if (willShow && unreadCount > 0) {
+  const handleNotificationClick = async (notification: Notification) => {
+    if (!notification.isRead) {
       try {
-        await authFetch("/api/v1/notifications/read-all", { method: "PUT" });
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        await authFetch(`/api/v1/notifications/${notification.id}/read`, { method: "PUT" });
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n))
+        );
       } catch (err) {
-        console.error("Failed to mark all as read", err);
+        console.error("Failed to mark as read", err);
       }
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await authFetch("/api/v1/notifications/read-all", { method: "PUT" });
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error("Failed to mark all as read", err);
     }
   };
 
@@ -171,7 +183,7 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
       </button>
 
       <div className="flex items-center gap-4">
-        {/* Notifications Feature Hidden for Current Release
+        {/* Notifications Feature */}
         <div className="relative" ref={notificationRef}>
           <button
             onClick={handleToggleNotifications}
@@ -197,6 +209,7 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
                   notifications.map((notification) => (
                     <div
                       key={notification.id}
+                      onClick={() => handleNotificationClick(notification)}
                       className={`flex gap-3 p-4 transition-colors hover:bg-muted/50 cursor-pointer border-b border-border/50 last:border-0 ${!notification.isRead ? "bg-primary/5" : ""}`}
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
@@ -225,7 +238,7 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
               </div>
               {notifications.length > 0 && (
                 <div className="border-t border-border p-2 bg-muted/10">
-                  <button onClick={handleToggleNotifications} className="w-full py-2 text-xs font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors">
+                  <button onClick={handleMarkAllAsRead} className="w-full py-2 text-xs font-medium text-primary hover:bg-primary/5 rounded-lg transition-colors">
                     Mark all as read
                   </button>
                 </div>
@@ -233,7 +246,6 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
             </div>
           )}
         </div>
-        */}
 
         {/* User Profile */}
         <div className="relative" ref={profileRef}>

@@ -284,7 +284,7 @@ public class GroupController {
             }
 
             // Soft delete the file
-            file.setDeleted(true);
+            file.setIsDeleted(true);
             fileRepository.save(file);
 
             auditService.logEvent(group, currentUser.getFullName(), "Deleted File", file.getOriginalName(), "critical");

@@ -49,8 +49,16 @@ public class FileEntity {
     @JoinColumn(name = "group_id")
     private GroupEntity group; // If null, it's a private file. If set, it's a group file.
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "folder_id")
+    private FolderEntity parentFolder;
+
     @Column(name = "is_deleted", nullable = false)
-    private boolean isDeleted = false;
+    @Builder.Default
+    private Boolean isDeleted = false; // Soft delete flag
+
+    @Builder.Default
+    private Boolean isBackup = false; // Deduplication backup flag
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;

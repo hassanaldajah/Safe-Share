@@ -14,6 +14,13 @@ export default defineConfig(({ mode }) => ({
       interval: 1000,
       ignored: ["**/node_modules/**", "**/.git/**"],
     },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#bgGrad)" />
+  
+  <!-- Shield outline/fill -->
+  <path d="M128 52L72 76.8889V112.444C72 157.778 95.3333 191.111 128 204.889C160.667 191.111 184 157.778 184 112.444V76.8889L128 52Z" 
+        fill="white" />
+        
+  <!-- Keyhole cutout -->
+  <circle cx="128" cy="116" r="16" fill="url(#bgGrad)" />
+  <path d="M120 128H136L140 156H116L120 128Z" fill="url(#bgGrad)" />
+</svg>

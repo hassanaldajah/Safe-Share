@@ -39,6 +39,7 @@ public class FileController {
     public ResponseEntity<?> uploadFile(
             @RequestParam("file") MultipartFile encryptedBlob,
             @RequestParam(value = "groupId", required = false) Integer groupId, // NEW: Optional Group ID
+            @RequestParam(value = "folderId", required = false) Integer folderId, // NEW: Optional Folder ID
             @RequestParam("originalName") String originalName,
             @RequestParam("fileType") String fileType,
             @RequestParam("sizeBytes") Long sizeBytes,
@@ -53,7 +54,7 @@ public class FileController {
             // PASS THE groupId HERE!
             fileService.uploadSecureFile(
                     encryptedBlob, originalName, fileType, sizeBytes,
-                    compressed, encryptedFileKey, iv, currentUser, groupId,
+                    compressed, encryptedFileKey, iv, currentUser, groupId, folderId,
                     maxDownloads, maxViews
             );
             return ResponseEntity.ok("File uploaded and secured successfully!");
@@ -64,9 +65,18 @@ public class FileController {
 
     @GetMapping
     public ResponseEntity<List<FileResponse>> getMyFiles(
+            @RequestParam(value = "folderId", required = false) Integer folderId,
             @AuthenticationPrincipal User currentUser
     ) {
-        List<FileResponse> myFiles = fileService.getUserFiles(currentUser);
+        List<FileResponse> myFiles = fileService.getUserFiles(currentUser, folderId);
+        return ResponseEntity.ok(myFiles);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<FileResponse>> getAllMyFiles(
+            @AuthenticationPrincipal User currentUser
+    ) {
+        List<FileResponse> myFiles = fileService.getAllUserFiles(currentUser);
         return ResponseEntity.ok(myFiles);
     }
 
@@ -169,6 +179,24 @@ public class FileController {
     public ResponseEntity<?> emptyTrashAlias(@AuthenticationPrincipal User currentUser) {
         fileService.emptyTrash(currentUser);
         return ResponseEntity.ok("Trash emptied.");
+    }
+
+    // --- ZERO-SPACE DEDUPLICATION BACKUP ENDPOINTS ---
+    @PostMapping("/{fileId}/backup")
+    public ResponseEntity<?> backupFile(@PathVariable Integer fileId, @AuthenticationPrincipal User currentUser) {
+        fileService.backupFile(fileId, currentUser);
+        return ResponseEntity.ok("File backed up securely!");
+    }
+
+    @GetMapping("/backups")
+    public ResponseEntity<List<FileResponse>> getBackupFiles(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(fileService.getBackupFiles(currentUser));
+    }
+
+    @PostMapping("/{fileId}/restore-backup")
+    public ResponseEntity<?> restoreBackup(@PathVariable Integer fileId, @AuthenticationPrincipal User currentUser) {
+        fileService.restoreBackup(fileId, currentUser);
+        return ResponseEntity.ok("Backup restored to main dashboard.");
     }
     @GetMapping("/{fileId}/metadata")
     public ResponseEntity<java.util.Map<String, String>> getFileMetadata(

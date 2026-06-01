@@ -13,7 +13,10 @@ import com.motasem.safeshare.repository.GroupMemberRepository;
 import com.motasem.safeshare.transaction.FileTransaction;
 import com.motasem.safeshare.repository.FileTransactionRepository;
 import com.motasem.safeshare.repository.FileVersionRepository;
+import com.motasem.safeshare.repository.FolderRepository;
 import com.motasem.safeshare.model.FileVersion;
+import com.motasem.safeshare.model.FolderEntity;
+import com.motasem.safeshare.model.GroupMember;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
@@ -45,15 +48,23 @@ public class FileService {
     // --- NEW INJECTIONS FOR GROUP LOGIC ---
     private final GroupRepository groupRepository;
     private final GroupMemberRepository groupMemberRepository;
+    private final FolderRepository folderRepository;
     private final AuditService auditService;
     private final S3StorageService s3StorageService;
     private final FileVersionRepository fileVersionRepository;
+    private final NotificationService notificationService;
+    private final SseService sseService;
 
     private final String UPLOAD_DIR = "uploads/";
 
-    // 1. Fetch ONLY active files for "My Folders"
-    public List<FileResponse> getUserFiles(User owner) {
-        List<FileEntity> userFiles = fileRepository.findAllByOwnerAndGroupIsNullAndIsDeletedFalse(owner);
+    // 1. Fetch ONLY active files for "My Folders" or inside a specific folder
+    public List<FileResponse> getUserFiles(User owner, Integer folderId) {
+        List<FileEntity> userFiles;
+        if (folderId == null) {
+            userFiles = fileRepository.findAllByOwnerAndGroupIsNullAndParentFolderIsNullAndIsDeletedFalseAndIsBackupFalse(owner);
+        } else {
+            userFiles = fileRepository.findAllByOwnerAndGroupIsNullAndParentFolderIdAndIsDeletedFalseAndIsBackupFalse(owner, folderId);
+        }
         return userFiles.stream().map(file -> FileResponse.builder()
                 .id(file.getId())
                 .name(file.getOriginalName())
@@ -64,6 +75,24 @@ public class FileService {
                 .uploadedAt(file.getUploadedAt())
                 .encryptedFileKey(file.getEncryptedFileKey())
                 .iv(file.getIv())
+                .folderId(file.getParentFolder() != null ? file.getParentFolder().getId() : null)
+                .build()
+        ).collect(Collectors.toList());
+    }
+
+    public List<FileResponse> getAllUserFiles(User owner) {
+        List<FileEntity> userFiles = fileRepository.findAllByOwnerAndGroupIsNullAndIsDeletedFalseAndIsBackupFalse(owner);
+        return userFiles.stream().map(file -> FileResponse.builder()
+                .id(file.getId())
+                .name(file.getOriginalName())
+                .fileType(file.getFileType())
+                .sizeBytes(file.getSizeBytes())
+                .compressed(file.getCompressed())
+                .virusScan(file.getVirusScanStatus())
+                .uploadedAt(file.getUploadedAt())
+                .encryptedFileKey(file.getEncryptedFileKey())
+                .iv(file.getIv())
+                .folderId(file.getParentFolder() != null ? file.getParentFolder().getId() : null)
                 .build()
         ).collect(Collectors.toList());
     }
@@ -88,7 +117,7 @@ public class FileService {
     public FileEntity uploadSecureFile(
             MultipartFile encryptedBlob, String originalName, String fileType,
             Long sizeBytes, Boolean compressed, String encryptedFileKey,
-            String iv, User currentUser, Integer groupId,
+            String iv, User currentUser, Integer groupId, Integer folderId,
             Integer maxDownloads, Integer maxViews) throws IOException {
 
         // 1. Upload to AWS S3
@@ -114,6 +143,12 @@ public class FileService {
                 .currentViews(0)
                 .build();
 
+        if (folderId != null) {
+            FolderEntity parentFolder = folderRepository.findByIdAndOwner(folderId, currentUser)
+                    .orElseThrow(() -> new RuntimeException("Folder not found"));
+            fileEntity.setParentFolder(parentFolder);
+        }
+
         // 3. NEW: Link the group and check roles
         if (groupId != null) {
             GroupEntity group = groupRepository.findById(groupId)
@@ -131,6 +166,14 @@ public class FileService {
             fileEntity.setGroup(group);
 
             auditService.logEvent(group, currentUser.getFullName(), "Uploaded File", fileEntity.getOriginalName(), "info");
+
+            // Notify group members
+            List<GroupMember> groupMembers = groupMemberRepository.findAllByGroup(group);
+            for (GroupMember m : groupMembers) {
+                if (!m.getUser().getId().equals(currentUser.getId())) {
+                    notificationService.createNotification(m.getUser(), currentUser.getFullName() + " uploaded a file to group " + group.getName() + ": " + originalName);
+                }
+            }
         }
 
         FileEntity savedFile = fileRepository.save(fileEntity);
@@ -188,19 +231,37 @@ public class FileService {
 
         // 4. Log the action
         auditService.logEvent(group, currentUser.getFullName(), "Shared to Group", originalFile.getOriginalName() + " (from Private Vault)", "info");
+
+        // 5. Notify group members
+        List<GroupMember> groupMembers = groupMemberRepository.findAllByGroup(group);
+        for (GroupMember m : groupMembers) {
+            if (!m.getUser().getId().equals(currentUser.getId())) {
+                notificationService.createNotification(m.getUser(), currentUser.getFullName() + " shared a file to group " + group.getName() + ": " + originalFile.getOriginalName());
+            }
+        }
     }
+    private boolean fileIsSharedWithUser(Integer fileId, User currentUser) {
+        FileEntity file = fileRepository.findById(fileId).orElse(null);
+        if (file != null && file.getGroup() != null) {
+            return groupMemberRepository.findByGroupAndUser(file.getGroup(), currentUser).isPresent();
+        }
+        return fileShareRepository.findByFile_IdAndSharedWith_Id(fileId, currentUser.getId()).isPresent();
+    }
+
     // --- SMART DOWNLOAD LOGIC WITH GROUPS & AUDIT ---
     public Resource downloadSecureFile(Integer fileId, User currentUser, String action) {
         FileEntity fileEntity = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found!"));
 
         boolean isOwner = fileEntity.getOwner().getId().equals(currentUser.getId());
+        boolean isShared = fileIsSharedWithUser(fileId, currentUser);
+
+        if (!isOwner && !isShared) {
+            throw new RuntimeException("Unauthorized: You do not have permission to access this file.");
+        }
 
         // --- NEW: IS THIS A GROUP FILE? ---
         if (fileEntity.getGroup() != null) {
-            // 1. Verify the user is in this group
-            groupMemberRepository.findByGroupAndUser(fileEntity.getGroup(), currentUser)
-                    .orElseThrow(() -> new RuntimeException("Unauthorized: You are not in this group!"));
 
             // Handle downloads and views for group file
             if ("view".equalsIgnoreCase(action)) {
@@ -265,14 +326,19 @@ public class FileService {
         fileVersionRepository.deleteByFile_Id(fileEntity.getId());
         fileShareRepository.deleteByFile_Id(fileEntity.getId());
 
+        String filePath = fileEntity.getFilePath();
         fileRepository.delete(fileEntity);
 
-        try {
-            s3StorageService.deleteFile(fileEntity.getFilePath());
-        } catch (Exception e) {
-            System.err.println("Failed to delete physical file from S3: " + e.getMessage());
-            e.printStackTrace(); // Print full stack trace for AWS blocking errors
-            throw new RuntimeException("Could not delete file from S3, rolling back database deletion: " + e.getMessage());
+        // Deduplication safety check: Only delete from S3 if no other DB records point to this file
+        long referencesLeft = fileRepository.countByFilePath(filePath);
+        if (referencesLeft == 0) {
+            try {
+                s3StorageService.deleteFile(filePath);
+            } catch (Exception e) {
+                System.err.println("Failed to delete physical file from S3: " + e.getMessage());
+                e.printStackTrace(); // Print full stack trace for AWS blocking errors
+                throw new RuntimeException("Could not delete file from S3, rolling back database deletion: " + e.getMessage());
+            }
         }
     }
 
@@ -327,7 +393,7 @@ public class FileService {
             throw new RuntimeException("Only the owner can delete this file.");
         }
 
-        file.setDeleted(true);
+        file.setIsDeleted(true);
         file.setDeletedAt(LocalDateTime.now());
         fileRepository.save(file);
     }
@@ -340,7 +406,7 @@ public class FileService {
             throw new RuntimeException("Only the owner can restore this file.");
         }
 
-        file.setDeleted(false);
+        file.setIsDeleted(false);
         file.setDeletedAt(null);
         fileRepository.save(file);
     }
@@ -358,14 +424,19 @@ public class FileService {
         fileVersionRepository.deleteByFile_Id(file.getId());
         fileShareRepository.deleteByFile_Id(file.getId());
 
+        String filePath = file.getFilePath();
         fileRepository.delete(file);
-
-        try {
-            s3StorageService.deleteFile(file.getFilePath());
-        } catch (Exception e) {
-            System.err.println("Failed to delete physical file from S3: " + e.getMessage());
-            e.printStackTrace(); // Print full stack trace for AWS blocking errors
-            throw new RuntimeException("Could not delete file from S3, rolling back database deletion: " + e.getMessage());
+        
+        // Deduplication safety check: Only delete from S3 if no other DB records point to this file
+        long referencesLeft = fileRepository.countByFilePath(filePath);
+        if (referencesLeft == 0) {
+            try {
+                s3StorageService.deleteFile(filePath);
+            } catch (Exception e) {
+                System.err.println("Failed to delete physical file from S3: " + e.getMessage());
+                e.printStackTrace(); // Print full stack trace for AWS blocking errors
+                throw new RuntimeException("Could not delete file from S3, rolling back database deletion: " + e.getMessage());
+            }
         }
     }
 
@@ -381,14 +452,84 @@ public class FileService {
         fileRepository.deleteAll(trashFiles);
 
         for (FileEntity file : trashFiles) {
-            try {
-                s3StorageService.deleteFile(file.getFilePath());
-            } catch (Exception e) {
-                System.err.println("Failed to delete physical file from S3: " + e.getMessage());
-                e.printStackTrace(); // Print full stack trace for AWS blocking errors
-                throw new RuntimeException("Could not delete file from S3, rolling back database deletion: " + e.getMessage());
+            long referencesLeft = fileRepository.countByFilePath(file.getFilePath());
+            if (referencesLeft == 0) {
+                try {
+                    s3StorageService.deleteFile(file.getFilePath());
+                } catch (Exception e) {
+                    System.err.println("Failed to delete physical file from S3: " + e.getMessage());
+                    e.printStackTrace(); // Print full stack trace for AWS blocking errors
+                    throw new RuntimeException("Could not delete file from S3, rolling back database deletion: " + e.getMessage());
+                }
             }
         }
+    }
+
+    // --- DEDUPLICATION BACKUP LOGIC ---
+    @Transactional
+    public FileEntity backupFile(Integer fileId, User currentUser) {
+        FileEntity original = fileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        if (!original.getOwner().getId().equals(currentUser.getId())) {
+            throw new RuntimeException("Only the owner can backup this file.");
+        }
+
+        FileEntity backup = FileEntity.builder()
+                .originalName(original.getOriginalName())
+                .fileType(original.getFileType())
+                .sizeBytes(original.getSizeBytes())
+                .compressed(original.getCompressed())
+                .virusScanStatus(original.getVirusScanStatus())
+                .encryptedFileKey(original.getEncryptedFileKey())
+                .iv(original.getIv())
+                .filePath(original.getFilePath()) // DEDUPLICATION: Point to the same physical file
+                .owner(currentUser)
+                .uploadedAt(LocalDateTime.now())
+                .isDeleted(false)
+                .isBackup(true) // Mark as a backup vault file
+                .currentDownloads(0)
+                .currentViews(0)
+                .maxDownloads(original.getMaxDownloads())
+                .maxViews(original.getMaxViews())
+                .build();
+
+        return fileRepository.save(backup);
+    }
+
+    public List<FileResponse> getBackupFiles(User owner) {
+        List<FileEntity> backupFiles = fileRepository.findAllByOwnerAndIsBackupTrueAndIsDeletedFalse(owner);
+        return backupFiles.stream().map(file -> FileResponse.builder()
+                .id(file.getId())
+                .name(file.getOriginalName())
+                .fileType(file.getFileType())
+                .sizeBytes(file.getSizeBytes())
+                .compressed(file.getCompressed())
+                .virusScan(file.getVirusScanStatus())
+                .uploadedAt(file.getUploadedAt())
+                .encryptedFileKey(file.getEncryptedFileKey())
+                .iv(file.getIv())
+                .folderId(null)
+                .build()
+        ).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void restoreBackup(Integer fileId, User owner) {
+        FileEntity file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new RuntimeException("File not found"));
+
+        if (!file.getOwner().getId().equals(owner.getId())) {
+            throw new RuntimeException("Only the owner can restore this backup.");
+        }
+
+        if (!file.getIsBackup()) {
+            throw new RuntimeException("This file is not a backup.");
+        }
+
+        file.setIsBackup(false);
+        file.setUploadedAt(LocalDateTime.now()); // Update time so it shows as recently restored
+        fileRepository.save(file);
     }
 
     // --- MANAGE ACCESS LOGIC ---
@@ -491,6 +632,11 @@ public class FileService {
         receivedLog.setOwner(receiver);
         receivedLog.setCanReshare(request.getCanReshare() != null ? request.getCanReshare() : false);
         fileTransactionRepository.save(receivedLog);
+
+        notificationService.createNotification(receiver, sender.getFullName() + " shared a file with you: " + file.getOriginalName());
+        
+        // Push real-time SSE notification
+        sseService.notifyUser(receiver.getSearchTag(), receivedLog);
     }
 
     public List<FileResponse> getSharedWithMeFiles(User receiver) {

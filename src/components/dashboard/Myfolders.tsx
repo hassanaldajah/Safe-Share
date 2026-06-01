@@ -4,7 +4,7 @@ import {
   FileText, Image as ImageIcon, File, Video, Music, Archive, Download,
   Trash2, Shield, ShieldCheck, AlertCircle, Package, X, Mail, Copy, Check,
   FolderPlus, ArrowLeft, AlertTriangle, Users, Clock, Eye, Link as LinkIcon, 
-  CheckCircle, Loader2, AtSign, Settings2, CheckSquare, Square, ChevronUp, ChevronDown
+  CheckCircle, Loader2, AtSign, Settings2, CheckSquare, Square, ChevronUp, ChevronDown, Database
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFolders, FileItem } from "@/components/dashboard/FoldersContext";
@@ -20,8 +20,11 @@ export function MyFolders() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [fileToShare, setFileToShare] = useState<FileItem | null>(null);
   const [currentFolder, setCurrentFolder] = useState<FileItem | null>(null);
   const [isDownloading, setIsDownloading] = useState<string | null>(null); 
+  const [isBackingUp, setIsBackingUp] = useState<string | null>(null);
 
   const [deleteDialog, setDeleteDialog] = useState<{ isOpen: boolean; itemId: string; itemName: string; }>({ isOpen: false, itemId: "", itemName: "" });
   
@@ -171,6 +174,25 @@ toast.success("File successfully shared to the group!");
       alert("Failed to decrypt and download the file.");
     } finally {
       setIsDownloading(null);
+    }
+  };
+
+  const handleBackup = async (file: FileItem) => {
+    try {
+      setIsBackingUp(file.id);
+      const response = await authFetch(`/api/v1/files/${file.id}/backup`, {
+        method: "POST"
+      });
+      if (response.ok) {
+        toast.success("File securely backed up to Vault");
+      } else {
+        throw new Error(await response.text());
+      }
+    } catch (error: any) {
+      console.error("Backup failed:", error);
+      toast.error(`Failed to backup ${file.name}: ${error.message}`);
+    } finally {
+      setIsBackingUp(null);
     }
   };
 
@@ -385,6 +407,11 @@ toast.success("File successfully shared to the group!");
                             {isDownloading === file.id ? <Loader2 className="h-4 w-4 animate-spin text-blue-600" /> : <Download className="h-4 w-4" />}
                           </button>
                         )}
+                        {file.type === "file" && (
+                          <button onClick={() => handleBackup(file)} disabled={isBackingUp === file.id} className="p-1.5 hover:bg-indigo-50 text-muted-foreground hover:text-indigo-600 rounded-lg transition-colors" title="Send to Vault">
+                            {isBackingUp === file.id ? <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> : <Database className="h-4 w-4" />}
+                          </button>
+                        )}
                         <button onClick={() => handleDelete(file.id, file.name)} className="p-1.5 hover:bg-red-50 text-muted-foreground hover:text-red-600 rounded-lg transition-colors" title="Delete">
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -429,8 +456,13 @@ toast.success("File successfully shared to the group!");
                     </button>
                   )}
                   {file.type === "file" && (
-                    <button onClick={() => handleDownload(file)} disabled={isDownloading === file.id} className="p-2 hover:bg-blue-50 text-muted-foreground hover:text-blue-600 rounded-lg transition-colors">
+                    <button onClick={() => handleDownload(file)} disabled={isDownloading === file.id} className="p-2 hover:bg-blue-50 text-muted-foreground hover:text-blue-600 rounded-lg transition-colors" title="Download">
                       {isDownloading === file.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                    </button>
+                  )}
+                  {file.type === "file" && (
+                    <button onClick={() => handleBackup(file)} disabled={isBackingUp === file.id} className="p-2 hover:bg-indigo-50 text-muted-foreground hover:text-indigo-600 rounded-lg transition-colors" title="Send to Vault">
+                      {isBackingUp === file.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
                     </button>
                   )}
                   <button onClick={() => handleDelete(file.id, file.name)} className="p-2 hover:bg-red-50 text-muted-foreground hover:text-red-600 rounded-lg transition-colors">

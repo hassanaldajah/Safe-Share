@@ -50,6 +50,7 @@ public CorsConfigurationSource corsConfigurationSource() {
                         .requestMatchers("/api/v1/auth/**").permitAll()// Your public endpoints
                         .requestMatchers("/api/diagnostics/**").permitAll()
                         .requestMatchers("/api/payments/webhook").permitAll()
+                        .requestMatchers("/api/v1/sse/**").permitAll()
                         .anyRequest().authenticated()                // Everything else requires a token
                 )
                 .sessionManagement(session -> session

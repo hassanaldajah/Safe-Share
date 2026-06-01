@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFolders, FileItem } from "@/components/dashboard/FoldersContext";
-import axios from "axios";
+import { authFetch } from "@/lib/api";
 
 export function TrashPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -83,15 +83,18 @@ export function TrashPage() {
   const handleDeleteForever = async (fileId: string) => {
     try {
       setIsDeleting(fileId);
-      const token = localStorage.getItem("token");
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.delete(`/api/v1/files/${fileId}`, config);
-      if (response.status === 200) {
+      const response = await authFetch(`/api/v1/files/${fileId}/permanent`, {
+        method: "DELETE"
+      });
+      if (response.ok) {
         removeFromTrashState(fileId);
+      } else {
+        const text = await response.text();
+        throw new Error(text);
       }
     } catch (error) {
       console.error("Failed to delete permanently", error);
-      alert("Failed to delete the file");
+      alert("Failed to delete the file permanently.");
     } finally {
       setIsDeleting(null);
       setDeleteConfirmItem(null);
@@ -108,16 +111,19 @@ export function TrashPage() {
     if (trashedFiles.length === 0) return;
     try {
       setIsEmptying(true);
-      const token = localStorage.getItem("token");
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.delete(`/api/v1/trash`, config);
-      if (response.status === 200) {
+      const response = await authFetch(`/api/v1/files/trash/empty`, {
+        method: "DELETE"
+      });
+      if (response.ok) {
         clearTrashState();
         setShowEmptyConfirm(false);
+      } else {
+        const text = await response.text();
+        throw new Error(text);
       }
     } catch (error) {
       console.error("Failed to empty trash", error);
-      alert("Failed to empty trash");
+      alert("Failed to empty trash.");
     } finally {
       setIsEmptying(false);
     }

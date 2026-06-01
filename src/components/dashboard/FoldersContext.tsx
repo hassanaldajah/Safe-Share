@@ -57,9 +57,9 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
   const fetchFiles = async () => {
     setIsLoading(true);
     try {
-      // Fetch both active files and trashed files simultaneously
-      const [filesResponse, trashResponse] = await Promise.all([
-        authFetch("/api/v1/files"),
+      const [foldersResponse, filesResponse, trashResponse] = await Promise.all([
+        authFetch("/api/v1/folders/all"),
+        authFetch("/api/v1/files/all"),
         authFetch("/api/v1/files/trash")
       ]);
       
@@ -67,21 +67,57 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
         id: f.id.toString(),
         name: f.name,
         type: "file",
-        size: formatFileSize(f.sizeBytes),
-        sizeBytes: f.sizeBytes,
-        compressed: f.compressed,
+        size: formatFileSize(f.sizeBytes || 0),
+        sizeBytes: f.sizeBytes || 0,
+        compressed: f.compressed || false,
         virusScan: f.virusScan || "clean",
         uploadedAt: f.uploadedAt ? f.uploadedAt.split('T')[0] : new Date().toISOString().split('T')[0],
         fileType: f.fileType || "other",
+        parentId: f.folderId ? f.folderId.toString() : undefined,
         deletedAt: f.deletedAt ? f.deletedAt.split('T')[0] : undefined,
         encryptedFileKey: f.encryptedFileKey,
         iv: f.iv
       });
 
-      if (filesResponse.ok) {
-        const data = await filesResponse.json();
-        setFiles(data.map(mapFileData));
+      const mapFolderData = (f: any): FileItem => ({
+        id: f.id.toString(),
+        name: f.name,
+        type: "folder",
+        size: "0 B",
+        sizeBytes: 0,
+        compressed: false,
+        virusScan: "clean",
+        uploadedAt: f.createdAt ? f.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+        parentId: f.parentId ? f.parentId.toString() : undefined,
+        children: []
+      });
+
+      let allItems: FileItem[] = [];
+      if (foldersResponse.ok) {
+        const foldersData = await foldersResponse.json();
+        allItems = allItems.concat(foldersData.map(mapFolderData));
       }
+      if (filesResponse.ok) {
+        const filesData = await filesResponse.json();
+        allItems = allItems.concat(filesData.map(mapFileData));
+      }
+
+      // Build the tree
+      const itemMap = new Map<string, FileItem>();
+      allItems.forEach(item => itemMap.set(item.id, item));
+
+      const rootItems: FileItem[] = [];
+      allItems.forEach(item => {
+        if (item.parentId && itemMap.has(item.parentId)) {
+          const parent = itemMap.get(item.parentId);
+          if (!parent!.children) parent!.children = [];
+          parent!.children.push(item);
+        } else {
+          rootItems.push(item);
+        }
+      });
+
+      setFiles(updateFolderSizes(rootItems));
       
       if (trashResponse.ok) {
         const trashData = await trashResponse.json();
@@ -136,13 +172,49 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const addFolder = (name: string, parentId?: string) => {
-    const newFolder: FileItem = {
-      id: Date.now().toString(), name, type: "folder", size: "0 B", sizeBytes: 0,
-      compressed: false, virusScan: "clean", uploadedAt: new Date().toISOString().split("T")[0],
-      parentId, children: [],
-    };
-    setFiles((prev) => updateFolderSizes([newFolder, ...prev]));
+  const addFolder = async (name: string, parentId?: string) => {
+    try {
+      const formData = new URLSearchParams();
+      formData.append("name", name);
+      if (parentId) formData.append("parentId", parentId);
+
+      const res = await authFetch("/api/v1/folders", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formData.toString()
+      });
+
+      if (res.ok) {
+        const f = await res.json();
+        const newFolder: FileItem = {
+          id: f.id.toString(), name: f.name, type: "folder", size: "0 B", sizeBytes: 0,
+          compressed: false, virusScan: "clean", uploadedAt: f.createdAt ? f.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
+          parentId: f.parentId ? f.parentId.toString() : undefined, children: [],
+        };
+        
+        if (newFolder.parentId) {
+          setFiles((prev) => {
+            // Need to recursively find parent and add. For now, a simple flat refresh is safer, but we can do a simple map:
+            const insertIntoTree = (items: FileItem[]): FileItem[] => {
+              return items.map(item => {
+                if (item.id === newFolder.parentId && item.type === "folder") {
+                  return { ...item, children: [newFolder, ...(item.children || [])] };
+                }
+                if (item.type === "folder" && item.children) {
+                  return { ...item, children: insertIntoTree(item.children) };
+                }
+                return item;
+              });
+            };
+            return updateFolderSizes(insertIntoTree(prev));
+          });
+        } else {
+          setFiles((prev) => updateFolderSizes([newFolder, ...prev]));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to add folder", err);
+    }
   };
 
   const addFile = (file: FileItem, parentId?: string) => {

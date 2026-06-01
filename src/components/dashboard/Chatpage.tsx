@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 import { ChatShareDialog } from "./ChatShareDialog";
 import { ManageAccessDialog } from "./ManageAccessDialog";
 
-// --- IMPORT YOUR ENCRYPTION MATH ---
 import { decryptKeyWithRSA, decryptFile } from "@/lib/encryption";
 import { toast } from "sonner";
+import { authFetch } from "@/lib/api";
 
 interface FileTransaction {
   id: string;
@@ -80,9 +80,7 @@ export function Chatpage() {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Authentication token missing. Please log in.");
 
-        const response = await fetch("/api/v1/transactions", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const response = await authFetch("/api/v1/transactions");
 
         if (!response.ok) throw new Error("Failed to load transactions.");
 
@@ -113,6 +111,52 @@ export function Chatpage() {
     fetchTransactions();
   }, []);
 
+  // Set up Server-Sent Events for real-time transaction updates
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const eventSource = new EventSource(`/api/v1/sse/subscribe?token=${token}`);
+
+    eventSource.addEventListener("new-transaction", (event) => {
+      try {
+        const tx = JSON.parse(event.data);
+        const mappedTx: FileTransaction = {
+          id: tx.id,
+          fileId: tx.fileId,
+          fileName: tx.fileName,
+          fileType: "file",
+          fileCategory: guessFileCategory(tx.fileName),
+          fileSize: tx.fileSizeBytes ? formatBytes(tx.fileSizeBytes) : undefined,
+          transactionType: tx.transactionType.toLowerCase() as "sent" | "received",
+          userId: tx.transactionType === "SENT" ? tx.receiverTag : tx.senderTag,
+          timestamp: new Date(tx.timestamp),
+          status: tx.status.toLowerCase(),
+          canReshare: tx.canReshare === true
+        };
+
+        setTransactions(prev => {
+          // Prevent duplicates if already exists
+          if (prev.some(t => t.id === mappedTx.id)) return prev;
+          return [mappedTx, ...prev];
+        });
+        
+        toast.success(`Received new file from ${mappedTx.userId}: ${mappedTx.fileName}`);
+      } catch (e) {
+        console.error("Failed to parse SSE event data:", e);
+      }
+    });
+
+    eventSource.onerror = () => {
+      console.error("SSE connection error or disconnected");
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, []);
+
   const handleView = async (transaction: FileTransaction) => {
     try {
       setIsViewing(transaction.id);
@@ -121,15 +165,11 @@ export function Chatpage() {
 
       if (!token || !privateKeyBase64) throw new Error("Missing cryptographic data.");
 
-      const metaRes = await fetch(`/api/v1/files/${transaction.fileId}/metadata`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      const metaRes = await authFetch(`/api/v1/files/${transaction.fileId}/metadata`);
       if (!metaRes.ok) throw new Error("Could not fetch file keys.");
       const metadata = await metaRes.json();
       
-      const fileRes = await fetch(`/api/v1/files/${transaction.fileId}/download?action=view`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      const fileRes = await authFetch(`/api/v1/files/${transaction.fileId}/download?action=view`);
       
       if (!fileRes.ok) {
           const errorText = await fileRes.text();
@@ -176,16 +216,12 @@ export function Chatpage() {
 
       if (!token || !privateKeyBase64) throw new Error("Missing cryptographic data.");
 
-      const metaRes = await fetch(`/api/v1/files/${transaction.fileId}/metadata`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      const metaRes = await authFetch(`/api/v1/files/${transaction.fileId}/metadata`);
       if (!metaRes.ok) throw new Error("Could not fetch file keys.");
       const metadata = await metaRes.json();
       const { encryptedKey, iv } = metadata; 
 
-      const fileRes = await fetch(`/api/v1/files/${transaction.fileId}/download?action=download`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      const fileRes = await authFetch(`/api/v1/files/${transaction.fileId}/download?action=download`);
       
       if (!fileRes.ok) {
           const errorText = await fileRes.text();
