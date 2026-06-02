@@ -687,11 +687,8 @@ public class FileService {
     }
 
     public java.util.Map<String, Object> getDashboardStats(User currentUser) {
-        var myFiles = fileRepository.findAllByOwnerId(currentUser.getId());
-        long totalFiles = myFiles.size();
-        long storageUsed = myFiles.stream()
-                .mapToLong(file -> file.getSizeBytes() != null ? file.getSizeBytes() : 0L)
-                .sum();
+        long totalFiles = fileRepository.countByOwnerIdAndIsDeletedFalseAndIsBackupFalse(currentUser.getId());
+        long storageUsed = fileRepository.sumSizeByOwnerIdAndIsDeletedFalseAndIsBackupFalse(currentUser.getId());
         long storageLimit = 5L * 1024 * 1024 * 1024;
 
         long sentShares = fileShareRepository.countBySharedBy(currentUser.getSearchTag());

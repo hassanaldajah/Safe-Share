@@ -24,6 +24,12 @@ public interface FileRepository extends JpaRepository<FileEntity, Integer> {
     // 1e. Count files by filePath to ensure safe deletion
     long countByFilePath(String filePath);
 
+    // Dashboard Metrics: Count and sum file sizes excluding soft-deleted and backup files
+    long countByOwnerIdAndIsDeletedFalseAndIsBackupFalse(Integer ownerId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT COALESCE(SUM(f.sizeBytes), 0) FROM FileEntity f WHERE f.owner.id = :ownerId AND f.isDeleted = false AND f.isBackup = false")
+    Long sumSizeByOwnerIdAndIsDeletedFalseAndIsBackupFalse(@org.springframework.data.repository.query.Param("ownerId") Integer ownerId);
+
     // 2. Finds group files
     java.util.List<FileEntity> findAllByGroupAndIsDeletedFalse(com.motasem.safeshare.model.GroupEntity group);
     List<FileEntity> findAllByOwnerAndIsDeletedTrue(User owner);
