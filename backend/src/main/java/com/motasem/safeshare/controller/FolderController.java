@@ -85,4 +85,23 @@ public class FolderController {
 
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/bulk-delete")
+    public ResponseEntity<?> bulkDeleteFolders(
+            @RequestBody List<Integer> folderIds,
+            @AuthenticationPrincipal User currentUser) {
+
+        if (folderIds == null || folderIds.isEmpty()) {
+            return ResponseEntity.badRequest().body("No folder IDs provided");
+        }
+
+        for (Integer folderId : folderIds) {
+            FolderEntity folder = folderRepository.findByIdAndOwner(folderId, currentUser).orElse(null);
+            if (folder != null) {
+                folderRepository.delete(folder);
+            }
+        }
+
+        return ResponseEntity.ok("Folders deleted successfully");
+    }
 }

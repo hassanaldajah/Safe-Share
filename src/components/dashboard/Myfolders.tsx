@@ -40,7 +40,7 @@ export function MyFolders() {
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [isSharingToGroup, setIsSharingToGroup] = useState(false);
 
-  const { files, addFolder, addFile, moveToTrash, getFilesInFolder, fetchFiles, isLoading } = useFolders();
+  const { files, addFolder, addFile, moveToTrash, deleteFolders, getFilesInFolder, fetchFiles, isLoading } = useFolders();
 
   useEffect(() => { fetchFiles(); }, []);
 
@@ -97,7 +97,16 @@ toast.success("File successfully shared to the group!");
 
   const handleShare = (item: FileItem) => setShareDialog({ isOpen: true, file: item });
   const handleDelete = (id: string, name: string) => setDeleteDialog({ isOpen: true, itemId: id, itemName: name });
-  const confirmDelete = () => { moveToTrash(deleteDialog.itemId); setDeleteDialog({ isOpen: false, itemId: "", itemName: "" }); };
+  const confirmDelete = async () => { 
+    const isFolder = currentFiles.some(f => f.id === deleteDialog.itemId && f.type === "folder");
+    if (isFolder) {
+      await deleteFolders([deleteDialog.itemId]);
+      toast.success("Folder deleted.");
+    } else {
+      moveToTrash(deleteDialog.itemId); 
+    }
+    setDeleteDialog({ isOpen: false, itemId: "", itemName: "" }); 
+  };
   const handleFolderClick = (folder: FileItem) => { if (folder.type === "folder") setCurrentFolder(folder); };
   const handleBackClick = () => setCurrentFolder(null);
 
@@ -245,11 +254,23 @@ toast.success("File successfully shared to the group!");
     setSelectedFiles(newSelected);
   };
 
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
+    const fileIds: string[] = [];
+    const folderIds: string[] = [];
+    
     selectedFiles.forEach((id) => {
-      moveToTrash(id);
+      const isFolder = currentFiles.some(f => f.id === id && f.type === "folder");
+      if (isFolder) folderIds.push(id);
+      else fileIds.push(id);
     });
-    toast.success(`${selectedFiles.size} items moved to trash.`);
+
+    if (folderIds.length > 0) {
+      await deleteFolders(folderIds);
+    }
+    
+    fileIds.forEach(id => moveToTrash(id));
+    
+    toast.success(`${selectedFiles.size} items processed.`);
     setSelectedFiles(new Set());
   };
 

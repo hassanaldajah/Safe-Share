@@ -27,6 +27,7 @@ interface FoldersContextType {
   restoreFromTrash: (id: string) => void;
   // --- CHANGED TO PROMISES FOR ASYNC BACKEND CALLS ---
   permanentlyDelete: (id: string) => Promise<void>;
+  deleteFolders: (folderIds: string[]) => Promise<void>;
   emptyTrash: () => Promise<void>;
   removeFromTrashState: (id: string) => void;
   clearTrashState: () => void;
@@ -311,6 +312,35 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // --- NEW: THE MAGIC FOLDER DELETE FUNCTION ---
+  const deleteFolders = async (folderIds: string[]) => {
+    try {
+      const numericIds = folderIds.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+      const response = await authFetch(`/api/v1/folders/bulk-delete`, {
+        method: "POST",
+        body: JSON.stringify(numericIds)
+      });
+
+      if (response.ok) {
+        // Remove folders from UI
+        setFiles(prev => {
+          const removeIds = new Set(folderIds);
+          const filterTree = (items: FileItem[]): FileItem[] => {
+            return items.filter(item => !removeIds.has(item.id))
+                        .map(item => item.children ? { ...item, children: filterTree(item.children) } : item);
+          };
+          return updateFolderSizes(filterTree(prev));
+        });
+      } else {
+        const errorText = await response.text();
+        console.error("Folder delete failed:", errorText);
+        alert("Failed to delete folders from the server.");
+      }
+    } catch (error) {
+      console.error("Network error during folder delete:", error);
+    }
+  };
+
   // --- NEW: THE MAGIC EMPTY TRASH FUNCTION ---
   const emptyTrash = async () => {
     try {
@@ -359,7 +389,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
     <FoldersContext.Provider
       value={{ 
         files, trashedFiles, addFolder, addFile, moveToTrash, restoreFromTrash,
-        permanentlyDelete, emptyTrash, removeFromTrashState, clearTrashState, updateFileStatus, getFilesInFolder, 
+        permanentlyDelete, deleteFolders, emptyTrash, removeFromTrashState, clearTrashState, updateFileStatus, getFilesInFolder, 
         getFolderSize, getTotalStorage, fetchFiles, isLoading
       }}
     >
