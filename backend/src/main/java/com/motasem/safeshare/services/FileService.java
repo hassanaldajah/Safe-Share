@@ -526,20 +526,40 @@ public class FileService {
 
     @Transactional
     public void restoreBackup(Integer fileId, User owner) {
-        FileEntity file = fileRepository.findById(fileId)
+        FileEntity backupRecord = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
 
-        if (!file.getOwner().getId().equals(owner.getId())) {
+        if (!backupRecord.getOwner().getId().equals(owner.getId())) {
             throw new RuntimeException("Only the owner can restore this backup.");
         }
 
-        if (!file.getIsBackup()) {
+        if (!backupRecord.getIsBackup()) {
             throw new RuntimeException("This file is not a backup.");
         }
 
-        file.setIsBackup(false);
-        file.setUploadedAt(LocalDateTime.now()); // Update time so it shows as recently restored
-        fileRepository.save(file);
+        // True Snapshot: Create a new active file record pointing to the same AWS S3 object
+        FileEntity restoredFile = FileEntity.builder()
+                .originalName(backupRecord.getOriginalName())
+                .fileType(backupRecord.getFileType())
+                .sizeBytes(backupRecord.getSizeBytes())
+                .compressed(backupRecord.getCompressed())
+                .virusScanStatus(backupRecord.getVirusScanStatus())
+                .encryptedFileKey(backupRecord.getEncryptedFileKey())
+                .iv(backupRecord.getIv())
+                .filePath(backupRecord.getFilePath()) 
+                .group(backupRecord.getGroup())
+                .parentFolder(backupRecord.getParentFolder())
+                .owner(owner)
+                .isDeleted(false) 
+                .isBackup(false)  
+                .maxDownloads(backupRecord.getMaxDownloads())
+                .currentDownloads(0)
+                .maxViews(backupRecord.getMaxViews())
+                .currentViews(0)
+                .uploadedAt(LocalDateTime.now())
+                .build();
+
+        fileRepository.save(restoredFile);
     }
 
     // --- MANAGE ACCESS LOGIC ---

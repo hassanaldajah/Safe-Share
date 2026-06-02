@@ -7,6 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import { FileItem } from "@/components/dashboard/FoldersContext";
 import { authFetch } from "@/lib/api";
+import { toast } from "sonner";
 
 export function BackupPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -57,13 +58,14 @@ export function BackupPage() {
     try {
       const response = await authFetch(`/api/v1/files/${id}/restore-backup`, { method: "POST" });
       if (response.ok) {
-        setBackupFiles(prev => prev.filter(f => f.id !== id));
+        // True Snapshot: Keep the backup file in the UI list and show a toast
+        toast.success("A copy has been restored to your dashboard");
       } else {
         throw new Error(await response.text());
       }
     } catch (error) {
       console.error("Failed to restore", error);
-      alert("Failed to restore the file.");
+      toast.error("Failed to restore the file.");
     } finally {
       setIsProcessing(null);
     }
