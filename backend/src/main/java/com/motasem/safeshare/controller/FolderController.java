@@ -1,12 +1,15 @@
 package com.motasem.safeshare.controller;
 
+import com.motasem.safeshare.model.FileEntity;
 import com.motasem.safeshare.model.FolderEntity;
 import com.motasem.safeshare.model.User;
+import com.motasem.safeshare.repository.FileRepository;
 import com.motasem.safeshare.repository.FolderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,6 +20,7 @@ import java.util.stream.Collectors;
 public class FolderController {
 
     private final FolderRepository folderRepository;
+    private final FileRepository fileRepository;
 
     @PostMapping
     public ResponseEntity<FolderResponse> createFolder(
@@ -86,8 +90,9 @@ public class FolderController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/bulk-delete")
-    public ResponseEntity<?> bulkDeleteFolders(
+    @Transactional
+    @PostMapping("/remove")
+    public ResponseEntity<?> removeFolders(
             @RequestBody List<Integer> folderIds,
             @AuthenticationPrincipal User currentUser) {
 
@@ -98,6 +103,12 @@ public class FolderController {
         for (Integer folderId : folderIds) {
             FolderEntity folder = folderRepository.findByIdAndOwner(folderId, currentUser).orElse(null);
             if (folder != null) {
+                // Find all files in this folder and delete them to prevent foreign key constraint violations
+                List<FileEntity> filesInFolder = fileRepository.findAllByOwnerAndGroupIsNullAndParentFolderIdAndIsDeletedFalseAndIsBackupFalse(currentUser, folderId);
+                for (FileEntity file : filesInFolder) {
+                    fileRepository.delete(file);
+                }
+                
                 folderRepository.delete(folder);
             }
         }

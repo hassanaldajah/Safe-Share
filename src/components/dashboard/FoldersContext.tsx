@@ -316,7 +316,7 @@ export function FoldersProvider({ children }: { children: ReactNode }) {
   const deleteFolders = async (folderIds: string[]) => {
     try {
       const numericIds = folderIds.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
-      const response = await authFetch(`/api/v1/folders/bulk-delete`, {
+      const response = await authFetch(`/api/v1/folders/remove`, {
         method: "POST",
         body: JSON.stringify(numericIds)
       });
