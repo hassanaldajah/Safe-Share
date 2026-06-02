@@ -23,6 +23,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
@@ -54,6 +55,7 @@ public class FileService {
     private final FileVersionRepository fileVersionRepository;
     private final NotificationService notificationService;
     private final SseService sseService;
+    private final TransactionTemplate transactionTemplate;
 
     private final String UPLOAD_DIR = "uploads/";
 
@@ -113,19 +115,20 @@ public class FileService {
     }
 
     // --- SMART UPLOAD LOGIC WITH GROUPS ---
-    @Transactional
     public FileEntity uploadSecureFile(
             MultipartFile encryptedBlob, String originalName, String fileType,
             Long sizeBytes, Boolean compressed, String encryptedFileKey,
             String iv, User currentUser, Integer groupId, Integer folderId,
             Integer maxDownloads, Integer maxViews) throws IOException {
 
-        // 1. Upload to AWS S3
+        // 1. Upload to AWS S3 (OUTSIDE TRANSACTION)
         String uniqueFileName = UUID.randomUUID().toString() + ".enc";
         String awsVersionId = s3StorageService.uploadFile(uniqueFileName, encryptedBlob);
 
-        // 2. Build Database Entity
-        FileEntity fileEntity = FileEntity.builder()
+        // 2. Wrap DB operations in a programmatic transaction
+        return transactionTemplate.execute(status -> {
+            // Build Database Entity
+            FileEntity fileEntity = FileEntity.builder()
                 .originalName(originalName)
                 .fileType(fileType)
                 .sizeBytes(sizeBytes)
@@ -178,16 +181,17 @@ public class FileService {
 
         FileEntity savedFile = fileRepository.save(fileEntity);
 
-        // 4. NEW: Create FileVersion record for Zero-Knowledge History
-        FileVersion fileVersion = FileVersion.builder()
-                .file(savedFile)
-                .awsVersionId(awsVersionId)
-                .encryptedSize(sizeBytes)
-                .uploadedAt(LocalDateTime.now())
-                .build();
-        fileVersionRepository.save(fileVersion);
+            // 4. NEW: Create FileVersion record for Zero-Knowledge History
+            FileVersion fileVersion = FileVersion.builder()
+                    .file(savedFile)
+                    .awsVersionId(awsVersionId)
+                    .encryptedSize(sizeBytes)
+                    .uploadedAt(LocalDateTime.now())
+                    .build();
+            fileVersionRepository.save(fileVersion);
 
-        return savedFile;
+            return savedFile;
+        });
     }
     // --- CROSS-VAULT SHARING (SHARE TO GROUP) ---
     @Transactional
@@ -313,7 +317,6 @@ public class FileService {
         }
     }
 
-    @Transactional
     public void deleteSecureFile(Integer fileId, User currentUser) {
         FileEntity fileEntity = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found!"));
@@ -322,12 +325,15 @@ public class FileService {
             throw new RuntimeException("Unauthorized attempt to delete file!");
         }
 
-        // Bulletproof Cleanup: Explicitly delete all related records with Foreign Keys
-        fileVersionRepository.deleteByFile_Id(fileEntity.getId());
-        fileShareRepository.deleteByFile_Id(fileEntity.getId());
-
         String filePath = fileEntity.getFilePath();
-        fileRepository.delete(fileEntity);
+
+        transactionTemplate.execute(status -> {
+            // Bulletproof Cleanup: Explicitly delete all related records with Foreign Keys
+            fileVersionRepository.deleteByFile_Id(fileEntity.getId());
+            fileShareRepository.deleteByFile_Id(fileEntity.getId());
+            fileRepository.delete(fileEntity);
+            return null;
+        });
 
         // Deduplication safety check: Only delete from S3 if no other DB records point to this file
         long referencesLeft = fileRepository.countByFilePath(filePath);
@@ -337,7 +343,7 @@ public class FileService {
             } catch (Exception e) {
                 System.err.println("Failed to delete physical file from S3: " + e.getMessage());
                 e.printStackTrace(); // Print full stack trace for AWS blocking errors
-                throw new RuntimeException("Could not delete file from S3, rolling back database deletion: " + e.getMessage());
+                throw new RuntimeException("Could not delete file from S3: " + e.getMessage());
             }
         }
     }
@@ -411,7 +417,6 @@ public class FileService {
         fileRepository.save(file);
     }
 
-    @Transactional
     public void permanentlyDelete(Integer fileId, User owner) {
         FileEntity file = fileRepository.findById(fileId)
                 .orElseThrow(() -> new RuntimeException("File not found"));
@@ -420,12 +425,15 @@ public class FileService {
             throw new RuntimeException("Only the owner can delete this file.");
         }
 
-        // Bulletproof Cleanup: Delete dependencies first to avoid foreign key constraint violations
-        fileVersionRepository.deleteByFile_Id(file.getId());
-        fileShareRepository.deleteByFile_Id(file.getId());
-
         String filePath = file.getFilePath();
-        fileRepository.delete(file);
+
+        transactionTemplate.execute(status -> {
+            // Bulletproof Cleanup: Delete dependencies first to avoid foreign key constraint violations
+            fileVersionRepository.deleteByFile_Id(file.getId());
+            fileShareRepository.deleteByFile_Id(file.getId());
+            fileRepository.delete(file);
+            return null;
+        });
         
         // Deduplication safety check: Only delete from S3 if no other DB records point to this file
         long referencesLeft = fileRepository.countByFilePath(filePath);
@@ -435,21 +443,23 @@ public class FileService {
             } catch (Exception e) {
                 System.err.println("Failed to delete physical file from S3: " + e.getMessage());
                 e.printStackTrace(); // Print full stack trace for AWS blocking errors
-                throw new RuntimeException("Could not delete file from S3, rolling back database deletion: " + e.getMessage());
+                throw new RuntimeException("Could not delete file from S3: " + e.getMessage());
             }
         }
     }
 
-    @Transactional
     public void emptyTrash(User owner) {
         List<FileEntity> trashFiles = fileRepository.findAllByOwnerAndIsDeletedTrue(owner);
-        for (FileEntity file : trashFiles) {
-            // Bulletproof Cleanup: Delete dependencies first to avoid foreign key constraint violations
-            fileVersionRepository.deleteByFile_Id(file.getId());
-            fileShareRepository.deleteByFile_Id(file.getId());
-        }
         
-        fileRepository.deleteAll(trashFiles);
+        transactionTemplate.execute(status -> {
+            for (FileEntity file : trashFiles) {
+                // Bulletproof Cleanup: Delete dependencies first to avoid foreign key constraint violations
+                fileVersionRepository.deleteByFile_Id(file.getId());
+                fileShareRepository.deleteByFile_Id(file.getId());
+            }
+            fileRepository.deleteAll(trashFiles);
+            return null;
+        });
 
         for (FileEntity file : trashFiles) {
             long referencesLeft = fileRepository.countByFilePath(file.getFilePath());
@@ -459,7 +469,7 @@ public class FileService {
                 } catch (Exception e) {
                     System.err.println("Failed to delete physical file from S3: " + e.getMessage());
                     e.printStackTrace(); // Print full stack trace for AWS blocking errors
-                    throw new RuntimeException("Could not delete file from S3, rolling back database deletion: " + e.getMessage());
+                    throw new RuntimeException("Could not delete file from S3: " + e.getMessage());
                 }
             }
         }

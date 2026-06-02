@@ -68,7 +68,6 @@ public class AuthenticationService {
         return "Account created successfully. Please verify your email.";
     }
 
-    @Transactional
     public void authenticate(AuthenticationRequest request) {
         var user = repository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
@@ -136,7 +135,6 @@ public class AuthenticationService {
         }
     }
 
-    @Transactional
     public void generatePasswordResetOtp(String email) {
         var user = repository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("If that email exists, a recovery code has been sent."));

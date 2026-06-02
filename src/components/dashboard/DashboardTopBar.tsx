@@ -110,6 +110,8 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
         console.error("Failed to mark as read", err);
       }
     }
+    navigate("/chat");
+    setShowNotifications(false);
   };
 
   const handleMarkAllAsRead = async () => {
@@ -210,7 +212,7 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
                     <div
                       key={notification.id}
                       onClick={() => handleNotificationClick(notification)}
-                      className={`flex gap-3 p-4 transition-colors hover:bg-muted/50 cursor-pointer border-b border-border/50 last:border-0 ${!notification.isRead ? "bg-primary/5" : ""}`}
+                      className={`flex gap-3 p-4 transition-all duration-200 hover:bg-muted/80 hover:shadow-sm hover:-translate-y-0.5 cursor-pointer border-b border-border/50 last:border-0 ${!notification.isRead ? "bg-primary/5" : ""}`}
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
                         <Bell className="h-4 w-4 text-primary" />
