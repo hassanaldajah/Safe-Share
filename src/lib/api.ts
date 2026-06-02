@@ -19,19 +19,14 @@ export const authFetch = async (url: string, options: RequestInit = {}) => {
   const response = await fetch(url, { ...options, headers });
 
   // --- THE SAFETY NET: Catch Expired Tokens Globally ---
-  if (response.status === 401) {
+  if (response.status === 401 || response.status === 403) {
     // Clear the stale data and redirect to sign-in
     localStorage.removeItem("token");
     localStorage.removeItem("privateKey");
     localStorage.removeItem("publicKey");
     localStorage.removeItem("user");
     window.location.href = "/signin?expired=true";
-    throw new Error("Session expired. Please log in again.");
-  }
-
-  // 403 = Permission denied — don't log the user out, let the caller handle it
-  if (response.status === 403) {
-    throw new Error("Permission denied.");
+    throw new Error("Session expired or permission denied. Please log in again.");
   }
 
   return response;
