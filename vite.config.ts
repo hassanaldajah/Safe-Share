@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 5173,         // 👈 Changed from 8080 to 5173
     strictPort: true,   // 👈 Forces Vite to crash if 5173 is somehow taken
+    allowedHosts: ["safe-share.site", "www.safe-share.site"],
     watch: {
       usePolling: true,
       interval: 1000,
