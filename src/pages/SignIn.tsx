@@ -62,13 +62,18 @@ const SignIn = () => {
         }),
       });
 
+      const message = await response.text();
+      
       if (!response.ok) {
+        if (message.toLowerCase().includes("not verified")) {
+          localStorage.setItem("pendingVerificationEmail", formData.email);
+          navigate("/verify-otp");
+          return;
+        }
         throw new Error("Invalid email or password");
       }
 
-      const message = await response.text();
       console.log(message);
-
       setShowOTP(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");

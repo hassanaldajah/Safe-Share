@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
+import VerifyOtp from "./pages/VerifyOtp";
 import NotFound from "./pages/NotFound";
 import MainLayoutWithDash from "./pages/MainLayoutWithDash";
 import DashboardHome from "./components/dashboard/DashboardHome";
@@ -42,6 +43,7 @@ const App = () => (
                 <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/signin" element={<SignIn />} />
                 <Route path="/signup" element={<SignUp />} />
+                <Route path="/verify-otp" element={<VerifyOtp />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 
                 <Route element={<MainLayoutWithDash />}>

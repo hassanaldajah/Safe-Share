@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AuthLayout from "@/components/auth/AuthLayout";
-import OTPModal from "@/components/auth/OTPModal"; 
 import { buildRegistrationPayload } from "@/services/cryptoService";
 
 /**
@@ -37,7 +36,6 @@ const SignUp = () => {
   const [showPassword, setShowPassword]   = useState(false);
   const [showConfirm,  setShowConfirm]    = useState(false);
   const [isLoading,    setIsLoading]      = useState(false);
-  const [showOTP,      setShowOTP]        = useState(false); 
   const [error,        setError]          = useState<string | null>(null);
   
   const navigate = useNavigate();
@@ -90,8 +88,8 @@ const SignUp = () => {
         throw new Error(msg || "Registration failed");
       }
 
-      // Success! The backend created the user and sent the email. Let's show the modal.
-      setShowOTP(true);
+      localStorage.setItem('pendingVerificationEmail', formData.email);
+      navigate("/verify-otp");
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -100,39 +98,7 @@ const SignUp = () => {
     }
   };
 
-  // --- STEP 2: Verify OTP & Login ---
-  const handleOTPVerify = async (otp: string) => {
-    setIsLoading(true);
-    setError(null);
 
-    try {
-      const response = await fetch("/api/v1/auth/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          code: otp,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Invalid or expired code");
-      }
-
-      // Cast the response to our AuthResponse interface
-      // const data: AuthResponse = await response.json(); // No longer needed if we don't use the data
-
-      setShowOTP(false);
-      navigate("/signin", { 
-        state: { message: "Email verified successfully! Please log in to initialize your cryptographic vault." } 
-      });
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Verification failed");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <>
@@ -298,14 +264,6 @@ const SignUp = () => {
 
         </form>
       </AuthLayout>
-
-      <OTPModal
-        isOpen={showOTP}
-        onClose={() => setShowOTP(false)}
-        onVerify={handleOTPVerify}
-        email={formData.email}
-        purpose="signup" 
-      />
     </>
   );
 };
