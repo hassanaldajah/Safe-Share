@@ -44,7 +44,7 @@ const VerifyOtp = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Invalid or expired code");
+        throw new Error((await response.text()) || "Invalid or expired code");
       }
 
       localStorage.removeItem("pendingVerificationEmail");
@@ -69,7 +69,7 @@ const VerifyOtp = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to resend OTP");
+        throw new Error((await response.text()) || "Failed to resend OTP");
       }
 
       setResendCooldown(60);

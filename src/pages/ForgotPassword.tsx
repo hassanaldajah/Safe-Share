@@ -34,7 +34,7 @@ export default function ForgotPassword() {
         body: JSON.stringify({ email }),
       });
 
-      if (!response.ok) throw new Error("Failed to request password reset.");
+      if (!response.ok) throw new Error((await response.text()) || "Failed to request password reset.");
       
       setStep(2); // Move to OTP entry
     } catch (err: any) {

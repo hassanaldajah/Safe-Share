@@ -22,9 +22,22 @@ const OTPModal = ({ isOpen, onClose, onVerify, email, purpose = "signin" }: OTPM
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
+  const startCooldown = (seconds: number) => {
+    setResendCooldown(seconds);
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
   const handleResend = async () => {
     setIsResending(true);
-    
+
     try {
       // 1. Actually talk to the Spring Boot backend!
       const response = await fetch("/api/v1/auth/resend-otp", {
@@ -34,20 +47,18 @@ const OTPModal = ({ isOpen, onClose, onVerify, email, purpose = "signin" }: OTPM
       });
 
       if (!response.ok) {
+        // The server allows one code per 60 seconds; show its countdown instead of an error
+        const message = await response.text();
+        const wait = message.match(/wait (\d+) seconds/);
+        if (wait) {
+          startCooldown(Number(wait[1]));
+          return;
+        }
         throw new Error("Failed to resend OTP");
       }
 
       // 2. Start the 60-second cooldown timer
-      setResendCooldown(60);
-      const interval = setInterval(() => {
-        setResendCooldown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      startCooldown(60);
 
     } catch (error) {
       console.error(error);

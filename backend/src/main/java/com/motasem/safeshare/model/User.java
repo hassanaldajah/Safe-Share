@@ -42,6 +42,9 @@ public class User implements UserDetails {
     private String otpCode;
     @Column(name = "otp_expiry")
     private LocalDateTime otpExpiry;
+    /** Wrong guesses against the current OTP; the code is burned after too many */
+    @Column(name = "otp_failed_attempts", columnDefinition = "integer default 0")
+    private Integer otpFailedAttempts;
     @Column(columnDefinition = "TEXT")
     private String profilePictureUrl;
     @Column(name = "theme", length = 20)

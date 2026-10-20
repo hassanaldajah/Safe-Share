@@ -98,7 +98,7 @@ const SignIn = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Invalid or expired code");
+        throw new Error((await response.text()) || "Invalid or expired code");
       }
 
       // We cast the response to our updated interface
