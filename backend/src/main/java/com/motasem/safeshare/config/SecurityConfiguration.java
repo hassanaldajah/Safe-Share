@@ -22,16 +22,16 @@ public class SecurityConfiguration {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
+
+    /** Comma-separated list of browser origins allowed to call the API (CORS_ALLOWED_ORIGINS). */
+    @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:http://localhost:5173}")
+    private java.util.List<String> allowedOrigins;
 @Bean
 public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
     
-    configuration.setAllowedOrigins(Arrays.asList(
-        "http://localhost:5173",
-        "https://safe-share.site",
-        "https://www.safe-share.site"
-    ));
-    
+    configuration.setAllowedOrigins(allowedOrigins);
+
     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
     configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
     configuration.setAllowCredentials(true);

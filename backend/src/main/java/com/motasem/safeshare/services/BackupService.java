@@ -1,5 +1,6 @@
 package com.motasem.safeshare.services;
 
+import lombok.extern.slf4j.Slf4j;
 import com.motasem.safeshare.model.BackupJob;
 import com.motasem.safeshare.repository.BackupJobRepository;
 import com.motasem.safeshare.repository.FileRepository;
@@ -19,6 +20,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class BackupService {
 
@@ -87,7 +89,7 @@ public class BackupService {
             result.put("filesCount", totalFiles);
             return result;
         } catch (Exception e) {
-            e.printStackTrace(); // Log the exact error to the Docker logs
+            log.error("Backup job failed", e);
             job.setStatus("failed");
             job.setEndTime(LocalDateTime.now());
             backupJobRepository.save(job);

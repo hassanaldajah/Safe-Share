@@ -1,5 +1,6 @@
 package com.motasem.safeshare.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import com.motasem.safeshare.model.User;
 import com.motasem.safeshare.repository.UserRepository;
 import com.motasem.safeshare.services.BackupService;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/backup")
 @RequiredArgsConstructor
@@ -68,7 +70,7 @@ public class BackupController {
             Map<String, Object> backupResult = backupService.generateSystemBackup(currentUser);
             return ResponseEntity.ok(backupResult);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Backup request failed", e);
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }

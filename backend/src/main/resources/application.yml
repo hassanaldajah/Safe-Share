@@ -1,0 +1,61 @@
+# Every secret comes from an environment variable (see .env.example). Nothing secret is stored in this file.
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/safeshare_db}
+    username: ${DB_USERNAME:safeshare_user}
+    password: ${DB_PASSWORD:safeshare_password}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  servlet:
+    multipart:
+      # Spring's default of 1MB is too small for a file vault
+      max-file-size: ${MAX_UPLOAD_SIZE:50MB}
+      max-request-size: ${MAX_UPLOAD_SIZE:50MB}
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    protocol: smtps
+    properties:
+      mail:
+        smtps:
+          auth: true
+          ssl:
+            enable: true
+
+jwt:
+  # Required. Base64 key of at least 256 bits. Generate one with: openssl rand -base64 32
+  secret: ${JWT_SECRET}
+
+gemini:
+  api:
+    key: ${GCP_API_KEY:}
+    url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent}
+
+app:
+  cors:
+    # Browser origins allowed to call the API, comma separated
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  dev:
+    # Print OTP codes in the server log when no e-mail account is configured.
+    # For local demos only. Never enable this on a public server.
+    log-otp: ${DEV_LOG_OTP:false}
+
+storage:
+  type: ${STORAGE_TYPE:local}   # local = files on this machine (default), s3 = Amazon S3
+  local-dir: ${STORAGE_DIR:uploads}
+
+# Amazon S3 is optional: used when storage.type=s3, and for profile pictures and backups
+aws:
+  accessKeyId: ${AWS_ACCESS_KEY_ID:}
+  secretKey: ${AWS_SECRET_ACCESS_KEY:}
+  region: ${AWS_REGION:eu-west-2}
+  s3:
+    bucket:
+      files: ${AWS_S3_BUCKET_FILES:safeshare-files}

@@ -1,28 +1,36 @@
+# Secrets: never commit these. Copy .env.example to .env and fill it in.
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.properties
+
+# Build output
+node_modules
+dist
+dist-ssr
+backend/target/
+*.class
+
+# Encrypted files uploaded while running locally
+backend/uploads/
+uploads/
+
 # Logs
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
+# Editors and OS
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
+*.iml
+.cph/
 .DS_Store
 *.suo
-*.ntvs*
-*.njsproj
-*.sln
 *.sw?
-.idea/
-*.xml
-application.yml
-.env
+*.save
+*.local

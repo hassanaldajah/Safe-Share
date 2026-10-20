@@ -1,5 +1,6 @@
 package com.motasem.safeshare.services;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -11,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class AiService {
 
@@ -71,7 +73,7 @@ public class AiService {
             return (String) parts.get(0).get("text");
 
         } catch (Exception e) {
-            System.err.println("Gemini API Error: " + e.getMessage());
+            log.warn("Gemini API error: {}", e.getMessage());
             return "I'm sorry, I am having trouble connecting to my AI brain right now. Please try again later!";
         }
     }
