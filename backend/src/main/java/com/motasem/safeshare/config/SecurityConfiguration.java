@@ -48,7 +48,6 @@ public CorsConfigurationSource corsConfigurationSource() {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()// Your public endpoints
-                        .requestMatchers("/api/diagnostics/**").permitAll()
                         .requestMatchers("/api/payments/webhook").permitAll()
                         .requestMatchers("/api/v1/sse/**").permitAll()
                         .requestMatchers("/api/v1/folders/**").authenticated() // Explicitly allow folders for authenticated users

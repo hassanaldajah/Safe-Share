@@ -15,7 +15,7 @@ import java.util.UUID;
 
 /**
  * Keeps encrypted blobs on the server's disk. This is the default, so the project runs without any cloud account.
- * Only one version of each file is kept (Amazon S3 versioning is not emulated).
+ * Only one version of each file is kept.
  */
 @Service
 @ConditionalOnProperty(name = "storage.type", havingValue = "local", matchIfMissing = true)

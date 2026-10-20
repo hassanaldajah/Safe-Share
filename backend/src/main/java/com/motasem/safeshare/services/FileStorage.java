@@ -7,7 +7,7 @@ import java.io.InputStream;
 
 /**
  * Where the (already encrypted) file blobs are kept. The server never sees plaintext.
- * Choose the implementation with {@code storage.type}: {@code local} (default) or {@code s3}.
+ * Choose the implementation with {@code storage.type}: {@code local} (default) or {@code database}.
  */
 public interface FileStorage {
 

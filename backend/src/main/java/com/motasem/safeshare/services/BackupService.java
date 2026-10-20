@@ -5,13 +5,8 @@ import com.motasem.safeshare.model.BackupJob;
 import com.motasem.safeshare.repository.BackupJobRepository;
 import com.motasem.safeshare.repository.FileRepository;
 import com.motasem.safeshare.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -27,19 +22,13 @@ public class BackupService {
     private final UserRepository userRepository;
     private final FileRepository fileRepository;
     private final BackupJobRepository backupJobRepository;
-    private final S3Client s3Client;
-    private final String bucketName;
 
     public BackupService(UserRepository userRepository,
                          FileRepository fileRepository,
-                         BackupJobRepository backupJobRepository,
-                         S3Client s3Client,
-                         @Value("${aws.s3.bucket.files:safeshare-files}") String bucketName) {
+                         BackupJobRepository backupJobRepository) {
         this.userRepository = userRepository;
         this.fileRepository = fileRepository;
         this.backupJobRepository = backupJobRepository;
-        this.s3Client = s3Client;
-        this.bucketName = bucketName;
     }
 
     public Map<String, Object> generateSystemBackup(com.motasem.safeshare.model.User currentUser) {
@@ -60,22 +49,6 @@ public class BackupService {
             var myFiles = fileRepository.findAllByOwnerId(currentUser.getId());
             long totalFiles = myFiles.size();
             long totalSizeBytes = myFiles.stream().mapToLong(f -> f.getSizeBytes() != null ? f.getSizeBytes() : 0L).sum();
-            
-            String jsonContent = String.format(
-                "{\n  \"timestamp\": \"%s\",\n  \"ownerEmail\": \"%s\",\n  \"totalFiles\": %d\n}",
-                timestamp, currentUser.getEmail(), totalFiles
-            );
-            
-            byte[] bytes = jsonContent.getBytes(StandardCharsets.UTF_8);
-            String s3Key = "backups/system-backup-" + timestamp.replace(":", "-") + ".json";
-            
-            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(s3Key)
-                    .contentType("application/json")
-                    .build();
-                    
-            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(bytes));
             
             job.setEndTime(LocalDateTime.now());
             job.setStatus("completed");

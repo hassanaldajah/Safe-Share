@@ -337,14 +337,14 @@ public class FileService {
             return null;
         });
 
-        // Deduplication safety check: Only delete from S3 if no other DB records point to this file
+        // Deduplication safety check: Only delete the stored file if no other DB records point to this file
         long referencesLeft = fileRepository.countByFilePath(filePath);
         if (referencesLeft == 0) {
             try {
                 fileStorage.deleteFile(filePath);
             } catch (Exception e) {
                 log.warn("Failed to delete the stored file: {}", e.getMessage());
-                throw new RuntimeException("Could not delete file from S3: " + e.getMessage());
+                throw new RuntimeException("Could not delete the stored file: " + e.getMessage());
             }
         }
     }
@@ -436,14 +436,14 @@ public class FileService {
             return null;
         });
         
-        // Deduplication safety check: Only delete from S3 if no other DB records point to this file
+        // Deduplication safety check: Only delete the stored file if no other DB records point to this file
         long referencesLeft = fileRepository.countByFilePath(filePath);
         if (referencesLeft == 0) {
             try {
                 fileStorage.deleteFile(filePath);
             } catch (Exception e) {
                 log.warn("Failed to delete the stored file: {}", e.getMessage());
-                throw new RuntimeException("Could not delete file from S3: " + e.getMessage());
+                throw new RuntimeException("Could not delete the stored file: " + e.getMessage());
             }
         }
     }
@@ -468,7 +468,7 @@ public class FileService {
                     fileStorage.deleteFile(file.getFilePath());
                 } catch (Exception e) {
                     log.warn("Failed to delete the stored file: {}", e.getMessage());
-                    throw new RuntimeException("Could not delete file from S3: " + e.getMessage());
+                    throw new RuntimeException("Could not delete the stored file: " + e.getMessage());
                 }
             }
         }
@@ -536,7 +536,7 @@ public class FileService {
             throw new RuntimeException("This file is not a backup.");
         }
 
-        // True Snapshot: Create a new active file record pointing to the same AWS S3 object
+        // True Snapshot: Create a new active file record pointing to the same stored file
         FileEntity restoredFile = FileEntity.builder()
                 .originalName(backupRecord.getOriginalName())
                 .fileType(backupRecord.getFileType())

@@ -136,6 +136,31 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
     navigate("/");
   };
 
+  // Shrink the photo in the browser (256 px, JPEG): it is stored in the database, so it must stay small
+  const shrinkImage = (file: File, size = 256): Promise<Blob> =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const scale = Math.min(1, size / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error("Could not read the image"))),
+          "image/jpeg",
+          0.85,
+        );
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Please choose an image file"));
+      };
+      img.src = url;
+    });
+
   const handleProfilePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -143,7 +168,7 @@ export function DashboardTopBar({ sidebarCollapsed, onHamburgerClick }: TopBarPr
     setIsUploading(true);
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", await shrinkImage(file), "profile.jpg");
 
       const res = await authFetch("/api/v1/users/profile-picture", {
         method: "POST",

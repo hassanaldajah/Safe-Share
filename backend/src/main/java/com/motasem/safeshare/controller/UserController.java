@@ -16,7 +16,7 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final com.motasem.safeshare.services.S3Service s3Service;
+    private final com.motasem.safeshare.services.ProfilePictureService profilePictureService;
 
     @GetMapping("/search")
     public ResponseEntity<UserSearchResponse> searchUserByTag(@RequestParam String tag) {
@@ -123,10 +123,10 @@ public class UserController {
             @AuthenticationPrincipal User currentUser) {
         
         try {
-            // 1. Upload to S3
-            String publicUrl = s3Service.uploadProfilePicture(file);
+            // 1. Validate the image and turn it into a small data URL
+            String publicUrl = profilePictureService.toDataUrl(file);
 
-            // 2. Save URL to database
+            // 2. Save it to the database
             User userToUpdate = userRepository.findById(currentUser.getId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
             

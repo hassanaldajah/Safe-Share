@@ -5,6 +5,10 @@ spring:
     username: ${DB_USERNAME:safeshare_user}
     password: ${DB_PASSWORD:safeshare_password}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+      # Serverless databases (Neon) close idle connections, so do not keep them for long
+      max-lifetime: 240000
   jpa:
     hibernate:
       ddl-auto: update
@@ -14,8 +18,8 @@ spring:
   servlet:
     multipart:
       # Spring's default of 1MB is too small for a file vault
-      max-file-size: ${MAX_UPLOAD_SIZE:50MB}
-      max-request-size: ${MAX_UPLOAD_SIZE:50MB}
+      max-file-size: ${MAX_UPLOAD_SIZE:25MB}
+      max-request-size: ${MAX_UPLOAD_SIZE:25MB}
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:465}
@@ -50,14 +54,8 @@ app:
     log-otp: ${DEV_LOG_OTP:false}
 
 storage:
-  type: ${STORAGE_TYPE:local}   # local = files on this machine (default), s3 = Amazon S3
+  # local    = files on this machine's disk (default; needs a permanent disk)
+  # database = files inside PostgreSQL (for hosting without a permanent disk, e.g. with Neon)
+  type: ${STORAGE_TYPE:local}
   local-dir: ${STORAGE_DIR:uploads}
 
-# Amazon S3 is optional: used when storage.type=s3, and for profile pictures and backups
-aws:
-  accessKeyId: ${AWS_ACCESS_KEY_ID:}
-  secretKey: ${AWS_SECRET_ACCESS_KEY:}
-  region: ${AWS_REGION:eu-west-2}
-  s3:
-    bucket:
-      files: ${AWS_S3_BUCKET_FILES:safeshare-files}

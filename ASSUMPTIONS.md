@@ -32,10 +32,10 @@ This document outlines the key assumptions, constraints, and design decisions ma
 
 | # | Assumption | Rationale |
 |---|-----------|-----------|
-| 3.1 | **AWS S3 for file storage** — Encrypted file blobs are stored in S3, while metadata (names, keys, paths) is stored in PostgreSQL. | Separates scalable blob storage from relational metadata. |
-| 3.2 | **File versioning via S3** — Each file version is tracked with an `awsVersionId` in the `file_versions` table, relying on S3 versioning. | Leverages S3's built-in versioning rather than duplicating blobs. |
-| 3.3 | **100 MB max upload size** — Spring Boot is configured with `max-file-size: 100MB` and `max-request-size: 100MB`. | Balances usability with server resource constraints. Can be adjusted per deployment. |
-| 3.4 | **Local fallback storage** — A `backend/uploads/` directory exists for local file storage during development when S3 is not configured. | Allows offline development without AWS credentials. |
+| 3.1 | **Pluggable file storage** — Encrypted file blobs go through a `FileStorage` interface: local disk (default) or the PostgreSQL database (`STORAGE_TYPE=database`, for hosting without a permanent disk). Metadata (names, keys, paths) is always in PostgreSQL. | No cloud account is needed, and the storage can be swapped without touching the business logic. |
+| 3.2 | **One stored version per file** — `file_versions` keeps a version id (the column is still named `awsVersionId` for compatibility), but local and database storage keep a single blob per file. | Keeps storage simple; real versioning would need a storage backend that supports it. |
+| 3.3 | **25 MB max upload size by default** — Spring Boot is configured with `max-file-size` and `max-request-size` from `MAX_UPLOAD_SIZE` (default 25MB). Keep it low with database storage, because each file is read into memory. | Balances usability with server resource constraints. Can be adjusted per deployment. |
+| 3.4 | **Local disk storage** — With `STORAGE_TYPE=local` (default) files are written to `uploads/` (a Docker volume). | Works offline, with no external accounts. |
 | 3.5 | **Download/view limits are optional** — `max_downloads` and `max_views` on files and shares are nullable. When `null`, access is unlimited. | Provides flexible sharing — not all files need access restrictions. |
 
 ---
@@ -68,7 +68,7 @@ This document outlines the key assumptions, constraints, and design decisions ma
 |---|-----------|-----------|
 | 6.1 | **Docker Compose for local orchestration** — `docker-compose.yml` defines the `db` (PostgreSQL), `api` (Spring Boot) and `web` (nginx serving the React build) services. For frontend development use `npm run dev` instead of the `web` service. | Keeps the local dev experience simple while containerising the critical services. |
 | 6.2 | **CORS restricted to known origins** — Only the origins listed in `CORS_ALLOWED_ORIGINS` are allowed (default: `http://localhost:5173`). | Prevents unauthorised cross-origin requests in production. |
-| 6.3 | **No HTTPS in local development** — Local dev uses plain HTTP. TLS termination is assumed to be handled by a reverse proxy (e.g., Nginx, AWS ALB) in production. | Standard practice; avoids self-signed certificate complexity during development. |
+| 6.3 | **No HTTPS in local development** — Local dev uses plain HTTP. TLS termination is assumed to be handled by a reverse proxy (e.g., Nginx or the hosting provider's load balancer) in production. | Standard practice; avoids self-signed certificate complexity during development. |
 | 6.4 | **Sensitive config is git-ignored** — `.env` is in `.gitignore`; `application.yml` is tracked but contains only `${ENV_VARIABLE}` placeholders. Developers copy `.env.example` to `.env` and fill it in. | Prevents accidental credential leaks to version control. |
 | 6.5 | **Gmail SMTP for email** — OTP delivery and notifications use Gmail SMTP with an app-specific password. | Quick to set up for development/demo. A dedicated transactional email service (SendGrid, SES) should be used in production. |
 
@@ -82,6 +82,6 @@ This document outlines the key assumptions, constraints, and design decisions ma
 | **Search** | Basic tag-based user search | Full-text search with Elasticsearch for files and content |
 | **Virus scanning** | Status field tracked but scan not fully integrated | Integrate ClamAV or a cloud-based scanning API |
 | **Payment/Billing** | Stripe webhook endpoint exists | Complete Stripe integration with subscription plans |
-| **File compression** | Boolean flag exists on files | Implement server-side compression (gzip/brotli) before S3 upload |
+| **File compression** | Boolean flag exists on files | Implement server-side compression (gzip/brotli) before upload |
 | **Monitoring** | None | Add Spring Boot Actuator, Prometheus, and Grafana |
 | **Testing** | Basic Spring Boot tests | Increase coverage with integration tests and Cypress E2E |

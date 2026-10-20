@@ -224,7 +224,7 @@ erDiagram
 | `virus_scan_status` | VARCHAR | — | Scan result: `clean` / `infected` |
 | `encrypted_file_key` | TEXT | NOT NULL | AES-256 key encrypted with owner's RSA public key |
 | `iv` | VARCHAR | NOT NULL | AES-GCM initialisation vector |
-| `file_path` | VARCHAR | NOT NULL | Storage path (S3 key or local path) |
+| `file_path` | VARCHAR | NOT NULL | Storage key (file name on disk, or the key in `stored_blob`) |
 | `group_id` | INTEGER | FK → `groups.id`, NULLABLE | Group this file belongs to (null = private) |
 | `folder_id` | INTEGER | FK → `secure_folders.id`, NULLABLE | Parent folder |
 | `user_id` | INTEGER | FK → `_user.id`, NOT NULL | File owner |
@@ -261,7 +261,7 @@ erDiagram
 |--------|------|-------------|-------------|
 | `id` | UUID | PK, AUTO | Version record ID |
 | `file_id` | INTEGER | FK → `secure_files.id`, NOT NULL | Parent file |
-| `aws_version_id` | VARCHAR | NOT NULL | S3 version identifier |
+| `aws_version_id` | VARCHAR | NOT NULL | Version identifier (name kept for compatibility; random id for local and database storage) |
 | `encrypted_size` | BIGINT | — | Encrypted blob size |
 | `uploaded_at` | TIMESTAMP | NOT NULL, AUTO | Version upload time |
 
@@ -400,3 +400,10 @@ Use this table directly when designing your ERD:
 5. **FileShare is a junction/association table** — it resolves the M:N between FileEntity and User, adding `encryptedKey`, `maxViews`, `maxDownloads`, and `canReshare` as extra attributes.
 6. **FileTransaction uses string references** — `senderTag` and `receiverTag` reference User's `searchTag` by value (not FK), and `fileId` references the file by string value. Only `owner_id` is a true FK.
 7. **Cascade rules**: FileEntity cascades deletes to FileVersion and FileShare (`orphanRemoval = true`). GroupEntity cascades deletes to GroupMember.
+
+### `stored_blob` (only with `STORAGE_TYPE=database`)
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `storage_key` | VARCHAR(255) | PK | The key saved in `files.file_path` |
+| `data` | BYTEA | NOT NULL | The encrypted file |
+| `created_at` | TIMESTAMP | NOT NULL | When it was stored |
