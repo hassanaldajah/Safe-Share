@@ -3,6 +3,7 @@ package com.motasem.safeshare.controller;
 import com.motasem.safeshare.model.User;
 import com.motasem.safeshare.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,12 +18,16 @@ public class PaymentController {
 
     private final UserRepository userRepository;
 
+    /** Where the browser is sent after the (mock) checkout. Set FRONTEND_URL when the app is not on localhost. */
+    @Value("${app.frontend-url:http://localhost:5173}")
+    private String frontendUrl;
+
     @PostMapping("/create-checkout-session")
     public ResponseEntity<Map<String, String>> createCheckoutSession(@AuthenticationPrincipal User user) {
         try {
             // Mock checkout session creation
             // Return a fake checkout URL that directly leads to the frontend success page
-            return ResponseEntity.ok(Map.of("url", "http://localhost:5173/payment-success"));
+            return ResponseEntity.ok(Map.of("url", frontendUrl + "/payment-success"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));

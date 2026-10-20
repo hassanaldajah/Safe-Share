@@ -33,6 +33,7 @@ services:
       DEV_LOG_OTP: ${DEV_LOG_OTP:-false}
       GCP_API_KEY: ${GCP_API_KEY:-}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       STORAGE_TYPE: ${STORAGE_TYPE:-local}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}

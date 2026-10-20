@@ -66,10 +66,10 @@ This document outlines the key assumptions, constraints, and design decisions ma
 
 | # | Assumption | Rationale |
 |---|-----------|-----------|
-| 6.1 | **Docker Compose for local orchestration** — `docker-compose.yml` defines the `db` (PostgreSQL) and `api` (Spring Boot) services. The frontend is run separately via `npm run dev`. | Keeps the local dev experience simple while containerising the critical services. |
-| 6.2 | **CORS restricted to known origins** — Only `localhost:5173`, `safe-share.site`, and `www.safe-share.site` are allowed. | Prevents unauthorised cross-origin requests in production. |
+| 6.1 | **Docker Compose for local orchestration** — `docker-compose.yml` defines the `db` (PostgreSQL), `api` (Spring Boot) and `web` (nginx serving the React build) services. For frontend development use `npm run dev` instead of the `web` service. | Keeps the local dev experience simple while containerising the critical services. |
+| 6.2 | **CORS restricted to known origins** — Only the origins listed in `CORS_ALLOWED_ORIGINS` are allowed (default: `http://localhost:5173`). | Prevents unauthorised cross-origin requests in production. |
 | 6.3 | **No HTTPS in local development** — Local dev uses plain HTTP. TLS termination is assumed to be handled by a reverse proxy (e.g., Nginx, AWS ALB) in production. | Standard practice; avoids self-signed certificate complexity during development. |
-| 6.4 | **Sensitive config is git-ignored** — `application.yml` and `.env` are in `.gitignore`. Developers must create these files locally. | Prevents accidental credential leaks to version control. |
+| 6.4 | **Sensitive config is git-ignored** — `.env` is in `.gitignore`; `application.yml` is tracked but contains only `${ENV_VARIABLE}` placeholders. Developers copy `.env.example` to `.env` and fill it in. | Prevents accidental credential leaks to version control. |
 | 6.5 | **Gmail SMTP for email** — OTP delivery and notifications use Gmail SMTP with an app-specific password. | Quick to set up for development/demo. A dedicated transactional email service (SendGrid, SES) should be used in production. |
 
 ---
