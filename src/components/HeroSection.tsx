@@ -1,8 +1,12 @@
+import { lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Lock, Shield, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+
+// three.js is loaded on demand so it does not slow down the first paint of the page
+const HeroScene3D = lazy(() => import("./HeroScene3D"));
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -23,6 +27,11 @@ const HeroSection = () => {
     <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
       {/* Background gradient */}
       <div className="absolute inset-0 gradient-radial" />
+
+      {/* 3D scene (three.js) */}
+      <Suspense fallback={null}>
+        <HeroScene3D />
+      </Suspense>
 
       {/* Animated background elements */}
       <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse-glow" />
