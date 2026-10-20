@@ -1,26 +1,8 @@
-# Build directories
-build/
-out/
-
-# IDE files
+target/
+uploads/
+.git/
 .idea/
 .vscode/
 *.iml
-*.iws
-
-# Git
-.git/
-.gitignore
-
-# Maven wrapper
-.mvn/
-mvnw
-mvnw.cmd
-
-# Other ignores
 *.log
-*.class
-uploads/
-Dockerfile
-docker-compose.yml
 HELP.md

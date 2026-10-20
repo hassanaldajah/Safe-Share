@@ -1,37 +1,62 @@
-version: '3.8'
-
+# One command starts everything:  docker compose up --build
+# First copy .env.example to .env and set JWT_SECRET (see README).
 services:
   db:
     image: postgres:15-alpine
     container_name: safeshare_db
     environment:
-      POSTGRES_USER: safeshare_user
-      POSTGRES_PASSWORD: safeshare_password
+      POSTGRES_USER: ${DB_USERNAME:-safeshare_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-safeshare_password}
       POSTGRES_DB: safeshare_db
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"   # reachable from this computer only
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d safeshare_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
     restart: unless-stopped
 
   api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    build: ./backend
     container_name: safeshare_api
-    ports:
-      - "8080:8080"
-    env_file:
-      - .env
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/safeshare_db
-      - SPRING_DATASOURCE_USERNAME=safeshare_user
-      - SPRING_DATASOURCE_PASSWORD=safeshare_password
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - GCP_API_KEY=${GCP_API_KEY}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/safeshare_db
+      DB_USERNAME: ${DB_USERNAME:-safeshare_user}
+      DB_PASSWORD: ${DB_PASSWORD:-safeshare_password}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (copy .env.example to .env)}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      DEV_LOG_OTP: ${DEV_LOG_OTP:-false}
+      GCP_API_KEY: ${GCP_API_KEY:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_REGION: ${AWS_REGION:-eu-west-2}
+      AWS_S3_BUCKET_FILES: ${AWS_S3_BUCKET_FILES:-safeshare-files}
+    ports:
+      - "127.0.0.1:8080:8080"   # direct API access from this computer only
+    volumes:
+      - uploads_data:/app/uploads
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    container_name: safeshare_web
+    depends_on:
+      - api
+    ports:
+      - "127.0.0.1:5173:80"     # the app: http://localhost:5173
     restart: unless-stopped
 
 volumes:
   postgres_data:
+  uploads_data:
