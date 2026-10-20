@@ -43,6 +43,11 @@ gemini:
     url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent}
 
 app:
+  mail:
+    # Sends OTP e-mails through a Google Apps Script that uses a Gmail account (docs/gmail-otp-mailer).
+    # Free, and works on hosts that block SMTP. When empty, SMTP (spring.mail.*) is used.
+    webhook-url: ${MAIL_WEBHOOK_URL:}
+    webhook-secret: ${MAIL_WEBHOOK_SECRET:}
   # Public address of the web app (used for the redirect after the mock checkout)
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
   cors:

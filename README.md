@@ -56,11 +56,14 @@ The first build takes a few minutes. Stop with `Ctrl+C`; your data is kept in Do
 
 ### Verification codes (OTP)
 
-Sign-up and sign-in send a 6-digit code by e-mail. Two ways to get it working:
+Sign-up and sign-in send a 6-digit code by e-mail. Pick one way:
 
-1. **Real e-mail**: set `MAIL_USERNAME` and `MAIL_PASSWORD` in `.env` (a Gmail address with an
-   [App Password](https://myaccount.google.com/apppasswords)).
-2. **Local demo without e-mail**: set `DEV_LOG_OTP=true` in `.env`. Codes are then printed in the API log:
+1. **Gmail through a Google Apps Script (free, recommended).** Works everywhere, including hosts that block SMTP.
+   Five-minute setup in [`docs/gmail-otp-mailer`](docs/gmail-otp-mailer/README.md), then set `MAIL_WEBHOOK_URL`
+   and `MAIL_WEBHOOK_SECRET` in `.env`.
+2. **Plain SMTP**: set `MAIL_USERNAME` and `MAIL_PASSWORD` in `.env` (a Gmail address with an
+   [App Password](https://myaccount.google.com/apppasswords)). Not available on hosts that block SMTP.
+3. **Local demo without e-mail**: set `DEV_LOG_OTP=true` in `.env`. Codes are then printed in the API log:
    `docker compose logs -f api`. **Never use this on a public server.**
 
 ---
@@ -72,7 +75,8 @@ Everything is set with environment variables (in `.env`). No secrets live in the
 | Variable | Required | Description |
 |---|---|---|
 | `JWT_SECRET` | ✅ | Signs login tokens. Base64, at least 256 bits. |
-| `MAIL_USERNAME`, `MAIL_PASSWORD` | for real e-mail | Gmail address and App Password |
+| `MAIL_WEBHOOK_URL`, `MAIL_WEBHOOK_SECRET` | for real e-mail | Sends the OTP through a Google Apps Script that uses Gmail (free, works on any host) |
+| `MAIL_USERNAME`, `MAIL_PASSWORD` | alternative | Plain SMTP with a Gmail address and App Password |
 | `DEV_LOG_OTP` | no | `true` prints OTPs in the log when e-mail is not configured (demos only) |
 | `GCP_API_KEY` | no | Gemini key for the AI assistant |
 | `DB_USERNAME`, `DB_PASSWORD` | no | Database login (defaults are for local use) |
@@ -138,7 +142,7 @@ STORAGE_TYPE=database               # hosted servers usually have no permanent d
 MAX_UPLOAD_SIZE=10MB
 CORS_ALLOWED_ORIGINS=https://YOUR-APP.vercel.app
 FRONTEND_URL=https://YOUR-APP.vercel.app
-MAIL_USERNAME / MAIL_PASSWORD       # see the e-mail note below
+MAIL_WEBHOOK_URL / MAIL_WEBHOOK_SECRET   # Gmail script, see docs/gmail-otp-mailer
 ```
 
 **3. Vercel.** Import the repository (the Vite preset is detected) and add one environment variable:
@@ -152,8 +156,9 @@ The browser then talks to the backend directly. This is deliberate: Vercel cuts 
 
 Things to know:
 
-- **E-mail.** Render's free web services block outbound SMTP (ports 25, 465 and 587), so Gmail SMTP does not work there.
-  Use a host that allows SMTP, a paid instance, or switch the OTP e-mail to an HTTP e-mail API.
+- **E-mail.** Render's free web services block outbound SMTP (ports 25, 465 and 587), so plain Gmail SMTP does not
+  work there. The Gmail script ([`docs/gmail-otp-mailer`](docs/gmail-otp-mailer/README.md)) uses HTTPS and works.
+  E-mail services such as Resend or Brevo need a domain you own (a `*.vercel.app` address will not do).
 - **Free tiers sleep.** The first request after a quiet period can take 30 to 60 seconds.
 - **Database storage** keeps every uploaded file in Neon. The free plan has 0.5 GB, so it suits demos.
 - Use HTTPS everywhere, and never set `DEV_LOG_OTP=true` on a public server.

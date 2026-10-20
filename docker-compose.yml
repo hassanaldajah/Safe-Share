@@ -30,6 +30,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (copy .env.example to .env)}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_WEBHOOK_URL: ${MAIL_WEBHOOK_URL:-}
+      MAIL_WEBHOOK_SECRET: ${MAIL_WEBHOOK_SECRET:-}
       DEV_LOG_OTP: ${DEV_LOG_OTP:-false}
       GCP_API_KEY: ${GCP_API_KEY:-}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
