@@ -6,6 +6,8 @@ SafeShare is a privacy-first file sharing and collaboration platform built with 
 
 > A graduation project. See [Credits](#-credits).
 
+**Live demo:** https://safe-share-gold.vercel.app (free hosting: the first request after a quiet period can take a few minutes while the backend wakes up).
+
 ---
 
 ## 🏗️ Architecture
