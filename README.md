@@ -15,7 +15,7 @@ SafeShare is a privacy-first file sharing and collaboration platform built with 
 | **Frontend** | React 19 (TypeScript), Vite, Tailwind CSS, shadcn/ui  |
 | **Backend**  | Spring Boot 4 (Java 17), Spring Security, Spring Data JPA |
 | **Database** | PostgreSQL 15                                         |
-| **Storage**  | Encrypted blobs on local disk (default) or Amazon S3  |
+| **Storage**  | Encrypted blobs on local disk (default) or in PostgreSQL |
 | **Auth**     | JWT + e-mail OTP verification                         |
 | **AI**       | Google Gemini 2.5 Flash (in-app assistant, optional)  |
 | **DevOps**   | Docker & Docker Compose                               |
@@ -31,7 +31,7 @@ SafeShare is a privacy-first file sharing and collaboration platform built with 
 - 🗂️ **Groups** with invite codes and role-based membership
 - 💬 **Live chat and notifications** (Server-Sent Events)
 - 🤖 **AI assistant** (Gemini)
-- 💾 **Backups** (needs Amazon S3)
+- 💾 **Backup history** and a password-protected backup of your private key
 - 🌙 Light, dark and system themes, responsive layout
 
 ---
@@ -76,11 +76,13 @@ Everything is set with environment variables (in `.env`). No secrets live in the
 | `DEV_LOG_OTP` | no | `true` prints OTPs in the log when e-mail is not configured (demos only) |
 | `GCP_API_KEY` | no | Gemini key for the AI assistant |
 | `DB_USERNAME`, `DB_PASSWORD` | no | Database login (defaults are for local use) |
-| `STORAGE_TYPE` | no | `local` (default) or `s3` |
+| `STORAGE_TYPE` | no | `local` (files on disk, default) or `database` (files inside PostgreSQL, for hosting without a permanent disk) |
+| `MAX_UPLOAD_SIZE` | no | Largest upload, default `25MB` (keep it small with `database` storage) |
+| `DB_URL` | hosted DB | JDBC address, e.g. `jdbc:postgresql://HOST/DB?sslmode=require` (see Hosting) |
+| `VITE_API_URL` | web on another host | Address of the backend, set where the **web app** is built (e.g. on Vercel) |
 | `CORS_ALLOWED_ORIGINS` | no | Allowed browser origins, comma separated |
-| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_S3_BUCKET_FILES` | for S3 | Only for `STORAGE_TYPE=s3`, profile pictures and backups |
 
-Without AWS keys the app works normally. Only profile pictures and backups need S3.
+No cloud account is needed to run SafeShare.
 
 ---
 
@@ -110,6 +112,54 @@ Tests: `cd backend && ./mvnw test`
 
 ---
 
+## ☁️ Hosting: Vercel (web) + Neon (database) + a backend host
+
+| Part | Where | Notes |
+|---|---|---|
+| Web app | **Vercel** | Static React build. It cannot run the Java backend. |
+| Database | **Neon** (free PostgreSQL) | Serverless, closes idle connections (handled by the pool settings). |
+| Backend (Spring Boot) | Any host that runs a Docker image: Render, Railway, Koyeb, Fly.io ... | Use `backend/Dockerfile`. |
+
+**1. Neon.** Create a project and copy the connection string, which looks like
+`postgresql://USER:PASSWORD@HOST/DB?sslmode=require`. Split it into the backend variables:
+
+```
+DB_URL=jdbc:postgresql://HOST/DB?sslmode=require
+DB_USERNAME=USER
+DB_PASSWORD=PASSWORD
+```
+
+**2. Backend host.** Deploy the `backend/` folder with its Dockerfile and set:
+
+```
+JWT_SECRET=...                      # openssl rand -base64 32
+DB_URL / DB_USERNAME / DB_PASSWORD  # from Neon
+STORAGE_TYPE=database               # hosted servers usually have no permanent disk
+MAX_UPLOAD_SIZE=10MB
+CORS_ALLOWED_ORIGINS=https://YOUR-APP.vercel.app
+FRONTEND_URL=https://YOUR-APP.vercel.app
+MAIL_USERNAME / MAIL_PASSWORD       # see the e-mail note below
+```
+
+**3. Vercel.** Import the repository (the Vite preset is detected) and add one environment variable:
+
+```
+VITE_API_URL=https://YOUR-BACKEND-HOST
+```
+
+The browser then talks to the backend directly. This is deliberate: Vercel cuts proxied requests after
+30 seconds, which would break the live notifications and chat. `vercel.json` only adds the single-page-app fallback.
+
+Things to know:
+
+- **E-mail.** Render's free web services block outbound SMTP (ports 25, 465 and 587), so Gmail SMTP does not work there.
+  Use a host that allows SMTP, a paid instance, or switch the OTP e-mail to an HTTP e-mail API.
+- **Free tiers sleep.** The first request after a quiet period can take 30 to 60 seconds.
+- **Database storage** keeps every uploaded file in Neon. The free plan has 0.5 GB, so it suits demos.
+- Use HTTPS everywhere, and never set `DEV_LOG_OTP=true` on a public server.
+
+---
+
 ## 🔐 Security notes
 
 What is in place:
@@ -127,7 +177,7 @@ Known limitations (deliberate trade-offs, or future work):
 - The private key is kept in the browser's `localStorage` so users do not retype their password constantly. A cross-site-scripting bug would expose it.
 - The live-updates stream (`/api/v1/sse/subscribe`) takes the token in the URL because the browser `EventSource` cannot send headers.
 - Sign-up tells the user when an e-mail is already registered.
-- Only one version of a file is kept when using local storage.
+- Only one version of each file is kept.
 
 If you find a security problem, please open a private security advisory instead of a public issue.
 
@@ -139,12 +189,12 @@ If you find a security problem, please open a private security advisory instead 
 SafeShare/
 ├── backend/                     # Spring Boot API
 │   └── src/main/java/com/motasem/safeshare/
-│       ├── config/              # Security, S3
+│       ├── config/              # Security
 │       ├── controller/          # REST controllers
 │       ├── model/               # JPA entities
 │       ├── repository/          # Spring Data repositories
 │       ├── security/            # JWT filter and service, rate limit
-│       └── services/            # Business logic, file storage (local / S3)
+│       └── services/            # Business logic, file storage (local / database)
 ├── src/                         # React frontend
 ├── docker/                      # nginx config and frontend Dockerfile
 ├── docker-compose.yml           # database + API + web
