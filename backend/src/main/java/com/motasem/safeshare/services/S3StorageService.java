@@ -1,10 +1,10 @@
 package com.motasem.safeshare.services;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import jakarta.annotation.PostConstruct;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -17,7 +17,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 @Service
-public class S3StorageService {
+@ConditionalOnProperty(name = "storage.type", havingValue = "s3")
+public class S3StorageService implements FileStorage {
 
     private final S3Client s3Client;
     private final String bucketName;
@@ -33,11 +34,8 @@ public class S3StorageService {
         this.regionString = regionString;
     }
 
-    @PostConstruct
-    public void init() {
-        System.out.println("S3Client initialized explicitly for region: " + this.regionString);
-    }
 
+    @Override
     public String uploadFile(String key, MultipartFile file) throws IOException {
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
@@ -50,6 +48,7 @@ public class S3StorageService {
         return response.versionId();
     }
 
+    @Override
     public InputStream downloadFile(String key, String awsVersionId) {
         GetObjectRequest.Builder requestBuilder = GetObjectRequest.builder()
                 .bucket(bucketName)
@@ -62,6 +61,7 @@ public class S3StorageService {
         return s3Client.getObject(requestBuilder.build());
     }
 
+    @Override
     public void deleteFile(String key) {
         DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                 .bucket(bucketName)

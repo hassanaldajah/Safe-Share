@@ -1,5 +1,6 @@
 package com.motasem.safeshare.services;
 
+import lombok.extern.slf4j.Slf4j;
 import com.motasem.safeshare.controller.*;
 import com.motasem.safeshare.model.FileEntity;
 import com.motasem.safeshare.model.FileShare;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FileService {
@@ -51,7 +53,7 @@ public class FileService {
     private final GroupMemberRepository groupMemberRepository;
     private final FolderRepository folderRepository;
     private final AuditService auditService;
-    private final S3StorageService s3StorageService;
+    private final FileStorage fileStorage;
     private final FileVersionRepository fileVersionRepository;
     private final NotificationService notificationService;
     private final SseService sseService;
@@ -121,9 +123,9 @@ public class FileService {
             String iv, User currentUser, Integer groupId, Integer folderId,
             Integer maxDownloads, Integer maxViews) throws IOException {
 
-        // 1. Upload to AWS S3 (OUTSIDE TRANSACTION)
+        // 1. Store the encrypted blob (OUTSIDE TRANSACTION)
         String uniqueFileName = UUID.randomUUID().toString() + ".enc";
-        String awsVersionId = s3StorageService.uploadFile(uniqueFileName, encryptedBlob);
+        String awsVersionId = fileStorage.uploadFile(uniqueFileName, encryptedBlob);
 
         // 2. Wrap DB operations in a programmatic transaction
         return transactionTemplate.execute(status -> {
@@ -308,12 +310,12 @@ public class FileService {
             fileShareRepository.save(share);
         }
 
-        // Return the file from S3
+        // Return the file from storage
         try {
-            java.io.InputStream s3Stream = s3StorageService.downloadFile(fileEntity.getFilePath(), null);
+            java.io.InputStream s3Stream = fileStorage.downloadFile(fileEntity.getFilePath(), null);
             return new InputStreamResource(s3Stream);
         } catch (Exception e) {
-            throw new RuntimeException("Error reading file from S3: " + e.getMessage());
+            throw new RuntimeException("Error reading file from storage: " + e.getMessage());
         }
     }
 
@@ -339,10 +341,9 @@ public class FileService {
         long referencesLeft = fileRepository.countByFilePath(filePath);
         if (referencesLeft == 0) {
             try {
-                s3StorageService.deleteFile(filePath);
+                fileStorage.deleteFile(filePath);
             } catch (Exception e) {
-                System.err.println("Failed to delete physical file from S3: " + e.getMessage());
-                e.printStackTrace(); // Print full stack trace for AWS blocking errors
+                log.warn("Failed to delete the stored file: {}", e.getMessage());
                 throw new RuntimeException("Could not delete file from S3: " + e.getMessage());
             }
         }
@@ -439,10 +440,9 @@ public class FileService {
         long referencesLeft = fileRepository.countByFilePath(filePath);
         if (referencesLeft == 0) {
             try {
-                s3StorageService.deleteFile(filePath);
+                fileStorage.deleteFile(filePath);
             } catch (Exception e) {
-                System.err.println("Failed to delete physical file from S3: " + e.getMessage());
-                e.printStackTrace(); // Print full stack trace for AWS blocking errors
+                log.warn("Failed to delete the stored file: {}", e.getMessage());
                 throw new RuntimeException("Could not delete file from S3: " + e.getMessage());
             }
         }
@@ -465,10 +465,9 @@ public class FileService {
             long referencesLeft = fileRepository.countByFilePath(file.getFilePath());
             if (referencesLeft == 0) {
                 try {
-                    s3StorageService.deleteFile(file.getFilePath());
+                    fileStorage.deleteFile(file.getFilePath());
                 } catch (Exception e) {
-                    System.err.println("Failed to delete physical file from S3: " + e.getMessage());
-                    e.printStackTrace(); // Print full stack trace for AWS blocking errors
+                    log.warn("Failed to delete the stored file: {}", e.getMessage());
                     throw new RuntimeException("Could not delete file from S3: " + e.getMessage());
                 }
             }
@@ -725,10 +724,10 @@ public class FileService {
         }
 
         try {
-            java.io.InputStream s3Stream = s3StorageService.downloadFile(fileEntity.getFilePath(), versionId);
+            java.io.InputStream s3Stream = fileStorage.downloadFile(fileEntity.getFilePath(), versionId);
             return new InputStreamResource(s3Stream);
         } catch (Exception e) {
-            throw new RuntimeException("Error reading file version from S3: " + e.getMessage());
+            throw new RuntimeException("Error reading file version from storage: " + e.getMessage());
         }
     }
 }
