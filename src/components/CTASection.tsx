@@ -51,7 +51,7 @@ const CTASection = () => {
 
             {/* Secondary — mailto developer */}
             <Button variant="hero-outline" size="xl" asChild>
-              <a href="mailto:mutasim.alatawneh@gmail.com">
+              <a href="https://github.com/hassanaldajah">
                 <Mail className="h-5 w-5" />
                 Contact Developer
               </a>

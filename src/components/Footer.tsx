@@ -153,7 +153,7 @@ const Footer = () => {
                   </a>
                 </li>
                 <li>
-                  <a href="mailto:mutasim.alatawneh@gmail.com" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <a href="https://github.com/hassanaldajah" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                     Contact Developer
                   </a>
                 </li>
@@ -194,7 +194,7 @@ const Footer = () => {
               >
                 Open Source
               </a>
-              <a href="mailto:mutasim.alatawneh@gmail.com" className="hover:text-foreground transition-colors">
+              <a href="https://github.com/hassanaldajah" className="hover:text-foreground transition-colors">
                 Contact
               </a>
             </div>
