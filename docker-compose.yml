@@ -3,7 +3,6 @@
 services:
   db:
     image: postgres:15-alpine
-    container_name: safeshare_db
     environment:
       POSTGRES_USER: ${DB_USERNAME:-safeshare_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-safeshare_password}
@@ -21,7 +20,6 @@ services:
 
   api:
     build: ./backend
-    container_name: safeshare_api
     depends_on:
       db:
         condition: service_healthy
@@ -50,7 +48,6 @@ services:
     build:
       context: .
       dockerfile: docker/frontend.Dockerfile
-    container_name: safeshare_web
     depends_on:
       - api
     ports:
