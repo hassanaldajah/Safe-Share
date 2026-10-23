@@ -1,51 +1,49 @@
 /* Landing Page Styles - Dark Security-Focused Theme */
-/* This CSS only applies to the landing page */
+/* This CSS only applies to the public pages (landing and pricing) */
 
-/* Dark security-focused theme for landing page */
+/* Dark security-focused theme for the public pages */
 .landing-page,
 body.landing-page {
-  /* Dark security-focused theme */
   --background: 222 47% 6%;
   --foreground: 210 40% 98%;
-  
+
   --card: 222 47% 8%;
   --card-foreground: 210 40% 98%;
-  
+
   --popover: 222 47% 10%;
   --popover-foreground: 210 40% 98%;
-  
+
   /* Teal accent for security/trust */
   --primary: 173 80% 45%;
   --primary-foreground: 222 47% 6%;
-  
+
   --secondary: 222 47% 12%;
   --secondary-foreground: 210 40% 98%;
-  
+
   --muted: 222 47% 14%;
-  --muted-foreground: 215 20% 55%;
-  
+  --muted-foreground: 215 20% 62%;
+
   --accent: 222 47% 16%;
   --accent-foreground: 210 40% 98%;
-  
+
   --destructive: 0 62% 50%;
   --destructive-foreground: 210 40% 98%;
-  
-  --border: 222 47% 15%;
-  --input: 222 47% 15%;
+
+  --border: 222 40% 15%;
+  --input: 222 40% 15%;
   --ring: 173 80% 45%;
-  
+
   --radius: 0.75rem;
-  
+
   /* Custom design tokens */
   --glow-primary: 173 80% 45%;
-  --surface-elevated: 222 47% 10%;
 }
 
-/* Apply dark theme to landing page body */
+/* Apply dark theme to the page body (keeps overscroll and scrollbars dark too) */
 body.landing-page {
   background: hsl(222 47% 6%);
   color: hsl(210 40% 98%);
-  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
 }
 
 .landing-page {
@@ -58,8 +56,12 @@ body.landing-page {
   background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--primary) / 0.15), transparent);
 }
 
-.gradient-hero {
-  background: linear-gradient(180deg, hsl(222 47% 8%) 0%, hsl(222 47% 4%) 100%);
+/* Faint dot grid behind the hero, fading out towards the edges */
+.hero-dots {
+  background-image: radial-gradient(hsl(var(--primary) / 0.16) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 100%);
 }
 
 /* Glow effects */
@@ -83,39 +85,152 @@ body.landing-page {
   border: 1px solid hsl(var(--border) / 0.5);
 }
 
-/* Animated gradient border */
-.border-gradient {
+/* Card that lights up under the pointer (--x/--y are set from JavaScript) */
+.spotlight-card {
+  position: relative;
+  isolation: isolate;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.spotlight-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(420px circle at var(--x, 50%) var(--y, 0%), hsl(var(--primary) / 0.12), transparent 45%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.spotlight-card:hover {
+  border-color: hsl(var(--primary) / 0.35);
+  box-shadow: 0 18px 40px -18px hsl(var(--primary) / 0.35);
+}
+
+.spotlight-card:hover::before {
+  opacity: 1;
+}
+
+/* Zero-knowledge diagram: a dot that travels along each connector */
+.flow-track {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(to bottom, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.45), hsl(var(--primary) / 0.1));
+}
+
+.flow-dot {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 6px;
+  height: 18px;
+  margin-left: -3px;
+  border-radius: 9999px;
+  background: hsl(var(--primary));
+  box-shadow: 0 0 12px hsl(var(--primary) / 0.9);
+  animation: flow-y 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.flow-track[data-muted] {
+  background: linear-gradient(to bottom, hsl(var(--muted-foreground) / 0.08), hsl(var(--muted-foreground) / 0.35), hsl(var(--muted-foreground) / 0.08));
+}
+
+.flow-track[data-muted] .flow-dot {
+  background: hsl(var(--muted-foreground));
+  box-shadow: none;
+  animation-delay: 0.9s;
+}
+
+@media (min-width: 768px) {
+  .flow-track {
+    background: linear-gradient(to right, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.45), hsl(var(--primary) / 0.1));
+  }
+
+  .flow-track[data-muted] {
+    background: linear-gradient(to right, hsl(var(--muted-foreground) / 0.08), hsl(var(--muted-foreground) / 0.35), hsl(var(--muted-foreground) / 0.08));
+  }
+
+  .flow-dot {
+    left: 0;
+    top: 50%;
+    width: 18px;
+    height: 6px;
+    margin-left: 0;
+    margin-top: -3px;
+    animation-name: flow-x;
+  }
+}
+
+@keyframes flow-y {
+  from { transform: translateY(-20px); }
+  to { transform: translateY(60px); }
+}
+
+@keyframes flow-x {
+  from { transform: translateX(-20px); }
+  to { transform: translateX(130px); }
+}
+
+/* Light that runs around the call-to-action shield's border (the gradient turns, the frame stays put) */
+@property --ring-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.ring-spin {
   position: relative;
 }
 
-.border-gradient::before {
-  content: '';
+.ring-spin::before {
+  content: "";
   position: absolute;
-  inset: 0;
-  padding: 1px;
+  inset: -1px;
   border-radius: inherit;
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.5), transparent 50%, hsl(var(--primary) / 0.3));
+  padding: 2px;
+  background: conic-gradient(from var(--ring-angle), transparent 0 55%, hsl(var(--primary)) 80%, transparent 100%);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
+  animation: ring-turn 4s linear infinite;
 }
 
-/* Surface styles */
-.surface-elevated {
-  background: hsl(var(--surface-elevated));
+@keyframes ring-turn {
+  to { --ring-angle: 360deg; }
+}
+
+/* Scroll cue under the hero: a small mouse with a dot that drops */
+.scroll-cue {
+  position: relative;
+  display: block;
+  width: 22px;
+  height: 34px;
+  border-radius: 9999px;
+  border: 1.5px solid hsl(var(--muted-foreground) / 0.6);
+}
+
+.scroll-cue::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 7px;
+  width: 4px;
+  height: 7px;
+  margin-left: -2px;
+  border-radius: 9999px;
+  background: hsl(var(--primary));
+  animation: cue 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes cue {
+  0% { transform: translateY(0); opacity: 1; }
+  70% { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 0; }
 }
 
 /* Animations */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
 @keyframes pulse-glow {
   0%, 100% {
     opacity: 0.4;
@@ -125,78 +240,8 @@ body.landing-page {
   }
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
 .animate-pulse-glow {
   animation: pulse-glow 3s ease-in-out infinite;
-}
-
-/* Smooth scroll behavior for anchor links */
-html {
-  scroll-behavior: smooth;
-}
-
-/* Landing page section spacing */
-.landing-section {
-  scroll-margin-top: 80px;
-}
-
-/* Enhanced card hover effects for landing page */
-.landing-card {
-  transition: all 0.3s ease;
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-}
-
-.landing-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px -8px hsl(var(--primary) / 0.2);
-  border-color: hsl(var(--primary) / 0.3);
-}
-
-/* Gradient text for headings */
-.gradient-text {
-  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.7));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Landing page background patterns */
-.landing-bg-pattern {
-  background-image: 
-    radial-gradient(circle at 20% 50%, hsl(var(--primary) / 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, hsl(var(--primary) / 0.05) 0%, transparent 50%);
-}
-
-/* Feature card icon backgrounds */
-.feature-icon-bg {
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.05));
-  border: 1px solid hsl(var(--primary) / 0.2);
-}
-
-/* Testimonial card styles */
-.testimonial-card {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  transition: all 0.3s ease;
-}
-
-.testimonial-card:hover {
-  border-color: hsl(var(--primary) / 0.3);
-  box-shadow: 0 8px 24px -8px hsl(var(--primary) / 0.15);
-}
-
-/* CTA section enhancements */
-.cta-gradient {
-  background: linear-gradient(
-    135deg,
-    hsl(var(--primary) / 0.05) 0%,
-    hsl(var(--primary) / 0.1) 50%,
-    hsl(var(--primary) / 0.05) 100%
-  );
 }
 
 /* Navbar scroll hide/show transition */

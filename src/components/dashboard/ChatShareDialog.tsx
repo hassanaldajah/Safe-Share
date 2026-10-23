@@ -108,7 +108,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
       <div className="relative w-full max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
         <div className="bg-background rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6 py-5 sticky top-0 z-10">
+          <div className="bg-gradient-to-br from-teal-600 via-teal-700 to-teal-900 px-6 py-5 sticky top-0 z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-background/20 backdrop-blur-sm rounded-lg">
@@ -127,7 +127,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
 
           <div className="p-6 space-y-6">
             {shareMessage.text && (
-              <div className={cn("p-4 rounded-lg text-sm font-medium", shareMessage.type === "error" ? "bg-red-50 text-red-700 border border-red-200" : "bg-green-50 text-green-700 border border-green-200")}>
+              <div className={cn("p-4 rounded-lg text-sm font-medium", shareMessage.type === "error" ? "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-500/30" : "bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-500/30")}>
                 {shareMessage.text}
               </div>
             )}
@@ -144,7 +144,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
                   value={searchTag}
                   onChange={(e) => setSearchTag(e.target.value)}
                   placeholder="username (e.g., mo_alatawnah)"
-                  className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
             </div>
@@ -153,7 +153,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
             <div className="border-t border-border pt-4">
               <button 
                 onClick={() => setShowPermissions(!showPermissions)}
-                className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+                className="flex items-center gap-2 text-sm font-medium text-primary hover:text-indigo-700 transition-colors"
               >
                 <Settings2 className="h-4 w-4" />
                 {showPermissions ? "Hide Access Controls" : "Set Access Controls (Optional)"}
@@ -178,7 +178,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
                       placeholder="Unlimited" 
                       value={maxViews}
                       onChange={(e) => setMaxViews(e.target.value)}
-                      className="w-24 px-3 py-1.5 text-sm border border-border rounded-md focus:ring-indigo-500"
+                      className="w-24 px-3 py-1.5 text-sm border border-border rounded-md focus:ring-ring"
                     />
                   </div>
 
@@ -197,7 +197,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
                       placeholder="Unlimited" 
                       value={maxDownloads}
                       onChange={(e) => setMaxDownloads(e.target.value)}
-                      className="w-24 px-3 py-1.5 text-sm border border-border rounded-md focus:ring-indigo-500"
+                      className="w-24 px-3 py-1.5 text-sm border border-border rounded-md focus:ring-ring"
                     />
                   </div>
 
@@ -213,7 +213,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
                         <p className="text-xs text-muted-foreground">Can they share this with others?</p>
                       </div>
                     </div>
-                    <div className="text-indigo-600">
+                    <div className="text-primary">
                       {canReshare ? <CheckSquare className="h-5 w-5" /> : <Square className="h-5 w-5 text-muted-foreground" />}
                     </div>
                   </div>
@@ -222,7 +222,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
               )}
             </div>
 
-            <p className="text-xs text-muted-foreground flex items-center gap-1.5 bg-blue-50 p-3 rounded-lg border border-blue-100">
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5 bg-blue-50 dark:bg-blue-500/15 p-3 rounded-lg border border-blue-100 dark:border-blue-500/30">
               <ShieldCheck className="h-4 w-4 text-blue-600 flex-shrink-0" />
               End-to-End Encrypted: The file key is re-encrypted in your browser using the recipient's public key. The server cannot read the contents.
             </p>
@@ -240,7 +240,7 @@ export function ChatShareDialog({ isOpen, onClose, transaction }: ChatShareDialo
                 disabled={!searchTag || isSharing}
                 className={cn(
                   "flex-1 px-4 py-2.5 font-medium rounded-lg transition-colors flex items-center justify-center gap-2",
-                  searchTag && !isSharing ? "bg-indigo-600 text-white hover:bg-indigo-700" : "bg-muted text-muted-foreground cursor-not-allowed"
+                  searchTag && !isSharing ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-muted text-muted-foreground cursor-not-allowed"
                 )}
               >
                 {isSharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}

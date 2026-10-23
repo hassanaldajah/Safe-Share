@@ -55,11 +55,11 @@ export function TrashPage() {
   const getVirusScanBadge = (status: FileItem["virusScan"]) => {
     switch (status) {
       case "clean":
-        return <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium"><ShieldCheck className="h-3.5 w-3.5" />Clean</div>;
+        return <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 rounded-full text-xs font-medium"><ShieldCheck className="h-3.5 w-3.5" />Clean</div>;
       case "scanning":
-        return <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"><Shield className="h-3.5 w-3.5 animate-pulse" />Scanning</div>;
+        return <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium"><Shield className="h-3.5 w-3.5 animate-pulse" />Scanning</div>;
       case "infected":
-        return <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-700 rounded-full text-xs font-medium"><AlertCircle className="h-3.5 w-3.5" />Infected</div>;
+        return <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 rounded-full text-xs font-medium"><AlertCircle className="h-3.5 w-3.5" />Infected</div>;
     }
   };
 
@@ -162,12 +162,12 @@ export function TrashPage() {
           </div>
 
           {trashedFiles.length > 0 && (
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-500/15 border border-yellow-200 dark:border-yellow-500/30 rounded-lg">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-yellow-900">Items in trash still use storage space</p>
-                  <p className="text-sm text-yellow-700 mt-1">
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
                     <span className="font-semibold">{storageInfo.trashedFormatted}</span> is being
                     used by trashed items. Empty trash to free up space.
                   </p>
@@ -188,13 +188,13 @@ export function TrashPage() {
                 placeholder="Search trash..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
+                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
               />
             </div>
 
             <div className="flex items-center gap-2 p-1 bg-muted rounded-lg">
-              <button onClick={() => setViewMode("list")} className={cn("p-2 rounded transition-all duration-200", viewMode === "list" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}><List className="h-4 w-4" /></button>
-              <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded transition-all duration-200", viewMode === "grid" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}><Grid3x3 className="h-4 w-4" /></button>
+              <button onClick={() => setViewMode("list")} className={cn("p-2 rounded transition-all duration-200", viewMode === "list" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground")}><List className="h-4 w-4" /></button>
+              <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded transition-all duration-200", viewMode === "grid" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground")}><Grid3x3 className="h-4 w-4" /></button>
             </div>
           </div>
         </div>
@@ -233,7 +233,7 @@ export function TrashPage() {
                       <td className="px-6 py-4 text-sm text-muted-foreground">{file.size || "—"}</td>
                       <td className="px-6 py-4">
                         {file.type === "file" && (
-                          <div className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium", file.compressed ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")}>
+                          <div className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium", file.compressed ? "bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300" : "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300")}>
                             <Package className="h-3.5 w-3.5" />{file.compressed ? "Yes" : "No"}
                           </div>
                         )}
@@ -247,13 +247,13 @@ export function TrashPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => handleRestore(file.id)} className="px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium" title="Restore">
+                          <button onClick={() => handleRestore(file.id)} className="px-3 py-1.5 bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-500/20 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium" title="Restore">
                             <RefreshCw className="h-3.5 w-3.5" /> Restore
                           </button>
                           <button
                             onClick={() => handlePermanentDelete(file.id, file.name)}
                             disabled={isDeleting === file.id}
-                            className="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium disabled:opacity-50"
+                            className="px-3 py-1.5 bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium disabled:opacity-50"
                             title="Delete Forever"
                           >
                             {isDeleting === file.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
@@ -277,7 +277,7 @@ export function TrashPage() {
                 <div key={file.id} className="bg-background rounded-xl border border-border p-4 hover:shadow-lg transition-all duration-200 group">
                   <div className="flex items-start justify-between mb-3">
                     <div className="p-3 bg-gradient-to-br from-red-50 to-orange-50 rounded-lg">{getFileIcon(file)}</div>
-                    <div className={cn("text-xs px-2 py-1 rounded-full font-medium", daysRemaining <= 7 ? "bg-red-100 text-red-700" : "bg-muted text-muted-foreground")}>{daysRemaining}d left</div>
+                    <div className={cn("text-xs px-2 py-1 rounded-full font-medium", daysRemaining <= 7 ? "bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300" : "bg-muted text-muted-foreground")}>{daysRemaining}d left</div>
                   </div>
 
                   <h3 className="font-medium text-foreground mb-1 truncate">{file.name}</h3>
@@ -286,20 +286,20 @@ export function TrashPage() {
                   <div className="flex items-center gap-2 mb-3">
                     {getVirusScanBadge(file.virusScan)}
                     {file.type === "file" && (
-                      <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", file.compressed ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")}>
+                      <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", file.compressed ? "bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300" : "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300")}>
                         <Package className="h-3 w-3" />{file.compressed ? "Compressed" : "Uncompressed"}
                       </div>
                     )}
                   </div>
 
                   <div className="flex flex-col gap-2 pt-3 border-t border-border">
-                    <button onClick={() => handleRestore(file.id)} className="w-full px-3 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center gap-2">
+                    <button onClick={() => handleRestore(file.id)} className="w-full px-3 py-2 bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 text-sm font-medium rounded-lg hover:bg-green-100 dark:hover:bg-green-500/20 transition-colors flex items-center justify-center gap-2">
                       <RefreshCw className="h-3.5 w-3.5" /> Restore
                     </button>
                     <button
                       onClick={() => handlePermanentDelete(file.id, file.name)}
                       disabled={isDeleting === file.id}
-                      className="w-full px-3 py-2 bg-red-50 text-red-700 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="w-full px-3 py-2 bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 text-sm font-medium rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       {isDeleting === file.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
                       {isDeleting === file.id ? "Deleting..." : "Delete Forever"}

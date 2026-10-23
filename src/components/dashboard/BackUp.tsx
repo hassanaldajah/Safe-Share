@@ -110,11 +110,11 @@ export function BackupPage() {
   const getVirusScanBadge = (status: FileItem["virusScan"]) => {
     switch (status) {
       case "clean":
-        return <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium"><ShieldCheck className="h-3.5 w-3.5" />Clean</div>;
+        return <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 rounded-full text-xs font-medium"><ShieldCheck className="h-3.5 w-3.5" />Clean</div>;
       case "scanning":
-        return <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"><Shield className="h-3.5 w-3.5 animate-pulse" />Scanning</div>;
+        return <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium"><Shield className="h-3.5 w-3.5 animate-pulse" />Scanning</div>;
       case "infected":
-        return <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-700 rounded-full text-xs font-medium"><AlertCircle className="h-3.5 w-3.5" />Infected</div>;
+        return <div className="flex items-center gap-1.5 px-2.5 py-1 bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 rounded-full text-xs font-medium"><AlertCircle className="h-3.5 w-3.5" />Infected</div>;
     }
   };
 
@@ -129,7 +129,7 @@ export function BackupPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground mb-1 flex items-center gap-2">
-                <Database className="h-6 w-6 text-indigo-600" /> My Vault
+                <Database className="h-6 w-6 text-primary" /> My Vault
               </h1>
               <p className="text-sm text-muted-foreground">
                 {filteredFiles.length} backed up items • Zero-space deduplication
@@ -149,13 +149,13 @@ export function BackupPage() {
                 placeholder="Search backups..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
+                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
               />
             </div>
 
             <div className="flex items-center gap-2 p-1 bg-muted rounded-lg">
-              <button onClick={() => setViewMode("list")} className={cn("p-2 rounded transition-all duration-200", viewMode === "list" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}><List className="h-4 w-4" /></button>
-              <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded transition-all duration-200", viewMode === "grid" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}><Grid3x3 className="h-4 w-4" /></button>
+              <button onClick={() => setViewMode("list")} className={cn("p-2 rounded transition-all duration-200", viewMode === "list" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground")}><List className="h-4 w-4" /></button>
+              <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded transition-all duration-200", viewMode === "grid" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground")}><Grid3x3 className="h-4 w-4" /></button>
             </div>
           </div>
         </div>
@@ -164,7 +164,7 @@ export function BackupPage() {
       <div className="px-6 lg:px-8 py-6 lg:py-8">
         {isLoading ? (
           <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-8 w-8 text-indigo-600 animate-spin" />
+            <Loader2 className="h-8 w-8 text-primary animate-spin" />
           </div>
         ) : viewMode === "list" ? (
           <div className="bg-background rounded-xl shadow-sm border border-border overflow-hidden overflow-x-auto">
@@ -193,7 +193,7 @@ export function BackupPage() {
                     <td className="px-6 py-4 text-sm text-muted-foreground">{file.size || "—"}</td>
                     <td className="px-6 py-4">
                       {file.type === "file" && (
-                        <div className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium", file.compressed ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")}>
+                        <div className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium", file.compressed ? "bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300" : "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300")}>
                           <Package className="h-3.5 w-3.5" />{file.compressed ? "Yes" : "No"}
                         </div>
                       )}
@@ -205,14 +205,14 @@ export function BackupPage() {
                         <button 
                           onClick={() => handleRestore(file.id)} 
                           disabled={isProcessing === file.id}
-                          className="px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium disabled:opacity-50"
+                          className="px-3 py-1.5 bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-500/20 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium disabled:opacity-50"
                         >
                           {isProcessing === file.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Restore
                         </button>
                         <button
                           onClick={() => handleDelete(file.id)}
                           disabled={isProcessing === file.id}
-                          className="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium disabled:opacity-50"
+                          className="px-3 py-1.5 bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-colors flex items-center gap-1.5 text-sm font-medium disabled:opacity-50"
                         >
                           {isProcessing === file.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} Delete
                         </button>
@@ -233,7 +233,7 @@ export function BackupPage() {
             {filteredFiles.map((file) => (
               <div key={file.id} className="bg-background rounded-xl border border-border p-4 hover:shadow-lg transition-all duration-200 group">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="p-3 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-lg">{getFileIcon(file)}</div>
+                  <div className="p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg">{getFileIcon(file)}</div>
                 </div>
 
                 <h3 className="font-medium text-foreground mb-1 truncate">{file.name}</h3>
@@ -242,7 +242,7 @@ export function BackupPage() {
                 <div className="flex items-center gap-2 mb-3">
                   {getVirusScanBadge(file.virusScan)}
                   {file.type === "file" && (
-                    <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", file.compressed ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")}>
+                    <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", file.compressed ? "bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300" : "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300")}>
                       <Package className="h-3 w-3" />{file.compressed ? "Compressed" : "Uncompressed"}
                     </div>
                   )}
@@ -252,14 +252,14 @@ export function BackupPage() {
                   <button 
                     onClick={() => handleRestore(file.id)} 
                     disabled={isProcessing === file.id}
-                    className="w-full px-3 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full px-3 py-2 bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 text-sm font-medium rounded-lg hover:bg-green-100 dark:hover:bg-green-500/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {isProcessing === file.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Restore
                   </button>
                   <button
                     onClick={() => handleDelete(file.id)}
                     disabled={isProcessing === file.id}
-                    className="w-full px-3 py-2 bg-red-50 text-red-700 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full px-3 py-2 bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 text-sm font-medium rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {isProcessing === file.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} Delete
                   </button>
@@ -280,7 +280,7 @@ export function BackupPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-background w-full max-w-md rounded-2xl shadow-xl border border-border p-6 overflow-hidden relative">
             <div className="flex items-start gap-4">
-              <div className="p-3 bg-red-50 text-red-600 rounded-full flex-shrink-0">
+              <div className="p-3 bg-red-50 dark:bg-red-500/15 text-red-600 rounded-full flex-shrink-0">
                 <AlertTriangle className="h-6 w-6" />
               </div>
               <div>

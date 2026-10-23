@@ -1,70 +1,56 @@
-import { motion } from "framer-motion";
 import { Star, Quote } from "lucide-react";
+import { Reveal } from "@/components/Reveal";
 
 const testimonials = [
   {
-    quote: "Finally a file sharing solution that takes privacy seriously. We use VaultShare for all our client communications.",
-    author: "Dr. Azzam Sleit ",
+    quote: "Finally a file sharing solution that takes privacy seriously. We use SafeShare for all our client communications.",
+    author: "Dr. Azzam Sleit",
     role: "Professor of Computer Science at KASIT",
-    avatar: "DR",
+    avatar: "AS",
   },
-   
-   
 ];
 
 const Testimonials = () => {
   return (
-    <section id="testimonials" className="py-24 relative overflow-hidden">
+    <section id="testimonials" className="py-20 lg:py-28 relative overflow-hidden scroll-mt-20">
       {/* Background accent */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-card/50 to-transparent" />
-      
+      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-transparent via-card/50 to-transparent" />
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Section header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
-           
-         </motion.div>
+        <Reveal className="text-center mb-12">
+          <p className="text-xs font-semibold tracking-[0.2em] uppercase text-primary mb-3">Testimonials</p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+            Trusted by People Who <span className="text-primary">Value Privacy</span>
+          </h2>
+        </Reveal>
 
-      
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="max-w-3xl mx-auto grid gap-6">
           {testimonials.map((testimonial, index) => (
-            <motion.div
-              key={testimonial.author}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="p-6 rounded-2xl bg-card border border-border"
-            >
-   
-              <Quote className="h-8 w-8 text-primary/30 mb-4" />
- 
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                ))}
-              </div>
- 
-              <p className="text-foreground mb-6 leading-relaxed">
-                "{testimonial.quote}"
-              </p>
+            <Reveal key={testimonial.author} delay={index * 0.1}>
+              <figure className="relative p-8 sm:p-12 rounded-3xl bg-card border border-border text-center shadow-2xl shadow-black/30">
+                <Quote className="h-10 w-10 text-primary/30 mx-auto mb-5" aria-hidden="true" />
 
-              {/* Author */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-semibold">
-                  {testimonial.avatar}
+                <div className="flex justify-center gap-1 mb-6" role="img" aria-label="Rated 5 out of 5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-primary text-primary" aria-hidden="true" />
+                  ))}
                 </div>
-                <div>
-                  <div className="font-medium text-foreground">{testimonial.author}</div>
-                  <div className="text-sm text-muted-foreground">{testimonial.role}</div>
-                </div>
-              </div>
-            </motion.div>
+
+                <blockquote className="text-xl sm:text-2xl font-medium leading-relaxed text-foreground mb-8">
+                  “{testimonial.quote}”
+                </blockquote>
+
+                <figcaption className="flex items-center justify-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-primary/15 border border-primary/30 text-primary flex items-center justify-center text-sm font-semibold">
+                    {testimonial.avatar}
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold text-foreground">{testimonial.author}</div>
+                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                  </div>
+                </figcaption>
+              </figure>
+            </Reveal>
           ))}
         </div>
       </div>

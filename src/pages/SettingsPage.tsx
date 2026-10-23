@@ -151,7 +151,7 @@ export default function SettingsPage() {
 
         {/* Save Button */}
         <div className="flex justify-end pb-12">
-          <button onClick={handleSave} disabled={isSaving} className={`flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all ${saved ? "bg-green-500 text-white" : "bg-primary text-primary-foreground hover:bg-primary/90"} disabled:opacity-70`}>
+          <button onClick={handleSave} disabled={isSaving} className={`flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all ${saved ? "bg-green-500 text-primary-foreground" : "bg-primary text-primary-foreground hover:bg-primary/90"} disabled:opacity-70`}>
             {isSaving ? "Saving..." : saved ? <><Check className="h-4 w-4" /> Saved!</> : "Save Changes"}
           </button>
         </div>

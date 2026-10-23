@@ -72,7 +72,7 @@ export default function DashboardHome() {
       </div>
 
       {error && (
-        <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-red-50 text-red-700 border border-red-100">
+        <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 border border-red-100 dark:border-red-500/30">
           <AlertCircle className="h-5 w-5" />
           <p className="text-sm font-medium">{error}</p>
         </div>
@@ -100,7 +100,7 @@ export default function DashboardHome() {
             
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                <div className="p-2.5 bg-primary/10 text-primary rounded-lg">
                   <Database className="h-5 w-5" />
                 </div>
                 <h2 className="text-lg font-semibold text-foreground">Storage Overview</h2>
@@ -115,7 +115,7 @@ export default function DashboardHome() {
                     used of {formatBytes(stats.storageLimitBytes)}
                   </span>
                 </div>
-                <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full">
+                <span className="text-sm font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
                   {storagePercentage.toFixed(1)}%
                 </span>
               </div>
@@ -128,7 +128,7 @@ export default function DashboardHome() {
           <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
             {/* Total Files */}
             <div className="bg-background rounded-xl border border-border p-5 shadow-sm flex items-center gap-4">
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+              <div className="p-3 bg-blue-50 dark:bg-blue-500/15 text-blue-600 rounded-xl">
                 <HardDrive className="h-6 w-6" />
               </div>
               <div>
@@ -139,7 +139,7 @@ export default function DashboardHome() {
 
             {/* Links Sent */}
             <div className="bg-background rounded-xl border border-border p-5 shadow-sm flex items-center gap-4">
-              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 rounded-xl">
                 <Send className="h-6 w-6" />
               </div>
               <div>
@@ -150,7 +150,7 @@ export default function DashboardHome() {
 
             {/* Links Received */}
             <div className="bg-background rounded-xl border border-border p-5 shadow-sm flex items-center gap-4">
-              <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
+              <div className="p-3 bg-primary/10 text-primary rounded-xl">
                 <Inbox className="h-6 w-6" />
               </div>
               <div>

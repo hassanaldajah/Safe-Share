@@ -89,9 +89,9 @@ toast.success("File successfully shared to the group!");
 
   const getVirusScanBadge = (status: FileItem["virusScan"]) => {
     switch (status) {
-      case "clean": return <div className="inline-flex w-fit items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium"><ShieldCheck className="h-3.5 w-3.5" />Clean</div>;
-      case "scanning": return <div className="inline-flex w-fit items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"><Shield className="h-3.5 w-3.5 animate-pulse" />Scanning</div>;
-      case "infected": return <div className="inline-flex w-fit items-center gap-1.5 px-2.5 py-1 bg-red-50 text-red-700 rounded-full text-xs font-medium"><AlertCircle className="h-3.5 w-3.5" />Infected</div>;
+      case "clean": return <div className="inline-flex w-fit items-center gap-1.5 px-2.5 py-1 bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 rounded-full text-xs font-medium"><ShieldCheck className="h-3.5 w-3.5" />Clean</div>;
+      case "scanning": return <div className="inline-flex w-fit items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium"><Shield className="h-3.5 w-3.5 animate-pulse" />Scanning</div>;
+      case "infected": return <div className="inline-flex w-fit items-center gap-1.5 px-2.5 py-1 bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 rounded-full text-xs font-medium"><AlertCircle className="h-3.5 w-3.5" />Infected</div>;
     }
   };
 
@@ -306,11 +306,11 @@ toast.success("File successfully shared to the group!");
                 </button>
               )}
               {!currentFolder && (
-                <button onClick={() => setIsCreateFolderOpen(true)} className="px-4 py-2.5 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-all flex items-center gap-2 shadow-sm">
+                <button onClick={() => setIsCreateFolderOpen(true)} className="px-4 py-2.5 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 shadow-sm">
                   <FolderPlus className="h-4 w-4" /> New Folder
                 </button>
               )}
-              <button onClick={() => setIsUploadDialogOpen(true)} className="px-4 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-sm">
+              <button onClick={() => setIsUploadDialogOpen(true)} className="px-4 py-2.5 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 shadow-sm">
                 <Upload className="h-4 w-4" /> Upload Files
               </button>
             </div>
@@ -323,11 +323,11 @@ toast.success("File successfully shared to the group!");
           <div className="flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input type="text" placeholder="Search files and folders..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-background text-foreground placeholder:text-muted-foreground" />
+              <input type="text" placeholder="Search files and folders..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground placeholder:text-muted-foreground" />
             </div>
             <div className="flex items-center gap-2 p-1 bg-muted rounded-lg">
-              <button onClick={() => setViewMode("list")} className={cn("p-2 rounded transition-all", viewMode === "list" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}><List className="h-4 w-4" /></button>
-              <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded transition-all", viewMode === "grid" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}><Grid3x3 className="h-4 w-4" /></button>
+              <button onClick={() => setViewMode("list")} className={cn("p-2 rounded transition-all", viewMode === "list" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground")}><List className="h-4 w-4" /></button>
+              <button onClick={() => setViewMode("grid")} className={cn("p-2 rounded transition-all", viewMode === "grid" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground")}><Grid3x3 className="h-4 w-4" /></button>
             </div>
           </div>
         </div>
@@ -336,7 +336,7 @@ toast.success("File successfully shared to the group!");
       <div className="px-6 lg:px-8 py-6 lg:py-8">
         {isLoading ? (
           <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <span className="ml-3 text-muted-foreground font-medium">Loading your secure files...</span>
           </div>
         ) : viewMode === "list" ? (
@@ -347,7 +347,7 @@ toast.success("File successfully shared to the group!");
                   <th className="px-6 py-3 w-12 text-left">
                     <input 
                       type="checkbox" 
-                      className="w-4 h-4 rounded border-border text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer"
                       checked={sortedFiles.length > 0 && selectedFiles.size === sortedFiles.length}
                       onChange={handleSelectAll}
                     />
@@ -390,7 +390,7 @@ toast.success("File successfully shared to the group!");
                     <td className="px-6 py-4 w-12">
                       <input 
                         type="checkbox"
-                        className="w-4 h-4 rounded border-border text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer"
                         checked={selectedFiles.has(file.id)}
                         onChange={() => handleSelectFile(file.id)}
                         onClick={(e) => e.stopPropagation()}
@@ -405,7 +405,7 @@ toast.success("File successfully shared to the group!");
                     <td className="px-6 py-4 text-sm text-muted-foreground">{file.size || "—"}</td>
                     <td className="px-6 py-4">
                       {file.type === "file" && (
-                        <div className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium", file.compressed ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")}>
+                        <div className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium", file.compressed ? "bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300" : "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300")}>
                           <Package className="h-3.5 w-3.5" />{file.compressed ? "Yes" : "No"}
                         </div>
                       )}
@@ -414,26 +414,26 @@ toast.success("File successfully shared to the group!");
                     <td className="px-6 py-4 text-sm text-muted-foreground">{file.uploadedAt ? new Date(file.uploadedAt).toLocaleDateString() : ""}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleShare(file)} className="p-1.5 hover:bg-indigo-50 text-muted-foreground hover:text-indigo-600 rounded-lg transition-colors" title="Share with User">
+                        <button onClick={() => handleShare(file)} className="p-1.5 hover:bg-primary/10 text-muted-foreground hover:text-primary rounded-lg transition-colors" title="Share with User">
                           <Share2 className="h-4 w-4" />
                         </button>
                         {/* --- NEW BUTTON: SHARE TO GROUP --- */}
                         {file.type === "file" && (
-                          <button onClick={() => openGroupShareModal(file.id)} className="p-1.5 hover:bg-purple-50 text-muted-foreground hover:text-purple-600 rounded-lg transition-colors" title="Share to Group">
+                          <button onClick={() => openGroupShareModal(file.id)} className="p-1.5 hover:bg-primary/10 text-muted-foreground hover:text-primary rounded-lg transition-colors" title="Share to Group">
                             <Users className="h-4 w-4" />
                           </button>
                         )}
                         {file.type === "file" && (
-                          <button onClick={() => handleDownload(file)} disabled={isDownloading === file.id} className="p-1.5 hover:bg-blue-50 text-muted-foreground hover:text-blue-600 rounded-lg transition-colors" title="Download">
+                          <button onClick={() => handleDownload(file)} disabled={isDownloading === file.id} className="p-1.5 hover:bg-blue-50 dark:hover:bg-blue-500/20 text-muted-foreground hover:text-blue-600 rounded-lg transition-colors" title="Download">
                             {isDownloading === file.id ? <Loader2 className="h-4 w-4 animate-spin text-blue-600" /> : <Download className="h-4 w-4" />}
                           </button>
                         )}
                         {file.type === "file" && (
-                          <button onClick={() => handleBackup(file)} disabled={isBackingUp === file.id} className="p-1.5 hover:bg-indigo-50 text-muted-foreground hover:text-indigo-600 rounded-lg transition-colors" title="Send to Vault">
-                            {isBackingUp === file.id ? <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> : <Database className="h-4 w-4" />}
+                          <button onClick={() => handleBackup(file)} disabled={isBackingUp === file.id} className="p-1.5 hover:bg-primary/10 text-muted-foreground hover:text-primary rounded-lg transition-colors" title="Send to Vault">
+                            {isBackingUp === file.id ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Database className="h-4 w-4" />}
                           </button>
                         )}
-                        <button onClick={() => handleDelete(file.id, file.name)} className="p-1.5 hover:bg-red-50 text-muted-foreground hover:text-red-600 rounded-lg transition-colors" title="Delete">
+                        <button onClick={() => handleDelete(file.id, file.name)} className="p-1.5 hover:bg-red-50 dark:hover:bg-red-500/20 text-muted-foreground hover:text-red-600 rounded-lg transition-colors" title="Delete">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -451,7 +451,7 @@ toast.success("File successfully shared to the group!");
                   <div className="flex items-center gap-2">
                     <input 
                       type="checkbox"
-                      className="w-4 h-4 rounded border-border text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      className="w-4 h-4 rounded border-border text-primary focus:ring-ring cursor-pointer"
                       checked={selectedFiles.has(file.id)}
                       onChange={() => handleSelectFile(file.id)}
                       onClick={(e) => e.stopPropagation()}
@@ -467,26 +467,26 @@ toast.success("File successfully shared to the group!");
                   {getVirusScanBadge(file.virusScan)}
                 </div>
                 <div className="flex items-center gap-2 pt-3 border-t border-border">
-                  <button onClick={() => handleShare(file)} className="p-2 hover:bg-indigo-50 text-muted-foreground hover:text-indigo-600 rounded-lg transition-colors" title="Share with User">
+                  <button onClick={() => handleShare(file)} className="p-2 hover:bg-primary/10 text-muted-foreground hover:text-primary rounded-lg transition-colors" title="Share with User">
                     <Share2 className="h-4 w-4" />
                   </button>
                   {/* --- NEW BUTTON: SHARE TO GROUP --- */}
                   {file.type === "file" && (
-                    <button onClick={() => openGroupShareModal(file.id)} className="p-2 hover:bg-purple-50 text-muted-foreground hover:text-purple-600 rounded-lg transition-colors" title="Share to Group">
+                    <button onClick={() => openGroupShareModal(file.id)} className="p-2 hover:bg-primary/10 text-muted-foreground hover:text-primary rounded-lg transition-colors" title="Share to Group">
                       <Users className="h-4 w-4" />
                     </button>
                   )}
                   {file.type === "file" && (
-                    <button onClick={() => handleDownload(file)} disabled={isDownloading === file.id} className="p-2 hover:bg-blue-50 text-muted-foreground hover:text-blue-600 rounded-lg transition-colors" title="Download">
+                    <button onClick={() => handleDownload(file)} disabled={isDownloading === file.id} className="p-2 hover:bg-blue-50 dark:hover:bg-blue-500/20 text-muted-foreground hover:text-blue-600 rounded-lg transition-colors" title="Download">
                       {isDownloading === file.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                     </button>
                   )}
                   {file.type === "file" && (
-                    <button onClick={() => handleBackup(file)} disabled={isBackingUp === file.id} className="p-2 hover:bg-indigo-50 text-muted-foreground hover:text-indigo-600 rounded-lg transition-colors" title="Send to Vault">
+                    <button onClick={() => handleBackup(file)} disabled={isBackingUp === file.id} className="p-2 hover:bg-primary/10 text-muted-foreground hover:text-primary rounded-lg transition-colors" title="Send to Vault">
                       {isBackingUp === file.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
                     </button>
                   )}
-                  <button onClick={() => handleDelete(file.id, file.name)} className="p-2 hover:bg-red-50 text-muted-foreground hover:text-red-600 rounded-lg transition-colors">
+                  <button onClick={() => handleDelete(file.id, file.name)} className="p-2 hover:bg-red-50 dark:hover:bg-red-500/20 text-muted-foreground hover:text-red-600 rounded-lg transition-colors">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -521,7 +521,7 @@ toast.success("File successfully shared to the group!");
             
             <label className="block text-sm font-medium text-foreground mb-1.5">Select a Group</label>
             <select 
-              className="w-full bg-background text-foreground border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6"
+              className="w-full bg-background text-foreground border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring mb-6"
               value={selectedGroupId}
               onChange={(e) => setSelectedGroupId(e.target.value)}
             >
@@ -536,7 +536,7 @@ toast.success("File successfully shared to the group!");
               <button 
                 onClick={handleShareToGroup} 
                 disabled={!selectedGroupId || isSharingToGroup} 
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50"
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50"
               >
                 {isSharingToGroup ? "Sharing..." : "Share to Group"}
               </button>

@@ -325,12 +325,12 @@ export function Chatpage() {
           <div className="flex items-center gap-4">
             <div className="flex-1 max-w-md relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input type="text" value={searchUserId} onChange={(e) => setSearchUserId(e.target.value)} placeholder="Search by User Tag (e.g., @motasem)" className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-background text-foreground placeholder:text-muted-foreground" />
+              <input type="text" value={searchUserId} onChange={(e) => setSearchUserId(e.target.value)} placeholder="Search by User Tag (e.g., @motasem)" className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground placeholder:text-muted-foreground" />
             </div>
             <div className="flex gap-2 p-1 bg-muted rounded-lg">
-              <button onClick={() => setFilterType("all")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm", filterType === "all" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}>All</button>
-              <button onClick={() => setFilterType("sent")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "sent" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}><ArrowUpRight className="h-4 w-4" /> Sent</button>
-              <button onClick={() => setFilterType("received")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "received" ? "bg-background shadow-sm text-indigo-600" : "text-muted-foreground hover:text-foreground")}><ArrowDownLeft className="h-4 w-4" /> Received</button>
+              <button onClick={() => setFilterType("all")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm", filterType === "all" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground")}>All</button>
+              <button onClick={() => setFilterType("sent")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "sent" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground")}><ArrowUpRight className="h-4 w-4" /> Sent</button>
+              <button onClick={() => setFilterType("received")} className={cn("px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2", filterType === "received" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground")}><ArrowDownLeft className="h-4 w-4" /> Received</button>
             </div>
           </div>
         </div>
@@ -338,7 +338,7 @@ export function Chatpage() {
 
       <div className="px-6 lg:px-8 py-6 lg:py-8">
         {error && (
-          <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-red-50 text-red-700 border border-red-100">
+          <div className="mb-6 flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 border border-red-100 dark:border-red-500/30">
             <AlertCircle className="h-5 w-5" />
             <p className="text-sm font-medium">{error}</p>
           </div>
@@ -346,7 +346,7 @@ export function Chatpage() {
 
         {isLoading ? (
           <div className="flex flex-col justify-center items-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-600 mb-4" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
             <p className="text-muted-foreground font-medium">Decrypting transaction history...</p>
           </div>
         ) : Object.keys(groupedByUser).length === 0 ? (
@@ -362,7 +362,7 @@ export function Chatpage() {
                 <div className="bg-background px-6 py-4 border-b border-border">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center shadow-sm"><User className="h-5 w-5 text-white" /></div>
+                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-sm"><User className="h-5 w-5 text-white" /></div>
                       <div>
                         <p className="font-semibold text-foreground flex items-center gap-2">{userId}</p>
                         <p className="text-sm text-muted-foreground">{userTransactions.length} transaction{userTransactions.length !== 1 ? "s" : ""}</p>
@@ -376,7 +376,7 @@ export function Chatpage() {
                     <div key={transaction.id} className="p-4 hover:bg-background transition-colors">
                       <div className="flex items-center gap-4">
                         
-                        <div className={cn("p-2.5 rounded-lg", transaction.transactionType === "sent" ? "bg-emerald-50 border border-emerald-100" : "bg-blue-50 border border-blue-100")}>
+                        <div className={cn("p-2.5 rounded-lg", transaction.transactionType === "sent" ? "bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-100 dark:border-emerald-500/30" : "bg-blue-50 dark:bg-blue-500/15 border border-blue-100 dark:border-blue-500/30")}>
                           {transaction.transactionType === "sent" ? <ArrowUpRight className="h-4 w-4 text-emerald-600" /> : <ArrowDownLeft className="h-4 w-4 text-blue-600" />}
                         </div>
 
@@ -391,7 +391,7 @@ export function Chatpage() {
                           <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium">
                             {transaction.fileSize && <span>{transaction.fileSize}</span>}
                             <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{formatTimestamp(transaction.timestamp)}</span>
-                            <span className={cn("px-2 py-0.5 rounded-full", transaction.transactionType === "sent" ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700")}>
+                            <span className={cn("px-2 py-0.5 rounded-full", transaction.transactionType === "sent" ? "bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300")}>
                               {transaction.transactionType === "sent" ? "You sent" : "You received"}
                             </span>
                           </div>
@@ -402,26 +402,26 @@ export function Chatpage() {
                           
                           {/* SHARE BUTTON */}
                           {(transaction.transactionType === "sent" || transaction.canReshare) && (
-                            <button onClick={() => handleShare(transaction)} className="p-2 hover:bg-purple-50 text-muted-foreground hover:text-purple-600 rounded-lg transition-colors" title="Share File">
+                            <button onClick={() => handleShare(transaction)} className="p-2 hover:bg-primary/10 text-muted-foreground hover:text-primary rounded-lg transition-colors" title="Share File">
                               <Share2 className="h-4 w-4" />
                             </button>
                           )}
 
                           {/* MANAGE ACCESS BUTTON */}
                           {transaction.transactionType === "sent" && (
-                            <button onClick={() => setManagingFile(transaction)} className="p-2 hover:bg-rose-50 text-muted-foreground hover:text-rose-600 rounded-lg transition-colors" title="Manage Access">
+                            <button onClick={() => setManagingFile(transaction)} className="p-2 hover:bg-rose-50 dark:hover:bg-rose-500/20 text-muted-foreground hover:text-rose-600 rounded-lg transition-colors" title="Manage Access">
                               <ShieldAlert className="h-4 w-4" />
                             </button>
                           )}
 
                           {/* VIEW BUTTON */}
-                          <button onClick={() => handleView(transaction)} disabled={isViewing === transaction.id} className="p-2 hover:bg-blue-50 text-muted-foreground hover:text-blue-600 rounded-lg transition-colors" title="View File">
+                          <button onClick={() => handleView(transaction)} disabled={isViewing === transaction.id} className="p-2 hover:bg-blue-50 dark:hover:bg-blue-500/20 text-muted-foreground hover:text-blue-600 rounded-lg transition-colors" title="View File">
                             {isViewing === transaction.id ? <Loader2 className="h-4 w-4 animate-spin text-blue-600" /> : <Eye className="h-4 w-4" />}
                           </button>
 
                           {/* DOWNLOAD BUTTON */}
-                          <button onClick={() => handleDownload(transaction)} disabled={isDownloading === transaction.id} className="p-2 hover:bg-indigo-50 text-muted-foreground hover:text-indigo-600 rounded-lg transition-colors" title="Download File">
-                            {isDownloading === transaction.id ? <Loader2 className="h-4 w-4 animate-spin text-indigo-600" /> : <Download className="h-4 w-4" />}
+                          <button onClick={() => handleDownload(transaction)} disabled={isDownloading === transaction.id} className="p-2 hover:bg-primary/10 text-muted-foreground hover:text-primary rounded-lg transition-colors" title="Download File">
+                            {isDownloading === transaction.id ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Download className="h-4 w-4" />}
                           </button>
 
                         </div>

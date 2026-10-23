@@ -1,5 +1,8 @@
-import { motion } from "framer-motion";
-import { Upload, Lock, Share2, Download } from "lucide-react";
+import { useRef } from "react";
+import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
+import { Upload, Lock, Share2 } from "lucide-react";
+import { Reveal } from "@/components/Reveal";
+import { reveal, staggerChildren } from "@/lib/motion";
 
 const steps = [
   {
@@ -23,59 +26,57 @@ const steps = [
 ];
 
 const HowItWorks = () => {
+  // The line between the steps draws itself as the section scrolls through the screen
+  const stepsRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: stepsRef, offset: ["start 85%", "end 55%"] });
+  const lineProgress = useSpring(scrollYProgress, { stiffness: 120, damping: 30, restDelta: 0.001 });
+
   return (
-    <section id="how-it-works" className="py-24 relative">
+    <section id="how-it-works" className="py-20 lg:py-28 relative scroll-mt-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+        <Reveal className="text-center mb-14 lg:mb-20">
+          <p className="text-xs font-semibold tracking-[0.2em] uppercase text-primary mb-3">Three Steps</p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
             How It <span className="text-primary">Works</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Secure file sharing in three simple steps. No technical knowledge required.
           </p>
-        </motion.div>
+        </Reveal>
 
-        {/* Steps */}
-        <div className="grid md:grid-cols-3 gap-8 relative">
-          {/* Connecting line */}
-          <div className="hidden md:block absolute top-20 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20" />
-
-          {steps.map((step, index) => (
+        <motion.div
+          ref={stepsRef}
+          variants={staggerChildren(0.18)}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-80px" }}
+          className="grid md:grid-cols-3 gap-12 md:gap-8 relative"
+        >
+          {/* Connecting line, from the first icon to the last */}
+          <div aria-hidden="true" className="hidden md:block absolute top-8 left-[16.67%] right-[16.67%] h-px bg-border">
             <motion.div
-              key={step.step}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.15 }}
-              className="relative text-center"
-            >
-              {/* Step number with icon */}
+              style={{ scaleX: reduceMotion ? 1 : lineProgress }}
+              className="h-full origin-left bg-gradient-to-r from-primary/30 via-primary to-primary/30"
+            />
+          </div>
+
+          {steps.map((step) => (
+            <motion.div key={step.step} variants={reveal} className="relative text-center">
               <div className="relative inline-block mb-6">
-                <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto">
-                  <step.icon className="h-7 w-7 text-primary" />
+                <div className="w-16 h-16 rounded-2xl bg-card border border-primary/30 flex items-center justify-center mx-auto shadow-lg shadow-primary/10">
+                  <step.icon className="h-7 w-7 text-primary" aria-hidden="true" />
                 </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center">
+                <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center tabular-nums">
                   {step.step}
                 </div>
               </div>
 
-              {/* Content */}
-              <h3 className="text-xl font-semibold mb-3 text-foreground">
-                {step.title}
-              </h3>
-              <p className="text-muted-foreground leading-relaxed max-w-xs mx-auto">
-                {step.description}
-              </p>
+              <h3 className="text-xl font-semibold mb-3 text-foreground">{step.title}</h3>
+              <p className="text-muted-foreground leading-relaxed max-w-xs mx-auto">{step.description}</p>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

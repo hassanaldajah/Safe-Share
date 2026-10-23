@@ -10,8 +10,8 @@ import { useFolders } from "@/components/dashboard/FoldersContext";
 type Role = "Admin" | "Editor" | "Viewer";
 
 const roleStyles: Record<string, string> = {
-  ADMIN: "bg-violet-100 text-violet-700 border border-violet-200",
-  EDITOR: "bg-sky-100 text-sky-700 border border-sky-200",
+  ADMIN: "bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-500/30",
+  EDITOR: "bg-sky-100 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-500/30",
   VIEWER: "bg-muted text-muted-foreground border border-border",
 };
 
@@ -46,10 +46,10 @@ function FilesTab({ files, myRole, onDownload, onDelete }: { files: any[], myRol
               <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{f.uploadedBy}</td>
               <td className="px-4 py-3 text-muted-foreground">{f.size}</td>
               <td className="px-4 py-3 text-right flex justify-end gap-2">
-                <button onClick={() => onDownload(f.id, f.name)} className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-lg transition-colors"><Download size={13} /> Download</button>
+                <button onClick={() => onDownload(f.id, f.name)} className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-600 hover:text-sky-800 bg-sky-50 dark:bg-sky-500/15 hover:bg-sky-100 dark:hover:bg-sky-500/20 px-3 py-1.5 rounded-lg transition-colors"><Download size={13} /> Download</button>
                 {/* Hide Delete Button for Viewers */}
                 {myRole !== "VIEWER" && (
-                  <button onClick={() => onDelete(f.id, f.name)} className="inline-flex items-center gap-1.5 text-xs font-medium text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"><Trash2 size={13} /> Delete</button>
+                  <button onClick={() => onDelete(f.id, f.name)} className="inline-flex items-center gap-1.5 text-xs font-medium text-red-600 hover:text-red-800 bg-red-50 dark:bg-red-500/15 hover:bg-red-100 dark:hover:bg-red-500/20 px-3 py-1.5 rounded-lg transition-colors"><Trash2 size={13} /> Delete</button>
                 )}
               </td>
             </tr>
@@ -84,10 +84,10 @@ function MembersTab({ members, myRole, groupId, onRefresh, onRemove }: { members
           
           {myRole === "ADMIN" && m.role !== "ADMIN" && (
             <div className="flex items-center gap-2">
-              <select className="text-xs bg-slate-800 text-gray-100 border border-slate-700 rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500" value={m.role} onChange={(e) => handleRoleChange(m.userId, e.target.value)}>
+              <select className="text-xs bg-slate-800 text-gray-100 border border-slate-700 rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-ring" value={m.role} onChange={(e) => handleRoleChange(m.userId, e.target.value)}>
                 <option value="VIEWER" className="bg-slate-800 text-gray-100">Viewer</option><option value="EDITOR" className="bg-slate-800 text-gray-100">Editor</option><option value="ADMIN" className="bg-slate-800 text-gray-100">Admin</option>
               </select>
-              <button onClick={() => onRemove(m.userId, m.name)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Remove Member"><UserMinus size={16} /></button>
+              <button onClick={() => onRemove(m.userId, m.name)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 rounded-lg transition-colors" title="Remove Member"><UserMinus size={16} /></button>
             </div>
           )}
         </div>
@@ -116,7 +116,7 @@ function AuditLogTab({ entries }: { entries: any[] }) {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm text-foreground">
-              <span className="font-bold text-indigo-700">{e.user}</span>{" "}
+              <span className="font-bold text-primary">{e.user}</span>{" "}
               <span className="text-muted-foreground">{e.action}</span>{" "}
               <span className="font-semibold text-foreground">"{e.target}"</span>
             </p>
@@ -319,7 +319,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
     <div className="min-h-screen bg-background relative">
       <div className="bg-background border-b border-border">
         <div className="px-6 lg:px-8 py-4">
-          <button onClick={onBack} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-indigo-600 mb-4 transition-colors">
+          <button onClick={onBack} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary mb-4 transition-colors">
             <ArrowLeft size={16} /> Back to Groups
           </button>
           
@@ -335,21 +335,21 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
             {/* --- REPOSITIONED INVITE CODE & LEAVE BUTTON --- */}
             <div className="flex flex-col items-end gap-3">
               {group.myRole === "ADMIN" && group.inviteCode && (
-                <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg shadow-sm">
-                  <span className="text-xs text-indigo-500 font-bold tracking-wider">INVITE CODE:</span>
-                  <span className="font-mono text-sm font-bold text-indigo-700 tracking-wide">{group.inviteCode}</span>
-                  <button onClick={handleCopyInvite} className="text-indigo-600 hover:text-indigo-800 transition-colors w-5 h-5 flex items-center justify-center">
+                <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-lg shadow-sm">
+                  <span className="text-xs text-primary font-bold tracking-wider">INVITE CODE:</span>
+                  <span className="font-mono text-sm font-bold text-primary tracking-wide">{group.inviteCode}</span>
+                  <button onClick={handleCopyInvite} className="text-primary hover:text-indigo-800 transition-colors w-5 h-5 flex items-center justify-center">
                     {copiedInvite ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                   </button>
                 </div>
               )}
               <div className="flex items-center gap-3">
                 {group.myRole === "ADMIN" && (
-                  <button onClick={handleDeleteGroupClick} className="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-white bg-red-50 hover:bg-red-600 px-3 py-1.5 rounded-lg font-medium transition-colors border border-red-100 hover:border-red-600">
+                  <button onClick={handleDeleteGroupClick} className="inline-flex items-center gap-1.5 text-xs text-red-600 hover:text-white bg-red-50 dark:bg-red-500/15 hover:bg-red-600 px-3 py-1.5 rounded-lg font-medium transition-colors border border-red-100 dark:border-red-500/30 hover:border-red-600">
                     <Trash2 size={14} /> Delete Group
                   </button>
                 )}
-                <button onClick={handleLeaveGroupClick} className="inline-flex items-center gap-1.5 text-xs text-amber-600 hover:text-white bg-amber-50 hover:bg-amber-600 px-3 py-1.5 rounded-lg font-medium transition-colors border border-amber-100 hover:border-amber-600">
+                <button onClick={handleLeaveGroupClick} className="inline-flex items-center gap-1.5 text-xs text-amber-600 hover:text-white bg-amber-50 dark:bg-amber-500/15 hover:bg-amber-600 px-3 py-1.5 rounded-lg font-medium transition-colors border border-amber-100 dark:border-amber-500/30 hover:border-amber-600">
                   <UserMinus size={14} /> Leave Group
                 </button>
               </div>
@@ -362,21 +362,21 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
       <div className="px-6 lg:px-8 py-6 lg:py-8">
 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-background p-4 rounded-xl border border-border shadow-sm flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-indigo-50 text-indigo-700"><Users size={20} /></div>
+            <div className="p-3 rounded-lg bg-primary/10 text-primary"><Users size={20} /></div>
             <div>
               <p className="text-sm text-muted-foreground font-medium">Members</p>
               <p className="text-xl font-bold text-foreground">{members.length || group.memberCount}</p>
             </div>
           </div>
           <div className="bg-background p-4 rounded-xl border border-border shadow-sm flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-sky-50 text-sky-700"><FileText size={20} /></div>
+            <div className="p-3 rounded-lg bg-sky-50 dark:bg-sky-500/15 text-sky-700 dark:text-sky-300"><FileText size={20} /></div>
             <div>
               <p className="text-sm text-muted-foreground font-medium">Shared Files</p>
               <p className="text-xl font-bold text-foreground">{groupFiles.length}</p>
             </div>
           </div>
           <div className="bg-background p-4 rounded-xl border border-border shadow-sm flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-violet-50 text-violet-700"><Crown size={20} /></div>
+            <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300"><Crown size={20} /></div>
             <div>
               <p className="text-sm text-muted-foreground font-medium">Your Role</p>
               <p className="text-xl font-bold text-foreground">{group.myRole}</p>
@@ -385,14 +385,14 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
         </div>
         <div className="flex items-center justify-between mb-6">
           <div className="flex gap-1 bg-muted/50 border border-border p-1 rounded-xl w-fit">
-            <button onClick={() => setActiveTab("files")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "files" ? "bg-background text-indigo-600 shadow-sm" : "text-muted-foreground hover:text-muted-foreground hover:bg-background"}`}><FileText size={15} /> Files</button>
-            <button onClick={() => setActiveTab("members")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "members" ? "bg-background text-indigo-600 shadow-sm" : "text-muted-foreground hover:text-muted-foreground hover:bg-background"}`}><Users size={15} /> Members</button>
-            <button onClick={() => setActiveTab("audit")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "audit" ? "bg-background text-indigo-600 shadow-sm" : "text-muted-foreground hover:text-muted-foreground hover:bg-background"}`}><Activity size={15} /> Audit Log</button>
+            <button onClick={() => setActiveTab("files")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "files" ? "bg-background text-primary shadow-sm" : "text-muted-foreground hover:text-muted-foreground hover:bg-background"}`}><FileText size={15} /> Files</button>
+            <button onClick={() => setActiveTab("members")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "members" ? "bg-background text-primary shadow-sm" : "text-muted-foreground hover:text-muted-foreground hover:bg-background"}`}><Users size={15} /> Members</button>
+            <button onClick={() => setActiveTab("audit")} className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "audit" ? "bg-background text-primary shadow-sm" : "text-muted-foreground hover:text-muted-foreground hover:bg-background"}`}><Activity size={15} /> Audit Log</button>
           </div>
 
           {activeTab === "files" && group.myRole !== "VIEWER" && (
             <div>
-              <button onClick={() => setShowUploadModal(true)} disabled={isUploading} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed">
+              <button onClick={() => setShowUploadModal(true)} disabled={isUploading} className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium px-5 py-2.5 rounded-xl transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed">
                 {isUploading ? <><Loader2 size={16} className="animate-spin" /> Encrypting...</> : <><Plus size={16} /> Upload to Group</>}
               </button>
             </div>
@@ -404,7 +404,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
           {activeTab === "members" && (loadingMembers ? <div className="p-12 text-center text-muted-foreground animate-pulse">Loading members...</div> : <MembersTab members={members} myRole={group.myRole} groupId={group.id} onRefresh={() => { fetchMembers(); fetchLogs(); }} onRemove={handleRemoveMember} />)}
           
           {/* --- RESTORED AUDIT LOG TAB --- */}
-          {activeTab === "audit" && (loadingLogs ? <div className="p-12 text-center text-indigo-600 animate-pulse font-medium">Decrypting audit logs...</div> : <AuditLogTab entries={auditLogs} />)}
+          {activeTab === "audit" && (loadingLogs ? <div className="p-12 text-center text-primary animate-pulse font-medium">Decrypting audit logs...</div> : <AuditLogTab entries={auditLogs} />)}
         </div>
       </div>
 
@@ -439,7 +439,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
               <label className="block text-sm font-medium text-foreground mb-1.5">Max Views (Optional)</label>
               <input type="number" min="0" placeholder="e.g. 10" value={uploadMaxViews} onChange={(e) => setUploadMaxViews(e.target.value)} className="w-full bg-slate-800 text-gray-100 border border-slate-700 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none rounded-xl px-4 py-2.5 text-sm" />
             </div>
-            <button onClick={handleConfirmUpload} disabled={isUploading || !selectedUploadFile} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50">
+            <button onClick={handleConfirmUpload} disabled={isUploading || !selectedUploadFile} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2.5 rounded-xl transition-colors text-sm disabled:opacity-50">
                {isUploading ? "Uploading..." : "Confirm Upload"}
             </button>
           </div>
@@ -453,7 +453,7 @@ function GroupDetailView({ group, onBack }: { group: any; onBack: () => void }) 
 function GroupCard({ group, onOpen }: { group: any; onOpen: () => void }) {
   return (
     <div className="bg-background border border-border rounded-2xl overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col">
-      <div className={`h-2 bg-gradient-to-r ${group.color || 'from-indigo-500 to-purple-600'}`} />
+      <div className={`h-2 bg-gradient-to-r ${group.color || 'from-teal-500 to-teal-700'}`} />
       <div className="p-5 flex-1 flex flex-col">
         <div className="flex items-start justify-between mb-3">
           <div>
@@ -554,7 +554,7 @@ function GroupHub({ groups, onOpenGroup, onRefresh, isLoading }: { groups: any[]
           <h2 className="font-semibold text-foreground text-lg">Your Groups</h2>
           <div className="flex gap-3">
             <button onClick={() => setShowJoin(true)} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground bg-background border border-border hover:bg-background px-4 py-2.5 rounded-lg transition-all shadow-sm"><LogIn size={16} /> Join Group</button>
-            <button disabled={atLimit} onClick={() => !atLimit && setShowCreate(true)} className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg transition-all shadow-sm ${atLimit ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 text-white"}`}><Plus size={16} /> Create Group</button>
+            <button disabled={atLimit} onClick={() => !atLimit && setShowCreate(true)} className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg transition-all shadow-sm ${atLimit ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-primary hover:bg-primary/90 text-primary-foreground"}`}><Plus size={16} /> Create Group</button>
           </div>
         </div>
 

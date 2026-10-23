@@ -214,10 +214,10 @@ export function AiAssistantPage() {
                 <button
                   key={action.id}
                   onClick={() => handleSend(action.prompt)}
-                  className="flex items-start gap-4 p-4 bg-background rounded-xl border border-border hover:border-purple-300 hover:shadow-md transition-all duration-200 text-left group"
+                  className="flex items-start gap-4 p-4 bg-background rounded-xl border border-border hover:border-primary/40 hover:shadow-md transition-all duration-200 text-left group"
                 >
-                  <div className="p-2.5 bg-purple-50 rounded-lg group-hover:bg-purple-100 transition-colors">
-                    <action.icon className="h-5 w-5 text-purple-600" />
+                  <div className="p-2.5 bg-primary/10 rounded-lg group-hover:bg-primary/15 transition-colors">
+                    <action.icon className="h-5 w-5 text-primary" />
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-foreground mb-1">
@@ -240,7 +240,7 @@ export function AiAssistantPage() {
               )}
             >
               {message.type === "assistant" && (
-                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-teal-500 to-teal-700 rounded-lg flex items-center justify-center">
                   <Bot className="h-5 w-5 text-white" />
                 </div>
               )}
@@ -249,7 +249,7 @@ export function AiAssistantPage() {
                 className={cn(
                   "max-w-3xl rounded-2xl px-5 py-4 group",
                   message.type === "user"
-                    ? "bg-purple-600 text-white"
+                    ? "bg-primary text-primary-foreground"
                     : "bg-background border border-border text-foreground"
                 )}
               >
@@ -287,7 +287,7 @@ export function AiAssistantPage() {
                       <button
                         key={i}
                         onClick={() => handleSuggestionClick(suggestion)}
-                        className="px-3 py-1.5 text-xs font-medium bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors"
+                        className="px-3 py-1.5 text-xs font-medium bg-primary/10 text-primary rounded-lg hover:bg-primary/15 transition-colors"
                       >
                         {suggestion}
                       </button>
@@ -317,7 +317,7 @@ export function AiAssistantPage() {
               </div>
 
               {message.type === "user" && (
-                <div className="flex-shrink-0 w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <User className="h-5 w-5 text-white" />
                 </div>
               )}
@@ -327,7 +327,7 @@ export function AiAssistantPage() {
           {/* Loading indicator */}
           {isLoading && (
             <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+              <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-teal-500 to-teal-700 rounded-lg flex items-center justify-center">
                 <Bot className="h-5 w-5 text-white" />
               </div>
               <div className="bg-background border border-border rounded-2xl px-5 py-4">
@@ -353,7 +353,7 @@ export function AiAssistantPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleSend()}
               placeholder="Ask me anything about your files..."
-              className="flex-1 px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
+              className="flex-1 px-4 py-3 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
             />
             <button
               onClick={() => handleSend()}
@@ -361,7 +361,7 @@ export function AiAssistantPage() {
               className={cn(
                 "px-6 py-3 rounded-xl font-medium transition-all duration-200 flex items-center gap-2",
                 input.trim() && !isLoading
-                  ? "bg-purple-600 text-white hover:bg-purple-700 shadow-sm hover:shadow-md"
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md"
                   : "bg-muted text-muted-foreground cursor-not-allowed"
               )}
             >

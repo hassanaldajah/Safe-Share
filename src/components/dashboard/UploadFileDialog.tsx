@@ -205,7 +205,7 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
       <div className="relative w-full max-w-3xl max-h-[90vh] animate-in fade-in slide-in-from-bottom-4 duration-300">
         <div className="bg-background rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
           {/* Header */}
-          <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6 py-5">
+          <div className="bg-gradient-to-br from-teal-600 via-teal-700 to-teal-900 px-6 py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-background/20 backdrop-blur-sm rounded-lg">
@@ -239,8 +239,8 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
               className={cn(
                 "border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer",
                 dragActive
-                  ? "border-indigo-500 bg-indigo-50"
-                  : "border-border hover:border-indigo-400 hover:bg-background",
+                  ? "border-primary bg-primary/10"
+                  : "border-border hover:border-primary/60 hover:bg-background",
                 isEncrypting && "opacity-50 cursor-not-allowed"
               )}
               onClick={() => !isEncrypting && fileInputRef.current?.click()}
@@ -324,7 +324,7 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
                                 checked={file.compressed}
                                 onChange={() => toggleCompression(file.id)}
                                 disabled={isEncrypting}
-                                className="rounded border-border text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
+                                className="rounded border-border text-primary focus:ring-ring disabled:opacity-50"
                               />
                               <span className="text-sm text-muted-foreground flex items-center gap-1">
                                 <Package className="h-3.5 w-3.5" />
@@ -332,7 +332,7 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
                               </span>
                             </label>
                             {file.compressionRecommended && (
-                              <span className="text-xs bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full">
+                              <span className="text-xs bg-yellow-50 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 px-2 py-0.5 rounded-full">
                                 Recommended
                               </span>
                             )}
@@ -344,7 +344,7 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
                       {!isEncrypting && (
                         <button
                           onClick={() => removeFile(file.id)}
-                          className="p-1.5 hover:bg-red-50 text-muted-foreground hover:text-red-600 rounded-lg transition-colors flex-shrink-0"
+                          className="p-1.5 hover:bg-red-50 dark:hover:bg-red-500/20 text-muted-foreground hover:text-red-600 rounded-lg transition-colors flex-shrink-0"
                         >
                           <X className="h-4 w-4" />
                         </button>
@@ -381,7 +381,7 @@ export function UploadFileDialog({ isOpen, onClose, onUpload, folderName }: Uplo
                   className={cn(
                     "px-6 py-2.5 font-medium rounded-lg transition-colors flex items-center gap-2",
                     canUpload && !isEncrypting
-                      ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
                       : "bg-secondary text-muted-foreground cursor-not-allowed"
                   )}
                 >

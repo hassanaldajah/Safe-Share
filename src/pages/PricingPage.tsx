@@ -1,7 +1,9 @@
 import { useEffect } from "react";
+import { MotionConfig } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import PricingSection from "@/components/PricingSection";
 import Footer from "@/components/Footer";
+import { SmoothScroll } from "@/components/SmoothScroll";
 import "@/styles/landing.css";
 
 const PricingPage = () => {
@@ -15,16 +17,17 @@ const PricingPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen landing-page pt-16" style={{ 
-      background: "hsl(222 47% 6%)",
-      color: "hsl(210 40% 98%)"
-    }}>
-      <Navbar />
-      <main>
-        <PricingSection />
-      </main>
-      <Footer />
-    </div>
+    <SmoothScroll>
+      <MotionConfig reducedMotion="user">
+        <div className="min-h-screen landing-page overflow-x-clip pt-16">
+          <Navbar />
+          <main id="main">
+            <PricingSection />
+          </main>
+          <Footer />
+        </div>
+      </MotionConfig>
+    </SmoothScroll>
   );
 };
 

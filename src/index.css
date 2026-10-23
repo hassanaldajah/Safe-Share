@@ -77,66 +77,68 @@
 
   html {
     font-family: "DM Sans", system-ui, sans-serif;
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
   }
+
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  button, a, [role="button"] {
+    touch-action: manipulation;
+  }
 }
+
+/* Dark theme: the same navy and teal as the landing page, so the brand colour stays in dark mode */
 .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 8%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 47% 9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 173 80% 45%;
+  --primary-foreground: 222 47% 6%;
+  --secondary: 222 40% 13%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 222 40% 13%;
+  --muted-foreground: 215 20% 65%;
+  --accent: 173 50% 13%;
+  --accent-foreground: 173 80% 70%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 222 30% 17%;
+  --input: 222 30% 17%;
+  --ring: 173 80% 45%;
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  --sidebar-background: 222 47% 5%;
+  --sidebar-accent: 222 40% 12%;
+  --sidebar-border: 222 30% 14%;
+
+  --storage-bg: 222 30% 17%;
 }
 
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+/* People who ask for less motion get still pages */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes shimmer {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
 }

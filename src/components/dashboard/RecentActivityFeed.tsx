@@ -36,7 +36,7 @@ export function RecentActivityFeed() {
       case "shared": return "text-blue-500";
       case "downloaded": return "text-sky-500";
       case "opened": return "text-teal-500";
-      case "joined": return "text-indigo-500";
+      case "joined": return "text-primary";
       default: return "text-muted-foreground";
     }
   };

@@ -66,7 +66,7 @@ export function CreateFolderDialog({
         <div className="bg-background rounded-2xl shadow-2xl overflow-hidden border border-border">
           
           {/* Header */}
-          <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6 py-5">
+          <div className="bg-gradient-to-br from-teal-600 via-teal-700 to-teal-900 px-6 py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-background/20 backdrop-blur-sm rounded-lg">
@@ -103,7 +103,7 @@ export function CreateFolderDialog({
                 placeholder="Enter folder name"
                 className={cn(
                   "w-full px-4 py-2.5 border rounded-lg transition-all",
-                  "focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent",
+                  "focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent",
                   "text-foreground placeholder:text-muted-foreground bg-background", // Added specific colors for clarity
                   error ? "border-red-300 bg-red-50/30" : "border-border"
                 )}
@@ -123,7 +123,7 @@ export function CreateFolderDialog({
               </button>
               <button
                 type="submit"
-                className="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all active:scale-[0.98]"
+                className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 shadow-md shadow-indigo-200 transition-all active:scale-[0.98]"
               >
                 Create Folder
               </button>

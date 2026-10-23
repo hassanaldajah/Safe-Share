@@ -1,6 +1,60 @@
 import { Check } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { authFetch } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Reveal } from "@/components/Reveal";
+import { reveal, staggerChildren } from "@/lib/motion";
+
+// Paying for a year costs 20% less per month
+const ANNUAL_FACTOR = 0.8;
+
+const usd = (value: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+
+// $9.99 becomes $7.99, $15 becomes $12
+const annualPrice = (monthly: number) => Math.round(monthly * ANNUAL_FACTOR * 100) / 100;
+
+type Plan = {
+  name: string;
+  description: string;
+  monthly: number;
+  unit: string;
+  features: string[];
+  popular?: boolean;
+};
+
+const plans: Plan[] = [
+  {
+    name: "Basic",
+    description: "For individuals sending occasional secure files.",
+    monthly: 0,
+    unit: "/ month",
+    features: ["5GB Encrypted Storage", "2GB Max File Size", "End-to-End Encryption", "7-Day Link Expiry"],
+  },
+  {
+    name: "Pro",
+    description: "For professionals who need absolute privacy and control.",
+    monthly: 9.99,
+    unit: "/ month",
+    features: ["1TB Encrypted Storage", "50GB Max File Size", "Custom Link Expiry", "Password-Protected Links", "Download Audit Logs"],
+    popular: true,
+  },
+  {
+    name: "Teams",
+    description: "For businesses managing sensitive client data.",
+    monthly: 15,
+    unit: "/ user / month",
+    features: ["3TB Pooled Storage", "Centralized Admin Console", "Team Access Policies", "Priority Support", "Custom Branding"],
+  },
+];
 
 const PricingSection = () => {
   const [isAnnual, setIsAnnual] = useState(true);
@@ -19,101 +73,109 @@ const PricingSection = () => {
     }
   };
 
+  const priceOf = (plan: Plan) => (isAnnual && plan.monthly > 0 ? annualPrice(plan.monthly) : plan.monthly);
+
   return (
-    <section id="pricing" className="py-24 relative overflow-hidden">
-      <div className="container px-4 mx-auto max-w-6xl">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
-            Simple, transparent pricing
-          </h2>
-          <p className="text-slate-400 max-w-2xl mx-auto mb-8">
+    <section id="pricing" className="py-20 lg:py-28 relative overflow-hidden">
+      <div aria-hidden="true" className="absolute inset-0 gradient-radial" />
+
+      <div className="container px-4 mx-auto max-w-6xl relative z-10">
+        <Reveal className="text-center mb-16">
+          <p className="text-xs font-semibold tracking-[0.2em] uppercase text-primary mb-3">Pricing</p>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4 text-foreground">
+            Simple, Transparent Pricing
+          </h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
             Choose the perfect plan for your secure file sharing needs. No hidden fees.
           </p>
-          
-          {/* Toggle */}
-          <div className="flex items-center justify-center gap-3">
-            <span className={`text-sm font-medium ${!isAnnual ? 'text-white' : 'text-slate-400'}`}>Monthly</span>
-            <button 
-              onClick={() => setIsAnnual(!isAnnual)}
-              className="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-[#00E5FF] focus:ring-offset-2 focus:ring-offset-slate-900"
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-[#00E5FF] transition-transform ${isAnnual ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
-            <span className={`text-sm font-medium ${isAnnual ? 'text-white' : 'text-slate-400'}`}>
-              Annually <span className="text-[#00E5FF] text-xs ml-1">(Save 20%)</span>
-            </span>
-          </div>
-        </div>
 
-        <div className="grid md:grid-cols-3 gap-8 items-center">
-          {/* Basic Plan */}
-          <div className="rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-8 flex flex-col h-full transition-transform hover:-translate-y-1 hover:border-white/20">
-            <h3 className="text-xl font-semibold text-white mb-2">Basic</h3>
-            <p className="text-slate-400 text-sm mb-6 h-10">For individuals sending occasional secure files.</p>
-            <div className="mb-6">
-              <span className="text-4xl font-bold text-white">$0</span>
-              <span className="text-slate-400"> / month</span>
-            </div>
-            <ul className="space-y-4 mb-8 flex-grow">
-              {['5GB Encrypted Storage', '2GB Max File Size', 'End-to-End Encryption', '7-Day Link Expiry'].map((feature, i) => (
-                <li key={i} className="flex items-start text-slate-300">
-                  <Check className="h-5 w-5 text-[#00E5FF] mr-3 shrink-0" />
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-            <button className="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 border border-white/20 text-white hover:bg-white/10">
-              Get Started Free
-            </button>
+          {/* Billing period */}
+          <div className="inline-flex items-center gap-3 rounded-full border border-border bg-card/60 px-4 py-2">
+            <label htmlFor="billing" className={`text-sm font-medium cursor-pointer ${!isAnnual ? "text-foreground" : "text-muted-foreground"}`}>
+              Monthly
+            </label>
+            <Switch id="billing" checked={isAnnual} onCheckedChange={setIsAnnual} aria-label="Pay annually" />
+            <label htmlFor="billing" className={`text-sm font-medium cursor-pointer ${isAnnual ? "text-foreground" : "text-muted-foreground"}`}>
+              Annually <span className="text-primary text-xs ml-1">Save 20%</span>
+            </label>
           </div>
+        </Reveal>
 
-          {/* Pro Plan */}
-          <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-[#00E5FF] shadow-[0_0_30px_rgba(0,229,255,0.15)] p-8 flex flex-col h-full relative transform md:-translate-y-4 transition-transform hover:-translate-y-5 hover:shadow-[0_0_40px_rgba(0,229,255,0.25)]">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#00E5FF] text-slate-900 text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-[0_0_15px_rgba(0,229,255,0.5)]">
-              Most Popular
-            </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Pro</h3>
-            <p className="text-slate-400 text-sm mb-6 h-10">For professionals who need absolute privacy and control.</p>
-            <div className="mb-6">
-              <span className="text-4xl font-bold text-white">$9.99</span>
-              <span className="text-slate-400"> / month</span>
-            </div>
-            <ul className="space-y-4 mb-8 flex-grow">
-              {['1TB Encrypted Storage', '50GB Max File Size', 'Custom Link Expiry', 'Password-Protected Links', 'Download Audit Logs'].map((feature, i) => (
-                <li key={i} className="flex items-start text-slate-300">
-                  <Check className="h-5 w-5 text-[#00E5FF] mr-3 shrink-0" />
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-            <button 
-              onClick={handleUpgradeToPro}
-              className="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 bg-[#00E5FF] text-slate-900 hover:bg-[#00E5FF]/90 hover:shadow-[0_0_20px_rgba(0,229,255,0.4)]">
-              Upgrade to Pro
-            </button>
-          </div>
+        <motion.div
+          variants={staggerChildren(0.12)}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-60px" }}
+          className="grid md:grid-cols-3 gap-8 md:items-center"
+        >
+          {plans.map((plan) => {
+            const price = priceOf(plan);
+            return (
+              <motion.div
+                key={plan.name}
+                variants={reveal}
+                whileHover={{ y: -6, transition: { duration: 0.3 } }}
+                className={`relative rounded-2xl p-8 flex flex-col h-full border transition-[border-color,box-shadow] duration-300 ${
+                  plan.popular
+                    ? "bg-card border-primary/60 shadow-[0_0_40px_-8px_hsl(var(--primary)/0.35)] md:-my-4 md:py-12"
+                    : "bg-card/60 border-border hover:border-primary/30"
+                }`}
+              >
+                {plan.popular && (
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-[0_0_18px_hsl(var(--primary)/0.5)]">
+                    Most Popular
+                  </div>
+                )}
 
-          {/* Teams Plan */}
-          <div className="rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 p-8 flex flex-col h-full transition-transform hover:-translate-y-1 hover:border-white/20">
-            <h3 className="text-xl font-semibold text-white mb-2">Teams</h3>
-            <p className="text-slate-400 text-sm mb-6 h-10">For businesses managing sensitive client data.</p>
-            <div className="mb-6">
-              <span className="text-4xl font-bold text-white">$15</span>
-              <span className="text-slate-400"> / user / month</span>
-            </div>
-            <ul className="space-y-4 mb-8 flex-grow">
-              {['3TB Pooled Storage', 'Centralized Admin Console', 'Team Access Policies', 'Priority Support', 'Custom Branding'].map((feature, i) => (
-                <li key={i} className="flex items-start text-slate-300">
-                  <Check className="h-5 w-5 text-[#00E5FF] mr-3 shrink-0" />
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-            <button className="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 border border-white/20 text-white hover:bg-white/10">
-              Contact Sales
-            </button>
-          </div>
-        </div>
+                <h2 className="text-xl font-semibold text-foreground mb-2">{plan.name}</h2>
+                <p className="text-muted-foreground text-sm mb-6 min-h-10">{plan.description}</p>
+
+                <div className="mb-1 flex items-baseline gap-1.5">
+                  <motion.span
+                    key={price}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="text-4xl font-bold text-foreground tabular-nums"
+                  >
+                    {usd(price)}
+                  </motion.span>
+                  <span className="text-muted-foreground">{plan.unit}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-6 h-4">
+                  {plan.monthly > 0 && isAnnual ? `Billed yearly at ${usd(Math.round(price * 12 * 100) / 100)}` : ""}
+                </p>
+
+                <ul className="space-y-4 mb-8 flex-grow">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start text-foreground/85">
+                      <Check className="h-5 w-5 text-primary mr-3 shrink-0" aria-hidden="true" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {plan.name === "Basic" && (
+                  <Button variant="outline" size="lg" className="w-full" asChild>
+                    <Link to="/signup">Get Started Free</Link>
+                  </Button>
+                )}
+                {plan.name === "Pro" && (
+                  <Button size="lg" className="w-full" onClick={handleUpgradeToPro}>
+                    Upgrade to Pro
+                  </Button>
+                )}
+                {plan.name === "Teams" && (
+                  <Button variant="outline" size="lg" className="w-full" asChild>
+                    <a href="https://github.com/hassanaldajah" target="_blank" rel="noopener noreferrer">
+                      Contact Sales
+                    </a>
+                  </Button>
+                )}
+              </motion.div>
+            );
+          })}
+        </motion.div>
       </div>
     </section>
   );

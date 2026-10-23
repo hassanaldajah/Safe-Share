@@ -150,7 +150,7 @@ export function ShareFileModal({ isOpen, onClose, file }: ShareFileModalProps) {
         <div className="bg-background rounded-2xl shadow-2xl overflow-hidden border border-border">
 
           {/* ── Header ───────────────────────────── */}
-          <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 px-6 py-5">
+          <div className="bg-gradient-to-br from-teal-600 via-teal-700 to-teal-900 px-6 py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 backdrop-blur-sm rounded-xl">
@@ -351,7 +351,7 @@ export function ShareFileModal({ isOpen, onClose, file }: ShareFileModalProps) {
                   className={cn(
                     "flex-1 px-4 py-2.5 font-medium rounded-xl transition-colors flex items-center justify-center gap-2",
                     searchTag.trim() && !isWorking
-                      ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
                       : "bg-muted text-muted-foreground cursor-not-allowed"
                   )}
                 >

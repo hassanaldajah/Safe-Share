@@ -105,14 +105,14 @@ export function ManageAccessDialog({ isOpen, onClose, fileId, fileName }: Manage
                     <div className="flex gap-4 mt-1 text-xs text-muted-foreground font-medium">
                       <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {access.maxViews === null ? "Unlimited" : `${access.maxViews} left`}</span>
                       <span className="flex items-center gap-1"><Download className="h-3.5 w-3.5" /> {access.maxDownloads === null ? "Unlimited" : `${access.maxDownloads} left`}</span>
-                      {access.canReshare && <span className="flex items-center gap-1 text-purple-600 bg-purple-100 px-2 rounded-full"><Share2 className="h-3 w-3" /> Reshare active</span>}
+                      {access.canReshare && <span className="flex items-center gap-1 text-primary bg-primary/15 px-2 rounded-full"><Share2 className="h-3 w-3" /> Reshare active</span>}
                     </div>
                   </div>
 
                   <button
                     onClick={() => handleRevoke(access.receiverTag)}
                     disabled={revokingUser === access.receiverTag}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 font-medium rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-500/15 text-red-600 hover:bg-red-100 dark:hover:bg-red-500/20 font-medium rounded-lg transition-colors"
                   >
                     {revokingUser === access.receiverTag ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                     Revoke

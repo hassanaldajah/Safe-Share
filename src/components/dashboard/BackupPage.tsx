@@ -114,29 +114,29 @@ export function BackupPage() {
         
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <Cloud className="h-8 w-8 text-indigo-600" />
+            <Cloud className="h-8 w-8 text-primary" />
             Cloud Key Escrow
           </h1>
           <p className="text-muted-foreground mt-2 text-lg">Securely back up your cryptographic keys so you never lose access to your files.</p>
         </div>
 
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex gap-4">
+        <div className="bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 rounded-xl p-5 flex gap-4">
           <AlertTriangle className="h-6 w-6 text-amber-600 flex-shrink-0" />
           <div>
-            <h3 className="font-semibold text-amber-800">Zero-Knowledge Guarantee</h3>
+            <h3 className="font-semibold text-amber-800 dark:text-amber-300">Zero-Knowledge Guarantee</h3>
             <p className="text-amber-700/80 text-sm mt-1">Your key is encrypted in your browser using the Master Password below. Our servers never see your password or your actual keys. <strong>If you forget this password, your backup cannot be recovered.</strong></p>
           </div>
         </div>
 
         <div className="bg-background rounded-2xl shadow-sm border border-border overflow-hidden">
           <div className="flex border-b border-border">
-            <button onClick={() => setMode("backup")} className={cn("flex-1 py-4 font-medium text-center transition-colors", mode === "backup" ? "text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50" : "text-muted-foreground hover:bg-background")}>Backup Key to Cloud</button>
+            <button onClick={() => setMode("backup")} className={cn("flex-1 py-4 font-medium text-center transition-colors", mode === "backup" ? "text-primary border-b-2 border-indigo-600 bg-indigo-50/50" : "text-muted-foreground hover:bg-background")}>Backup Key to Cloud</button>
             <button onClick={() => setMode("restore")} className={cn("flex-1 py-4 font-medium text-center transition-colors", mode === "restore" ? "text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50/50" : "text-muted-foreground hover:bg-background")}>Restore Key from Cloud</button>
           </div>
 
           <div className="p-8 space-y-6">
             {message.text && (
-              <div className={cn("p-4 rounded-xl text-sm font-medium flex items-center gap-2", message.type === "error" ? "bg-red-50 text-red-700 border border-red-200" : "bg-green-50 text-green-700 border border-green-200")}>
+              <div className={cn("p-4 rounded-xl text-sm font-medium flex items-center gap-2", message.type === "error" ? "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-500/30" : "bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-500/30")}>
                 {message.type === "success" && <ShieldCheck className="h-5 w-5" />}
                 {message.text}
               </div>
@@ -146,7 +146,7 @@ export function BackupPage() {
               <label className="block text-sm font-medium text-muted-foreground mb-2">Master Recovery Password</label>
               <div className="relative">
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter a strong password" className="w-full pl-11 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter a strong password" className="w-full pl-11 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-ring" />
               </div>
             </div>
 
@@ -155,7 +155,7 @@ export function BackupPage() {
                 <label className="block text-sm font-medium text-muted-foreground mb-2">Confirm Password</label>
                 <div className="relative">
                   <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm your password" className="w-full pl-11 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm your password" className="w-full pl-11 pr-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-ring" />
                 </div>
               </div>
             )}
@@ -163,7 +163,7 @@ export function BackupPage() {
             <button 
               onClick={mode === "backup" ? handleBackup : handleRestore} 
               disabled={isLoading || !password || (mode === "backup" && !confirmPassword)}
-              className={cn("w-full py-3.5 rounded-xl font-medium text-white shadow-sm flex items-center justify-center gap-2 transition-colors", isLoading || !password ? "bg-secondary cursor-not-allowed" : mode === "backup" ? "bg-indigo-600 hover:bg-indigo-700" : "bg-emerald-600 hover:bg-emerald-700")}
+              className={cn("w-full py-3.5 rounded-xl font-medium text-white shadow-sm flex items-center justify-center gap-2 transition-colors", isLoading || !password ? "bg-secondary cursor-not-allowed" : mode === "backup" ? "bg-primary hover:bg-primary/90" : "bg-emerald-600 hover:bg-emerald-700")}
             >
               {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : mode === "backup" ? <CloudUpload className="h-5 w-5" /> : <CloudDownload className="h-5 w-5" />}
               {isLoading ? "Processing..." : mode === "backup" ? "Encrypt & Backup to Cloud" : "Download & Unlock Key"}
