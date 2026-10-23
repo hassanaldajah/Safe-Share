@@ -8,7 +8,8 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-safeshare_password}
       POSTGRES_DB: safeshare_db
     ports:
-      - "127.0.0.1:5433:5432"   # reachable from this computer only
+      # 15432, not 5432/5433: a PostgreSQL installed on the computer often uses those
+      - "127.0.0.1:15432:5432"  # reachable from this computer only
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

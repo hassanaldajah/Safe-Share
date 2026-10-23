@@ -98,12 +98,12 @@ Requirements: Node.js ≥ 18, Java 17, Docker (for the database).
 
 ```bash
 # 1. database
-docker compose up -d db          # PostgreSQL on localhost:5433
+docker compose up -d db          # PostgreSQL on localhost:15432
 
 # 2. backend (http://localhost:8080)
 cd backend
 export JWT_SECRET=$(openssl rand -base64 32)
-export DB_URL=jdbc:postgresql://localhost:5433/safeshare_db
+export DB_URL=jdbc:postgresql://localhost:15432/safeshare_db
 export DEV_LOG_OTP=true          # codes appear in this terminal
 ./mvnw spring-boot:run
 
